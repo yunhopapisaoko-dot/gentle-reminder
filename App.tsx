@@ -31,11 +31,16 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setIsAuthenticated(true);
-        await fetchInitialData(session.user.id, session.user);
-      } else {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setIsAuthenticated(true);
+          fetchInitialData(session.user.id, session.user);
+        } else {
+          setIsAuthenticated(false);
+          setLoading(false);
+        }
+      } catch (e) {
         setIsAuthenticated(false);
         setLoading(false);
       }
@@ -43,11 +48,11 @@ const App: React.FC = () => {
 
     initAuth();
 
-    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         setIsAuthenticated(true);
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-          await fetchInitialData(session.user.id, session.user);
+          fetchInitialData(session.user.id, session.user);
         }
       } else {
         setIsAuthenticated(false);
@@ -56,29 +61,18 @@ const App: React.FC = () => {
       }
     });
 
-    const postSub = supabaseService.subscribeToPosts(() => {
-      refreshPosts();
-    });
-
     return () => {
       authSub.unsubscribe();
-      postSub.unsubscribe();
     };
   }, []);
 
   const fetchInitialData = async (userId: string, authUser?: any) => {
-    setLoading(true);
+    // Não travamos o loading aqui, deixamos ele ser resolvido no final
     try {
-      const [profile, dbPosts, members] = await Promise.all([
-        supabaseService.getProfile(userId),
-        supabaseService.getPosts(),
-        supabaseService.getAllProfiles()
-      ]);
-
-      if (profile) {
-        setCurrentUser(profile);
-      } else if (authUser) {
-        // Fallback se o perfil ainda não foi criado pela trigger do Supabase
+      // Carregamento sequencial para evitar que uma falha trave tudo
+      const profile = await supabaseService.getProfile(userId);
+      if (profile) setCurrentUser(profile);
+      else if (authUser) {
         const meta = authUser.user_metadata;
         setCurrentUser({
           id: userId,
@@ -89,11 +83,15 @@ const App: React.FC = () => {
         });
       }
 
+      const dbPosts = await supabaseService.getPosts();
       setPosts(dbPosts || []);
+
+      const members = await supabaseService.getAllProfiles();
       setCommunityMembers(members || []);
 
     } catch (error: any) {
-      if (error?.message?.includes('profiles')) {
+      console.error("Erro ao carregar dados:", error);
+      if (error?.message?.includes('profiles') || error?.message?.includes('relation')) {
         setShowDbSetup(true);
       }
     } finally {
@@ -122,7 +120,7 @@ const App: React.FC = () => {
   const renderMainContent = () => {
     if (loading) return (
       <div className="flex flex-col items-center justify-center py-32 animate-pulse">
-        <span className="material-symbols-rounded text-primary text-5xl mb-4">cyclone</span>
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
         <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em]">Sincronizando...</p>
       </div>
     );
@@ -147,6 +145,7 @@ const App: React.FC = () => {
               <div className="px-10 py-20 text-center opacity-40">
                 <span className="material-symbols-rounded text-6xl mb-4 text-primary">auto_stories</span>
                 <p className="text-[10px] font-bold text-white uppercase tracking-widest">Nada postado ainda.</p>
+                <button onClick={() => setShowDbSetup(true)} className="mt-4 text-[9px] text-primary underline uppercase tracking-widest">Configurar Banco</button>
               </div>
             )}
           </div>
@@ -158,19 +157,20 @@ const App: React.FC = () => {
               <div key={post.id} className="bg-surface-purple/30 rounded-[40px] p-8 border border-white/5">
                 <h4 className="text-white font-black text-xl mb-4">{post.title}</h4>
                 <p className="text-white/50 text-sm italic mb-6">"{post.excerpt}"</p>
-                <div className="flex items-center space-x-3" onClick={() => setSelectedUser(post.author)}>
+                <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setSelectedUser(post.author)}>
                    <img src={post.author.avatar} className="w-8 h-8 rounded-full" alt="avatar" />
                    <span className="text-[10px] font-black text-white/80">{post.author.name}</span>
                 </div>
               </div>
             ))}
+            {posts.length === 0 && <p className="text-center text-white/20 py-20 italic">O feed está vazio.</p>}
           </div>
         );
       case TabType.Global:
         return (
           <div className="p-8 grid grid-cols-2 gap-6 pb-40">
             {communityMembers.map((user) => (
-              <button key={user.id} onClick={() => setSelectedUser(user)} className="bg-surface-purple/20 p-6 rounded-[40px] flex flex-col items-center border border-white/5">
+              <button key={user.id} onClick={() => setSelectedUser(user)} className="bg-surface-purple/20 p-6 rounded-[40px] flex flex-col items-center border border-white/5 hover:bg-white/5 transition-colors">
                 <img src={user.avatar} className="w-20 h-20 rounded-[28px] mb-4 object-cover" alt={user.name} />
                 <span className="text-xs font-black text-white truncate w-full text-center">{user.name}</span>
               </button>
@@ -214,7 +214,7 @@ const App: React.FC = () => {
         {selectedLocalChat && <ChatInterface locationContext={selectedLocalChat} onClose={() => setSelectedLocalChat(null)} />}
 
         {!selectedLocalChat && !selectedUser && !isCreateModalOpen && (
-          <button onClick={() => setIsCreateModalOpen(true)} className="fixed bottom-10 right-10 w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white shadow-2xl z-30">
+          <button onClick={() => setIsCreateModalOpen(true)} className="fixed bottom-10 right-10 w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white shadow-2xl z-30 active:scale-95 transition-transform">
             <span className="material-symbols-rounded text-4xl">add</span>
           </button>
         )}
