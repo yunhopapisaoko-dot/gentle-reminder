@@ -1,0 +1,7 @@
+{
+  "name": "MagicTalk Community",
+  "description": "A vibrant anime-themed community platform for sharing artwork, stories, and connecting with fellow fans.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
