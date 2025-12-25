@@ -35,7 +35,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
   const [isClosing, setIsClosing] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showActionModal, setShowActionModal] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   
   const chatRef = useRef<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -54,16 +53,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
   };
 
   useEffect(() => {
-    const chat = getCommunityChat();
-    if (!chat) {
-      setError("A Miku está descansando agora (API Key não configurada).");
-      return;
+    // Tenta inicializar a IA se possível, mas não trava o chat
+    try {
+      chatRef.current = getCommunityChat();
+    } catch (e) {
+      chatRef.current = null;
     }
     
-    chatRef.current = chat;
     const welcomeText = locationContext 
-      ? `[Interior: ${locationContext}] Você entrou no cenário. Como deseja começar o seu roleplay aqui hoje? ^_^`
-      : "Kon'nichiwa! Bem-vindo ao MagicTalk! Eu sou a Miku, sua guia digital. Como posso ajudar? ^_^";
+      ? `[Cenário: ${locationContext}] O mundo está pronto para sua história. Como deseja começar seu roleplay? ^_^`
+      : "Bem-vindo ao MagicTalk! Este é o seu espaço de roleplay.";
     
     setMessages([{ id: 'main-welcome', role: 'model', text: welcomeText }]);
   }, [locationContext]);
@@ -83,7 +82,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
 
   const handleSend = async (customMsg?: string) => {
     const textToSend = customMsg || input;
-    if (!textToSend.trim() || !chatRef.current || isLoading) return;
+    if (!textToSend.trim() || isLoading) return;
 
     const userMessage: ChatMessage = { id: Date.now().toString(), role: 'user', text: textToSend };
     
@@ -97,33 +96,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
     }
     
     if (!customMsg) setInput('');
-    setIsLoading(true);
 
-    try {
-      const currentLocName = currentSubLoc ? `${currentSubLoc.name} dentro do ${locationContext}` : locationContext;
-      const prompt = locationContext 
-        ? `Agindo como Miku no interior de um(a) ${currentLocName}, responda à seguinte ação de roleplay: ${textToSend}. Seja curta, fofa e use emojis.`
-        : textToSend;
-        
-      const response = await chatRef.current.sendMessage(prompt);
-      const modelMessage: ChatMessage = { 
-        id: (Date.now() + 1).toString(), 
-        role: 'model', 
-        text: response.response.text() || 'Ops, perdi o sinal! Vamos tentar de novo? ^_^' 
-      };
-
-      if (currentSubLoc) {
-        setRoomMessages(prev => ({
-          ...prev,
-          [currentSubLoc.name]: [...(prev[currentSubLoc.name] || []), modelMessage]
-        }));
-      } else {
+    // Se a IA estiver disponível e não for apenas um chat de local genérico, ela responde
+    if (chatRef.current && !currentSubLoc) {
+      setIsLoading(true);
+      try {
+        const response = await chatRef.current.sendMessage(textToSend);
+        const modelMessage: ChatMessage = { 
+          id: (Date.now() + 1).toString(), 
+          role: 'model', 
+          text: response.response.text() 
+        };
         setMessages(prev => [...prev, modelMessage]);
+      } catch (error) {
+        console.error("Erro na IA:", error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -135,7 +124,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
       const welcome: ChatMessage = {
         id: `welcome-${loc.name}`,
         role: 'model',
-        text: `*Miku te acompanha até o(a) ${loc.name}*\n"Chegamos! Este lugar é bem reservado, o que pretende fazer por aqui? ^_~"`
+        text: `*Você entrou no(a) ${loc.name}*\nEste lugar está tranquilo. O que pretende fazer por aqui?`
       };
       setRoomMessages(prev => ({ ...prev, [loc.name]: [welcome] }));
     }
@@ -188,7 +177,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
             <div className="flex items-center mt-1.5 space-x-2">
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_#22c55e]"></div>
               <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em]">
-                {currentSubLoc ? `Região: ${locationContext}` : 'Streaming ao vivo'}
+                {currentSubLoc ? `Região: ${locationContext}` : 'Cenário Ativo'}
               </span>
             </div>
           </div>
@@ -214,19 +203,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
 
       {/* Dynamic Messages Container */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-8 relative z-10 scrollbar-hide pb-32">
-        {error && (
-          <div className="mx-auto max-w-xs p-6 bg-rose-500/10 border border-rose-500/20 rounded-[32px] text-center animate-in zoom-in">
-             <span className="material-symbols-rounded text-rose-500 text-4xl mb-4">error</span>
-             <p className="text-[11px] font-black text-rose-500 uppercase tracking-widest">{error}</p>
-             <p className="text-[9px] text-rose-500/60 mt-2 uppercase font-bold tracking-widest">Verifique o VITE_GEMINI_API_KEY</p>
-          </div>
-        )}
-        
         {activeMessages.map(msg => (
           <div key={msg.id} className={`flex items-end space-x-3 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
             {msg.role === 'model' && (
-              <div className="w-11 h-11 rounded-2xl bg-primary flex-shrink-0 border-2 border-white/40 overflow-hidden shadow-2xl transition-transform hover:scale-110">
-                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8UMZbyNBjK0Y6ht-U0Zdk-x6P4P-kN2zL7jQii2bgGPDHw36t3jfsCTVmTPunEkGRYXe32-rj1l797zbFzB8HZoKxz3g84pNhNeQAbdvQWee1ujOZ4R19SdmzhmQ-EEgCUiATik5lVNwKITZdD9ypXr4Qj0ZdqDsKxmEXyafPR6kSLsmztZktWu7u7c5MUCJrXhCq5p7ssn8J6-ByQZlNl0QrfnfnQ-OTl8grbr4NQtsqhWQxq0M-RUthmQ0Jx9e7kuk3-MiA5w" alt="Miku" className="w-full h-full object-cover" />
+              <div className="w-11 h-11 rounded-2xl bg-primary flex-shrink-0 border-2 border-white/40 overflow-hidden shadow-2xl flex items-center justify-center">
+                <span className="material-symbols-rounded text-white text-2xl">auto_awesome</span>
               </div>
             )}
             <div className={`max-w-[82%] px-6 py-4 rounded-[32px] shadow-2xl text-[14px] font-bold leading-relaxed animate-in zoom-in duration-500 backdrop-blur-3xl border border-white/10 ${
@@ -265,19 +246,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
           
           <input
             type="text"
-            disabled={!!error}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            placeholder={error ? "Chat desativado" : (currentSubLoc ? `Sussurrar em ${currentSubLoc.name}...` : "Sua próxima ação...")}
+            placeholder={currentSubLoc ? `Roleplay em ${currentSubLoc.name}...` : "Sua próxima ação..."}
             className="flex-1 bg-transparent border-none text-[15px] focus:ring-0 placeholder:text-white/20 text-white font-bold py-4 px-2"
           />
           
           <button 
             onClick={() => handleSend()}
-            disabled={isLoading || !input.trim() || !!error}
+            disabled={isLoading || !input.trim()}
             className={`w-13 h-13 rounded-full flex items-center justify-center transition-all ${
-              isLoading || !input.trim() || !!error
+              isLoading || !input.trim()
                 ? 'bg-white/5 text-white/10' 
                 : 'bg-primary text-white shadow-2xl shadow-primary/40 active:scale-90 hover:brightness-110'
             }`}
@@ -293,7 +273,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
           <div className="w-full bg-background-dark rounded-t-[60px] border-t border-white/10 p-10 pb-16 animate-in slide-in-from-bottom duration-500 shadow-[0_-30px_120px_rgba(0,0,0,1)]">
             <div className="w-16 h-1.5 bg-white/5 rounded-full mx-auto mb-10"></div>
             
-            {/* Asset Wallet Card */}
             <div className="mb-10 relative overflow-hidden rounded-[48px] p-10 border border-white/5 shadow-3xl bg-gradient-to-br from-surface-purple/40 to-black group">
               <div className="absolute top-[-20%] right-[-10%] opacity-5 group-hover:opacity-15 transition-opacity">
                 <span className="material-symbols-rounded text-[200px] text-primary rotate-12">token</span>
@@ -304,8 +283,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
                       <span className="material-symbols-rounded text-3xl">account_balance_wallet</span>
                    </div>
                    <div>
-                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30">Saldo Disponível</span>
-                     <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest mt-1">Conta Verificada</p>
+                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30">Status de Carteira</span>
+                     <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest mt-1">Roleplay Integrado</p>
                    </div>
                 </div>
                 
@@ -316,12 +295,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
               </div>
             </div>
 
-            {/* Explorations Grid */}
             <div className="space-y-8">
               <div className="flex items-center justify-between px-4">
                 <div className="flex items-center space-x-3">
                    <div className="w-2 h-6 bg-primary rounded-full shadow-[0_0_10px_rgba(139,92,246,0.5)]"></div>
-                   <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">Zonas de Exploração</h3>
+                   <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">Mudar de Sala</h3>
                 </div>
                 <span className="text-[10px] font-black text-primary/40 uppercase tracking-widest italic">{locationContext}</span>
               </div>
@@ -352,7 +330,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
               onClick={() => setShowActionModal(false)}
               className="w-full bg-white text-black py-7 rounded-[36px] text-[11px] font-black uppercase tracking-[0.5em] shadow-3xl active:scale-[0.97] transition-all hover:bg-gray-100"
             >
-              Continuar Sessão
+              Voltar ao Roleplay
             </button>
           </div>
         </div>
