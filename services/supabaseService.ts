@@ -38,6 +38,19 @@ export const supabaseService = {
     if (error) throw error;
   },
 
+  async uploadAvatar(userId: string, file: File): Promise<string> {
+    const fileExt = file.name.split('.').pop() || 'png';
+    const filePath = `${userId}/avatar_${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await withTimeout(supabase.storage
+      .from('avatars')
+      .upload(filePath, file, { cacheControl: '3600', upsert: true }));
+
+    if (uploadError) throw uploadError;
+    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    return data.publicUrl;
+  },
+
   async uploadFile(bucket: string, path: string, file: File): Promise<string> {
     const { error: uploadError } = await withTimeout(supabase.storage
       .from(bucket)
@@ -88,6 +101,11 @@ export const supabaseService = {
       excerpt,
       image_url: imageUrl
     }]);
+    if (error) throw error;
+  },
+
+  async updateLeaderStatus(userId: string, isLeader: boolean) {
+    const { error } = await supabase.from('profiles').update({ is_leader: isLeader }).eq('id', userId);
     if (error) throw error;
   },
 
