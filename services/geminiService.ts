@@ -2,11 +2,26 @@ import { GoogleGenAI } from "@google/genai";
 
 // Helper to get API Key safely in browser environment
 const getApiKey = () => {
-  return import.meta.env.VITE_GEMINI_API_KEY || (window as any).process?.env?.API_KEY || "";
+  // Try Vite environment variable first
+  const key = import.meta.env.VITE_GEMINI_API_KEY || "";
+  if (key) return key;
+
+  // Fallback to global process.env if defined
+  try {
+    return (window as any).process?.env?.GEMINI_API_KEY || (window as any).process?.env?.VITE_GEMINI_API_KEY || "";
+  } catch {
+    return "";
+  }
 };
 
 export const getCommunityChat = () => {
   const apiKey = getApiKey();
+  
+  if (!apiKey) {
+    console.warn("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY in your environment.");
+    return null;
+  }
+
   const genAI = new GoogleGenAI(apiKey);
   
   const model = genAI.getGenerativeModel({
@@ -20,8 +35,10 @@ export const getCommunityChat = () => {
 };
 
 export const generateLatestFeed = async () => {
+  const apiKey = getApiKey();
+  if (!apiKey) return null;
+
   try {
-    const apiKey = getApiKey();
     const genAI = new GoogleGenAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { getCommunityChat } from '../services/geminiService';
 import { ChatMessage } from '../types';
@@ -36,6 +35,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
   const [isClosing, setIsClosing] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showActionModal, setShowActionModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const chatRef = useRef<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -54,7 +54,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
   };
 
   useEffect(() => {
-    chatRef.current = getCommunityChat();
+    const chat = getCommunityChat();
+    if (!chat) {
+      setError("A Miku está descansando agora (API Key não configurada).");
+      return;
+    }
+    
+    chatRef.current = chat;
     const welcomeText = locationContext 
       ? `[Interior: ${locationContext}] Você entrou no cenário. Como deseja começar o seu roleplay aqui hoje? ^_^`
       : "Kon'nichiwa! Bem-vindo ao MagicTalk! Eu sou a Miku, sua guia digital. Como posso ajudar? ^_^";
@@ -99,11 +105,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
         ? `Agindo como Miku no interior de um(a) ${currentLocName}, responda à seguinte ação de roleplay: ${textToSend}. Seja curta, fofa e use emojis.`
         : textToSend;
         
-      const response = await chatRef.current.sendMessage({ message: prompt });
+      const response = await chatRef.current.sendMessage(prompt);
       const modelMessage: ChatMessage = { 
         id: (Date.now() + 1).toString(), 
         role: 'model', 
-        text: response.text || 'Ops, perdi o sinal! Vamos tentar de novo? ^_^' 
+        text: response.response.text() || 'Ops, perdi o sinal! Vamos tentar de novo? ^_^' 
       };
 
       if (currentSubLoc) {
@@ -208,6 +214,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
 
       {/* Dynamic Messages Container */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-8 relative z-10 scrollbar-hide pb-32">
+        {error && (
+          <div className="mx-auto max-w-xs p-6 bg-rose-500/10 border border-rose-500/20 rounded-[32px] text-center animate-in zoom-in">
+             <span className="material-symbols-rounded text-rose-500 text-4xl mb-4">error</span>
+             <p className="text-[11px] font-black text-rose-500 uppercase tracking-widest">{error}</p>
+             <p className="text-[9px] text-rose-500/60 mt-2 uppercase font-bold tracking-widest">Verifique o VITE_GEMINI_API_KEY</p>
+          </div>
+        )}
+        
         {activeMessages.map(msg => (
           <div key={msg.id} className={`flex items-end space-x-3 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
             {msg.role === 'model' && (
@@ -251,18 +265,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
           
           <input
             type="text"
+            disabled={!!error}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            placeholder={currentSubLoc ? `Sussurrar em ${currentSubLoc.name}...` : "Sua próxima ação..."}
+            placeholder={error ? "Chat desativado" : (currentSubLoc ? `Sussurrar em ${currentSubLoc.name}...` : "Sua próxima ação...")}
             className="flex-1 bg-transparent border-none text-[15px] focus:ring-0 placeholder:text-white/20 text-white font-bold py-4 px-2"
           />
           
           <button 
             onClick={() => handleSend()}
-            disabled={isLoading || !input.trim()}
+            disabled={isLoading || !input.trim() || !!error}
             className={`w-13 h-13 rounded-full flex items-center justify-center transition-all ${
-              isLoading || !input.trim() 
+              isLoading || !input.trim() || !!error
                 ? 'bg-white/5 text-white/10' 
                 : 'bg-primary text-white shadow-2xl shadow-primary/40 active:scale-90 hover:brightness-110'
             }`}
