@@ -11,11 +11,12 @@ interface ChatInterfaceProps {
   onMemberClick?: (user: User) => void;
 }
 
-// Configuração visual das raças: Cores e Ícones oficiais sincronizados
+// Configuração visual das raças: Sincronizado com AuthView
 const RACE_STLYES: Record<string, { color: string, icon: string, bg: string }> = {
   'Draeven': { color: 'text-rose-500', icon: 'local_fire_department', bg: 'bg-rose-500/10' },
   'Sylven': { color: 'text-emerald-500', icon: 'eco', bg: 'bg-emerald-500/10' },
   'Lunari': { color: 'text-cyan-400', icon: 'dark_mode', bg: 'bg-cyan-400/10' },
+  'AI': { color: 'text-primary', icon: 'auto_awesome', bg: 'bg-primary/10' } // Tag especial para Miku
 };
 
 const WALLPAPERS: Record<string, string> = {
@@ -121,7 +122,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
         };
         setMessages(prev => [...prev, modelMessage]);
       } catch (error) {
-        console.error("Erro na IA:", error);
+        console.error("IA Error:", error);
       } finally {
         setIsLoading(false);
       }
@@ -212,42 +213,48 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
       </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-10 relative z-10 scrollbar-hide pb-32">
-        {activeMessages.map(msg => (
-          <div key={msg.id} className={`flex items-start space-x-3 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
-            <button 
-              onClick={() => msg.author && onMemberClick?.(msg.author)}
-              className={`w-11 h-11 rounded-2xl mt-1 flex-shrink-0 border-2 border-white/40 overflow-hidden shadow-2xl flex items-center justify-center transition-transform active:scale-90 ${msg.role === 'model' ? 'bg-primary cursor-default' : 'bg-surface-purple cursor-pointer'}`}
-            >
-              {msg.role === 'model' ? (
-                <span className="material-symbols-rounded text-white text-2xl">auto_awesome</span>
-              ) : (
-                <img src={msg.author?.avatar} className="w-full h-full object-cover" alt="avatar" />
-              )}
-            </button>
-            <div className={`flex flex-col space-y-1.5 max-w-[82%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-              {msg.author && (
+        {activeMessages.map(msg => {
+          const isAI = msg.role === 'model';
+          const authorRace = isAI ? 'AI' : (msg.author?.race || 'Draeven');
+          const style = RACE_STLYES[authorRace] || RACE_STLYES['Draeven'];
+
+          return (
+            <div key={msg.id} className={`flex items-start space-x-3 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
+              <button 
+                onClick={() => msg.author && onMemberClick?.(msg.author)}
+                className={`w-11 h-11 rounded-2xl mt-1 flex-shrink-0 border-2 border-white/40 overflow-hidden shadow-2xl flex items-center justify-center transition-transform active:scale-90 ${isAI ? 'bg-primary cursor-default' : 'bg-surface-purple cursor-pointer'}`}
+              >
+                {isAI ? (
+                  <span className="material-symbols-rounded text-white text-2xl">auto_awesome</span>
+                ) : (
+                  <img src={msg.author?.avatar} className="w-full h-full object-cover" alt="avatar" />
+                )}
+              </button>
+              <div className={`flex flex-col space-y-1.5 max-w-[82%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                {/* TAG DE RAÇA ACIMA DO NOME */}
                 <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} px-2 space-y-1 mb-0.5`}>
-                  {msg.author.race && RACE_STLYES[msg.author.race] && (
-                    <div className={`flex items-center space-x-1.5 px-3 py-1 rounded-full border border-white/10 ${RACE_STLYES[msg.author.race].bg} ${RACE_STLYES[msg.author.race].color} shadow-sm animate-in zoom-in duration-300`}>
-                       <span className="material-symbols-rounded text-[11px]">{RACE_STLYES[msg.author.race].icon}</span>
-                       <span className="text-[8px] font-black uppercase tracking-[0.2em] italic">{msg.author.race}</span>
-                    </div>
-                  )}
-                  <span className="text-[11px] font-black text-white italic opacity-90 leading-none">@{msg.author.username}</span>
+                  <div className={`flex items-center space-x-1.5 px-3 py-1 rounded-full border border-white/10 ${style.bg} ${style.color} shadow-sm animate-in zoom-in duration-300`}>
+                     <span className="material-symbols-rounded text-[11px]">{style.icon}</span>
+                     <span className="text-[8px] font-black uppercase tracking-[0.2em] italic">{isAI ? 'Miku AI' : authorRace}</span>
+                  </div>
+                  <span className="text-[11px] font-black text-white italic opacity-90 leading-none">
+                    {isAI ? '@miku_bot' : `@${msg.author?.username || 'user'}`}
+                  </span>
                 </div>
-              )}
-              <div className={`px-6 py-4 rounded-[32px] shadow-2xl text-[14px] font-bold leading-relaxed animate-in zoom-in duration-500 backdrop-blur-3xl border border-white/10 ${
-                msg.role === 'user' 
-                  ? 'bg-primary/70 text-white rounded-tr-none' 
-                  : 'bg-black/70 text-white rounded-tl-none'
-              }`}>
-                {msg.text.split('\n').map((line, i) => (
-                  <p key={i} className={line.startsWith('*') ? 'italic text-white/50 text-[12px] mb-1.5 block' : 'mb-1'}>{line}</p>
-                ))}
+                
+                <div className={`px-6 py-4 rounded-[32px] shadow-2xl text-[14px] font-bold leading-relaxed animate-in zoom-in duration-500 backdrop-blur-3xl border border-white/10 ${
+                  msg.role === 'user' 
+                    ? 'bg-primary/70 text-white rounded-tr-none' 
+                    : 'bg-black/70 text-white rounded-tl-none'
+                }`}>
+                  {msg.text.split('\n').map((line, i) => (
+                    <p key={i} className={line.startsWith('*') ? 'italic text-white/50 text-[12px] mb-1.5 block' : 'mb-1'}>{line}</p>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         {isLoading && (
           <div className="flex items-end space-x-3 animate-in fade-in">
              <div className="bg-black/60 backdrop-blur-3xl px-6 py-4 rounded-[32px] rounded-bl-none border border-white/10 shadow-2xl">
