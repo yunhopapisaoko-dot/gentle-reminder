@@ -124,7 +124,7 @@ const App: React.FC = () => {
   const handleRouletteResult = (id: string, name: string, hpImpact: number) => {
     handleUpdateStatus({ hp: hpImpact });
     if (hpImpact < 0) setCurrentUser(prev => ({ ...prev, currentDisease: id }));
-    fetchInitialData(currentUser.id); // Recarregar para atualizar last_spin_at
+    fetchInitialData(currentUser.id);
   };
 
   const handleEnterRoom = (roomId: string) => {
@@ -145,6 +145,88 @@ const App: React.FC = () => {
     localStorage.setItem('magic_visited_rooms', JSON.stringify(newVisited));
     localStorage.setItem('magic_confirmed_rooms', JSON.stringify(newConfirmed));
   };
+
+  const renderMainContent = () => {
+    if (loading) return (
+      <div className="flex flex-col items-center justify-center py-32 animate-pulse">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em]">Sincronizando...</p>
+      </div>
+    );
+
+    switch (activeTab) {
+      case TabType.Destaque:
+        return (
+          <div className="pb-40">
+            <Stories members={communityMembers} onSelectArtist={setSelectedUser} />
+            {posts.length > 0 ? (
+              <>
+                <FeaturedCard post={posts[0]} />
+                <div className="px-6 mt-8 grid grid-cols-2 gap-4">
+                  {posts.slice(1).map(post => (
+                    <div key={post.id} onClick={() => setSelectedUser(post.author)}>
+                      <GridCard post={post} />
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="px-10 py-20 text-center opacity-40">
+                <span className="material-symbols-rounded text-6xl mb-4 text-primary">auto_stories</span>
+                <p className="text-[10px] font-bold text-white uppercase tracking-widest">Nada postado ainda.</p>
+              </div>
+            )}
+          </div>
+        );
+      case TabType.Feed:
+        return (
+          <div className="p-6 space-y-6 pb-40">
+            {posts.map(post => (
+              <div key={post.id} className="bg-surface-purple/30 rounded-[40px] p-8 border border-white/5">
+                <h4 className="text-white font-black text-xl mb-4">{post.title}</h4>
+                <p className="text-white/50 text-sm italic mb-6">"{post.excerpt}"</p>
+                <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setSelectedUser(post.author)}>
+                   <img src={post.author.avatar} className="w-8 h-8 rounded-full" alt="avatar" />
+                   <span className="text-[10px] font-black text-white/80">{post.author.name}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      case TabType.Global:
+        return (
+          <div className="p-8 grid grid-cols-2 gap-6 pb-40">
+            {communityMembers.map((user) => (
+              <button key={user.id} onClick={() => setSelectedUser(user)} className="bg-surface-purple/20 p-6 rounded-[40px] flex flex-col items-center border border-white/5 hover:bg-white/5 transition-colors">
+                <img src={user.avatar} className="w-20 h-20 rounded-[28px] mb-4 object-cover" alt={user.name} />
+                <span className="text-xs font-black text-white truncate w-full text-center">{user.name}</span>
+              </button>
+            ))}
+          </div>
+        );
+      case TabType.Locais:
+        return <LocaisGrid onSelect={handleEnterRoom} confirmedRooms={confirmedRooms} />;
+      case TabType.Chat:
+        return (
+          <ChatInterface 
+            onUpdateStatus={handleUpdateStatus} 
+            onConsumeItems={handleBuyItems}
+            currentUser={currentUser} 
+            onMemberClick={setSelectedUser} 
+            onNavigate={handleEnterRoom}
+            onClose={() => setActiveTab(TabType.Destaque)} 
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  if (isAuthenticated === null) return null;
+
+  if (!isAuthenticated) {
+    return <AuthView onLogin={() => setIsAuthenticated(true)} />;
+  }
 
   return (
     <div className="flex justify-center h-[100dvh] bg-[#020105] overflow-hidden">
