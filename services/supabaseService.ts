@@ -1,5 +1,5 @@
 import { supabase } from '../supabase';
-import { Post, User, JobApplication } from '../types';
+import { Post, User } from '../types';
 
 const withTimeout = <T>(promise: Promise<T>, timeoutMs: number = 30000): Promise<T> => {
   return Promise.race([
@@ -46,56 +46,6 @@ export const supabaseService = {
     } catch { return null; }
   },
 
-  async applyForJob(application: Partial<JobApplication>) {
-    const { error } = await supabase.from('job_applications').insert([application]);
-    if (error) throw error;
-  },
-
-  async getJobApplications(location: string): Promise<JobApplication[]> {
-    const { data, error } = await supabase
-      .from('job_applications')
-      .select('*, profiles(full_name, avatar_url, username)')
-      .eq('location', location)
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false });
-    if (error) return [];
-    return data;
-  },
-
-  async approveApplication(applicationId: string, userId: string, location: string, role: string) {
-    // 1. Atualiza status da aplicação
-    const { error: appError } = await supabase
-      .from('job_applications')
-      .update({ status: 'approved' })
-      .eq('id', applicationId);
-    if (appError) throw appError;
-
-    // 2. Adiciona como trabalhador
-    const { error: workerError } = await supabase
-      .from('establishment_workers')
-      .insert([{ user_id: userId, location, role }]);
-    if (workerError && !workerError.message.includes('unique')) throw workerError;
-  },
-
-  async rejectApplication(applicationId: string) {
-    const { error } = await supabase
-      .from('job_applications')
-      .update({ status: 'rejected' })
-      .eq('id', applicationId);
-    if (error) throw error;
-  },
-
-  async checkWorkerStatus(userId: string, location: string): Promise<string | null> {
-    const { data, error } = await supabase
-      .from('establishment_workers')
-      .select('role')
-      .eq('user_id', userId)
-      .eq('location', location)
-      .single();
-    if (error || !data) return null;
-    return data.role;
-  },
-
   async updateProfile(userId: string, updates: any): Promise<void> {
     const { error } = await withTimeout(supabase.from('profiles').update({
       full_name: updates.full_name,
@@ -106,6 +56,45 @@ export const supabaseService = {
       updated_at: new Date().toISOString()
     }).eq('id', userId));
     if (error) throw error;
+  },
+
+  async uploadAvatar(userId: string, file: File): Promise<string> {
+    const fileExt = file.name.split('.').pop() || 'png';
+    const filePath = `${userId}/avatar_${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await withTimeout(supabase.storage
+      .from('avatars')
+      .upload(filePath, file, { cacheControl: '3600', upsert: true }));
+
+    if (uploadError) throw uploadError;
+    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    return data.publicUrl;
+  },
+
+  async uploadFile(bucket: string, path: string, file: File): Promise<string> {
+    const { error: uploadError } = await withTimeout(supabase.storage
+      .from(bucket)
+      .upload(path, file, { cacheControl: '3600', upsert: true }));
+
+    if (uploadError) throw uploadError;
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    return data.publicUrl;
+  },
+
+  async getAllProfiles(): Promise<User[]> {
+    try {
+      const { data, error } = await supabase.from('profiles').select('*').order('updated_at', { ascending: false });
+      if (error) return [];
+      return data.map((p: any) => ({
+        id: p.id,
+        name: p.full_name || 'Usuário',
+        username: p.username || 'user',
+        avatar: p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
+        race: p.race,
+        isLeader: p.is_leader || false,
+        bio: p.bio
+      }));
+    } catch { return []; }
   },
 
   async getPosts(): Promise<Post[]> {
@@ -132,6 +121,7 @@ export const supabaseService = {
   },
 
   async createPost(userId: string, title: string, excerpt: string, imageUrl?: string) {
+    await this.getProfile(userId);
     const { error } = await supabase.from('posts').insert([{
       author_id: userId,
       title,
@@ -141,47 +131,12 @@ export const supabaseService = {
     if (error) throw new Error(error.message || "Falha ao inserir post.");
   },
 
-  async getAllProfiles(): Promise<User[]> {
-    try {
-      const { data, error } = await supabase.from('profiles').select('*').order('updated_at', { ascending: false });
-      if (error) return [];
-      return data.map((p: any) => ({
-        id: p.id,
-        name: p.full_name || 'Usuário',
-        username: p.username || 'user',
-        avatar: p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
-        race: p.race,
-        isLeader: p.is_leader || false,
-        bio: p.bio
-      }));
-    } catch { return []; }
-  },
-
   async updateLeaderStatus(userId: string, isLeader: boolean) {
     const { error } = await supabase.from('profiles').update({ is_leader: isLeader }).eq('id', userId);
     if (error) throw error;
   },
 
-  async uploadFile(bucket: string, path: string, file: File): Promise<string> {
-    const { error: uploadError } = await withTimeout(supabase.storage
-      .from(bucket)
-      .upload(path, file, { cacheControl: '3600', upsert: true }));
-
-    if (uploadError) throw uploadError;
-    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-    return data.publicUrl;
-  },
-
-  async uploadAvatar(userId: string, file: File): Promise<string> {
-    const fileExt = file.name.split('.').pop() || 'png';
-    const filePath = `${userId}/avatar_${Date.now()}.${fileExt}`;
-
-    const { error: uploadError } = await withTimeout(supabase.storage
-      .from('avatars')
-      .upload(filePath, file, { cacheControl: '3600', upsert: true }));
-
-    if (uploadError) throw uploadError;
-    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-    return data.publicUrl;
+  subscribeToPosts(callback: () => void) {
+    return supabase.channel('public:posts').on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, callback).subscribe();
   }
 };
