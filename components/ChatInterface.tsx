@@ -17,7 +17,15 @@ interface ChatInterfaceProps {
   onUpdateStatus?: (changes: { hp?: number; hunger?: number; thirst?: number; alcohol?: number }) => void;
   onConsumeItems?: (items: MenuItem[]) => void;
   onClearDisease?: (hpRestore: number) => void;
+  onNavigate?: (locationId: string) => void;
 }
+
+const LOCATIONS_LIST = [
+  { id: 'hospital', name: 'Hospital', icon: 'medical_services' },
+  { id: 'creche', name: 'Creche', icon: 'child_care' },
+  { id: 'restaurante', name: 'Restaurante', icon: 'restaurant' },
+  { id: 'padaria', name: 'Padaria', icon: 'bakery_dining' },
+];
 
 const RACE_THEMES: Record<string, { color: string, icon: string, bg: string }> = {
   'Draeven': { color: 'text-rose-500', icon: 'local_fire_department', bg: 'bg-rose-500/10' },
@@ -30,7 +38,7 @@ const WALLPAPERS: Record<string, string> = {
   hospital: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=1000',
   creche: 'https://images.unsplash.com/photo-1560523160-754a9e25c68f?q=80&w=1000',
   restaurante: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000',
-  padaria: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=1000',
+  padaria: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400',
   default: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=1000'
 };
 
@@ -42,7 +50,16 @@ const ICONS: Record<string, string> = {
   default: 'chat'
 };
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, onClose, currentUser, onMemberClick, onUpdateStatus, onConsumeItems, onClearDisease }) => {
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
+  locationContext, 
+  onClose, 
+  currentUser, 
+  onMemberClick, 
+  onUpdateStatus, 
+  onConsumeItems, 
+  onClearDisease,
+  onNavigate 
+}) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [roomMessages, setRoomMessages] = useState<Record<string, ChatMessage[]>>({});
   const [currentSubLoc, setCurrentSubLoc] = useState<SubLocation | null>(null);
@@ -58,6 +75,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
   const [showManagerDash, setShowManagerDash] = useState(false);
   const [showWorkerPanel, setShowWorkerPanel] = useState(false);
   
+  // Sugestões de comandos
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
   const chatRef = useRef<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -101,13 +121,34 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
     }
   }, [messages, roomMessages, currentSubLoc, isLoading]);
 
+  // Monitorar input para comandos
+  useEffect(() => {
+    if (input === '/' || input === '*') {
+      setShowSuggestions(true);
+    } else if (!input.startsWith('/') && !input.startsWith('*')) {
+      setShowSuggestions(false);
+    }
+  }, [input]);
+
   const activeMessages = currentSubLoc 
     ? (roomMessages[currentSubLoc.name] || []) 
     : messages;
 
   const handleSend = async (customMsg?: string) => {
-    const textToSend = customMsg || input;
-    if (!textToSend.trim() || isLoading) return;
+    const textToSend = (customMsg || input).trim();
+    if (!textToSend || isLoading) return;
+
+    // Verificar se é um comando manual de navegação
+    if (textToSend.startsWith('/') || textToSend.startsWith('*')) {
+      const target = textToSend.slice(1).toLowerCase();
+      const loc = LOCATIONS_LIST.find(l => l.id === target || l.name.toLowerCase() === target);
+      if (loc && onNavigate) {
+        onNavigate(loc.id);
+        setInput('');
+        setShowSuggestions(false);
+        return;
+      }
+    }
 
     const userMessage: ChatMessage = { 
       id: Date.now().toString(), 
@@ -145,60 +186,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
     }
   };
 
-  const handleOrderConfirmed = (items: MenuItem[]) => {
-    if (onConsumeItems) onConsumeItems(items);
-    
-    const orderMsg: ChatMessage = {
-      id: `order-${Date.now()}`,
-      role: 'model',
-      text: `*Pedido entregue!*\nVocê consumiu os itens e recuperou seus status. Bom apetite! ^_^`
-    };
-
-    if (currentSubLoc) {
-      setRoomMessages(prev => ({
-        ...prev,
-        [currentSubLoc.name]: [...(prev[currentSubLoc.name] || []), orderMsg]
-      }));
-    } else {
-      setMessages(prev => [...prev, orderMsg]);
-    }
-  };
-
-  const handleTreat = (disease: DiseaseInfo) => {
-    if (onClearDisease) {
-      onClearDisease(Math.abs(disease.hpImpact));
-    } else if (onUpdateStatus) {
-      onUpdateStatus({ hp: Math.abs(disease.hpImpact) });
-    }
-    
-    const treatMsg: ChatMessage = {
-      id: `treat-${Date.now()}`,
-      role: 'model',
-      text: `*Iniciando tratamento para ${disease.name}*\nProcedimento em andamento... Sua saúde está sendo restaurada! ✨`
-    };
-
-    if (currentSubLoc) {
-      setRoomMessages(prev => ({
-        ...prev,
-        [currentSubLoc.name]: [...(prev[currentSubLoc.name] || []), treatMsg]
-      }));
-    } else {
-      setMessages(prev => [...prev, treatMsg]);
-    }
-    setShowConsultations(false);
-  };
-
-  const handleSelectSubLoc = (loc: SubLocation) => {
-    setCurrentSubLoc(loc);
-    setShowActionModal(false);
-    
-    if (!roomMessages[loc.name]) {
-      const welcome: ChatMessage = {
-        id: `welcome-${loc.name}`,
-        role: 'model',
-        text: `*Você entrou no(a) ${loc.name}*\nEste lugar está tranquilo. O que pretende fazer por aqui?`
-      };
-      setRoomMessages(prev => ({ ...prev, [loc.name]: [welcome] }));
+  const handleSuggestionClick = (locId: string) => {
+    if (onNavigate) {
+      onNavigate(locId);
+      setInput('');
+      setShowSuggestions(false);
     }
   };
 
@@ -279,6 +271,30 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
       </div>
 
       <div className="px-6 pb-12 pt-4 relative z-10">
+        {/* Comando Suggestions */}
+        {showSuggestions && (
+          <div className="absolute bottom-[calc(100%+12px)] left-6 right-6 bg-background-dark/95 backdrop-blur-3xl rounded-[32px] border border-white/10 p-4 shadow-[0_-20px_60px_rgba(0,0,0,0.5)] animate-in slide-in-bottom duration-300">
+             <div className="flex items-center space-x-3 mb-4 px-2">
+                <span className="material-symbols-rounded text-primary text-xl">rocket_launch</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40">Viagem Rápida</span>
+             </div>
+             <div className="grid grid-cols-2 gap-3">
+                {LOCATIONS_LIST.map(loc => (
+                  <button 
+                    key={loc.id}
+                    onClick={() => handleSuggestionClick(loc.id)}
+                    className="flex items-center space-x-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-primary/10 hover:border-primary/20 transition-all active:scale-95 group"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40 group-hover:bg-primary group-hover:text-white transition-all">
+                       <span className="material-symbols-rounded">{loc.icon}</span>
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white">{loc.name}</span>
+                  </button>
+                ))}
+             </div>
+          </div>
+        )}
+
         <div className="flex items-center space-x-3 bg-black/60 backdrop-blur-3xl rounded-[40px] p-2.5 pl-5 border border-white/10 shadow-2xl">
           <button onClick={() => setShowActionModal(true)} className="w-13 h-13 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all hover:bg-white/15"><span className="material-symbols-rounded text-3xl">add</span></button>
           <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSend()} placeholder={currentSubLoc ? `Roleplay em ${currentSubLoc.name}...` : "O que você faz agora?"} className="flex-1 bg-transparent border-none text-[15px] focus:ring-0 placeholder:text-white/20 text-white font-bold py-4 px-2" />

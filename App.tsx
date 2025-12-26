@@ -36,6 +36,7 @@ const App: React.FC = () => {
   
   const [isAllChatsOpen, setIsAllChatsOpen] = useState(false);
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
+  const [visitedRooms, setVisitedRooms] = useState<string[]>([]);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -139,6 +140,13 @@ const App: React.FC = () => {
     setCurrentUser(prev => ({ ...prev, currentDisease: undefined }));
   };
 
+  const handleEnterRoom = (roomId: string) => {
+    setSelectedLocalChat(roomId);
+    if (!visitedRooms.includes(roomId)) {
+      setVisitedRooms(prev => [roomId, ...prev]);
+    }
+  };
+
   const refreshPosts = async () => {
     const dbPosts = await supabaseService.getPosts();
     setPosts(dbPosts || []);
@@ -216,7 +224,7 @@ const App: React.FC = () => {
           </div>
         );
       case TabType.Locais:
-        return <LocaisGrid onSelect={setSelectedLocalChat} />;
+        return <LocaisGrid onSelect={handleEnterRoom} />;
       case TabType.Chat:
         return (
           <ChatInterface 
@@ -225,6 +233,7 @@ const App: React.FC = () => {
             onClearDisease={handleClearDisease} 
             currentUser={currentUser} 
             onMemberClick={setSelectedUser} 
+            onNavigate={handleEnterRoom}
             onClose={() => setActiveTab(TabType.Destaque)} 
           />
         );
@@ -259,10 +268,11 @@ const App: React.FC = () => {
             currentUser={currentUser} 
             onMemberClick={setSelectedUser} 
             locationContext={selectedLocalChat} 
+            onNavigate={handleEnterRoom}
             onClose={() => setSelectedLocalChat(null)} 
           />
         )}
-        {isAllChatsOpen && <AllChatsView onClose={() => setIsAllChatsOpen(false)} onSelectChat={setSelectedLocalChat} />}
+        {isAllChatsOpen && <AllChatsView visitedRooms={visitedRooms} onClose={() => setIsAllChatsOpen(false)} onSelectChat={handleEnterRoom} />}
         {isRouletteOpen && <RouletteView onClose={() => setIsRouletteOpen(false)} onResult={handleRouletteResult} />}
         {!selectedLocalChat && !selectedUser && !isCreateModalOpen && <FloatingActionDock activeTab={activeTab} onCreateClick={() => setIsCreateModalOpen(true)} onAllChatsClick={() => setIsAllChatsOpen(true)} onRouletteClick={() => setIsRouletteOpen(true)} />}
       </div>

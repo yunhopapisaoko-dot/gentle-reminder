@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 
 interface Local {
   id: string;
@@ -18,6 +17,12 @@ const LOCAIS_DATA: Local[] = [
 ];
 
 export const LocaisGrid: React.FC<{ onSelect: (id: string) => void }> = ({ onSelect }) => {
+  const [confirmingLocal, setConfirmingLocal] = useState<Local | null>(null);
+
+  const handleSelect = (local: Local) => {
+    setConfirmingLocal(local);
+  };
+
   return (
     <div className="p-4 grid grid-cols-1 gap-5 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="px-2 mb-1">
@@ -26,10 +31,9 @@ export const LocaisGrid: React.FC<{ onSelect: (id: string) => void }> = ({ onSel
       {LOCAIS_DATA.map((local) => (
         <button
           key={local.id}
-          onClick={() => onSelect(local.id)}
+          onClick={() => handleSelect(local)}
           className="relative group h-40 w-full rounded-[32px] overflow-hidden border border-white/5 shadow-2xl hover:border-primary/50 transition-all duration-500 transform active:scale-[0.96]"
         >
-          {/* Thumbnails agora mostram o interior para combinar com o chat */}
           <img src={local.image} alt={local.name} className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-1000" />
           <div className="absolute inset-0 bg-gradient-to-tr from-background-dark via-background-dark/30 to-transparent"></div>
           
@@ -54,6 +58,34 @@ export const LocaisGrid: React.FC<{ onSelect: (id: string) => void }> = ({ onSel
           </div>
         </button>
       ))}
+
+      {confirmingLocal && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-8 animate-in fade-in duration-300">
+           <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={() => setConfirmingLocal(null)}></div>
+           <div className="relative w-full max-w-xs bg-background-dark border border-white/10 rounded-[48px] p-8 shadow-[0_0_80px_rgba(139,92,246,0.3)] animate-in zoom-in duration-400">
+              <div className="w-20 h-20 rounded-[28px] bg-primary/20 border border-primary/30 flex items-center justify-center text-primary mx-auto mb-6">
+                 <span className="material-symbols-rounded text-5xl">{confirmingLocal.icon}</span>
+              </div>
+              <h3 className="text-xl font-black text-white italic tracking-tighter uppercase text-center mb-2">Entrar no Local?</h3>
+              <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] text-center mb-8">Deseja iniciar um roleplay no {confirmingLocal.name}?</p>
+              
+              <div className="flex space-x-4">
+                 <button 
+                  onClick={() => setConfirmingLocal(null)}
+                  className="flex-1 py-4 rounded-2xl bg-white/5 text-white/40 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
+                 >
+                   Não
+                 </button>
+                 <button 
+                  onClick={() => { onSelect(confirmingLocal.id); setConfirmingLocal(null); }}
+                  className="flex-1 py-4 rounded-2xl bg-primary text-white text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all"
+                 >
+                   Confirmar
+                 </button>
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 };
