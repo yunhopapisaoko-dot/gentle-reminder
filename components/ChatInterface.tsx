@@ -11,7 +11,7 @@ interface ChatInterfaceProps {
   onMemberClick?: (user: User) => void;
 }
 
-// Definição centralizada para consistência visual
+// Configuração visual das raças: Cores e Ícones oficiais sincronizados
 const RACE_STLYES: Record<string, { color: string, icon: string, bg: string }> = {
   'Draeven': { color: 'text-rose-500', icon: 'local_fire_department', bg: 'bg-rose-500/10' },
   'Sylven': { color: 'text-emerald-500', icon: 'eco', bg: 'bg-emerald-500/10' },
@@ -226,11 +226,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
             </button>
             <div className={`flex flex-col space-y-1.5 max-w-[82%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
               {msg.author && (
-                <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} px-2 space-y-0.5 mb-0.5`}>
+                <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} px-2 space-y-1 mb-0.5`}>
                   {msg.author.race && RACE_STLYES[msg.author.race] && (
-                    <div className={`flex items-center space-x-1 px-2 py-0.5 rounded-full border border-white/10 ${RACE_STLYES[msg.author.race].bg} ${RACE_STLYES[msg.author.race].color}`}>
-                       <span className="material-symbols-rounded text-[10px]">{RACE_STLYES[msg.author.race].icon}</span>
-                       <span className="text-[7px] font-black uppercase tracking-[0.2em]">{msg.author.race}</span>
+                    <div className={`flex items-center space-x-1.5 px-3 py-1 rounded-full border border-white/10 ${RACE_STLYES[msg.author.race].bg} ${RACE_STLYES[msg.author.race].color} shadow-sm animate-in zoom-in duration-300`}>
+                       <span className="material-symbols-rounded text-[11px]">{RACE_STLYES[msg.author.race].icon}</span>
+                       <span className="text-[8px] font-black uppercase tracking-[0.2em] italic">{msg.author.race}</span>
                     </div>
                   )}
                   <span className="text-[11px] font-black text-white italic opacity-90 leading-none">@{msg.author.username}</span>
