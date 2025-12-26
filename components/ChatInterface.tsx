@@ -11,12 +11,12 @@ interface ChatInterfaceProps {
   onMemberClick?: (user: User) => void;
 }
 
-// Configuração visual das raças
-const RACE_STLYES: Record<string, { color: string, icon: string, bg: string, border: string }> = {
-  'Draeven': { color: 'text-rose-500', icon: 'local_fire_department', bg: 'bg-rose-500/10', border: 'border-rose-500/20' },
-  'Sylven': { color: 'text-emerald-500', icon: 'eco', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-  'Lunari': { color: 'text-cyan-400', icon: 'dark_mode', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' },
-  'AI': { color: 'text-primary', icon: 'auto_awesome', bg: 'bg-primary/10', border: 'border-primary/20' }
+// Configuração visual simplificada das raças para as tags
+const RACE_THEMES: Record<string, { color: string, icon: string, bg: string }> = {
+  'Draeven': { color: 'text-rose-500', icon: 'local_fire_department', bg: 'bg-rose-500/10' },
+  'Sylven': { color: 'text-emerald-500', icon: 'eco', bg: 'bg-emerald-500/10' },
+  'Lunari': { color: 'text-cyan-400', icon: 'dark_mode', bg: 'bg-cyan-400/10' },
+  'AI': { color: 'text-primary', icon: 'auto_awesome', bg: 'bg-primary/10' }
 };
 
 const WALLPAPERS: Record<string, string> = {
@@ -214,7 +214,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
         {activeMessages.map(msg => {
           const isAI = msg.role === 'model';
           const authorRace = isAI ? 'AI' : (msg.author?.race || 'Draeven');
-          const style = RACE_STLYES[authorRace] || RACE_STLYES['Draeven'];
+          const theme = RACE_THEMES[authorRace] || RACE_THEMES['Draeven'];
 
           return (
             <div key={msg.id} className={`flex items-start space-x-4 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
@@ -229,16 +229,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
                 )}
               </button>
               
-              <div className={`flex flex-col space-y-1.5 max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                {/* IDENTIDADE MINIMALISTA EM LINHA ÚNICA */}
-                <div className={`flex items-center space-x-2 px-1 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                   <span className="text-sm font-black text-white italic tracking-tighter drop-shadow-md">
+              <div className={`flex flex-col space-y-2 max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                {/* IDENTIDADE ALINHADA COM A TAG */}
+                <div className={`flex items-center space-x-2 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                   <span className="text-[14px] font-black text-white italic tracking-tighter drop-shadow-md">
                      {isAI ? 'Miku AI' : (msg.author?.name || 'Viajante')}
                    </span>
                    
-                   <div className={`flex items-center space-x-1 px-2 py-0.5 rounded-lg border ${style.border} ${style.bg} ${style.color} backdrop-blur-md animate-in slide-in-from-bottom duration-500`}>
-                      <span className="material-symbols-rounded text-[10px]">{style.icon}</span>
-                      <span className="text-[8px] font-black uppercase tracking-widest italic">{isAI ? 'Guia' : authorRace}</span>
+                   <div className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg ${theme.bg} ${theme.color} border border-current/10 backdrop-blur-sm animate-in slide-in-from-bottom duration-500`}>
+                      <span className="material-symbols-rounded text-[11px] leading-none">{theme.icon}</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest italic leading-none">{isAI ? 'Guia' : authorRace}</span>
                    </div>
                 </div>
                 
