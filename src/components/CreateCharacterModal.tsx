@@ -63,7 +63,7 @@ export const CreateCharacterModal: React.FC<CreateCharacterModalProps> = ({ user
         sexuality: formData.sexuality,
         origin: formData.origin,
         appearance_name: formData.appearance_name,
-        group_name: formData.group_name.toUpperCase(), // Garante consistência na pasta
+        group_name: formData.group_name.toUpperCase(),
         image_url: imageUrl
       });
 
@@ -88,14 +88,13 @@ export const CreateCharacterModal: React.FC<CreateCharacterModalProps> = ({ user
             </div>
             <div>
               <h2 className="text-xl font-black text-white italic uppercase leading-none">Novo Personagem</h2>
-              <p className="text-[9px] font-black text-primary uppercase tracking-widest mt-1">Crie sua identidade</p>
+              <p className="text-[9px] font-black text-primary uppercase tracking-widest mt-1">Defina sua identidade</p>
             </div>
           </div>
           <button onClick={handleClose} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40"><span className="material-symbols-rounded">close</span></button>
         </div>
 
         <form onSubmit={handleSave} className="flex-1 overflow-y-auto scrollbar-hide p-8 space-y-6">
-          {/* Avatar Upload */}
           <div className="flex flex-col items-center">
             <div 
               onClick={() => fileInputRef.current?.click()}
@@ -148,7 +147,7 @@ export const CreateCharacterModal: React.FC<CreateCharacterModalProps> = ({ user
           </div>
 
           <div className="space-y-4 pt-4 border-t border-white/5">
-            <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Origem & Aparência</p>
+            <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Origem & Detalhes</p>
             
             <div className="space-y-1">
               <label className="text-[8px] font-black text-white/20 uppercase tracking-widest ml-3">Origem</label>

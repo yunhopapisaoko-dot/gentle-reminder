@@ -12,7 +12,6 @@ export const CharactersGrid: React.FC<CharactersGridProps> = ({ characters, onCr
   const [search, setSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
-  // Agrupamento automático por pastas (group_name)
   const groups = useMemo(() => {
     const map: Record<string, Character[]> = {};
     characters.forEach(c => {
@@ -34,14 +33,12 @@ export const CharactersGrid: React.FC<CharactersGridProps> = ({ characters, onCr
 
   return (
     <div className="p-6 space-y-8 pb-40 animate-in slide-in-bottom duration-500">
-      {/* Search & Header */}
       <div className="space-y-6">
         <div className="flex items-center justify-between">
            <div>
               <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter leading-none">Personagens</h2>
               <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-1.5">{characters.length} identidades registradas</p>
            </div>
-           {/* Botão de Ação Rápida no Topo */}
            <button 
             onClick={onCreateClick}
             className="w-14 h-14 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20 active:scale-90 transition-all border border-white/20"
@@ -64,7 +61,6 @@ export const CharactersGrid: React.FC<CharactersGridProps> = ({ characters, onCr
         </div>
       </div>
 
-      {/* Grid de Pastas ou Personagens */}
       {selectedGroup ? (
         <div className="space-y-8 animate-in slide-in-right duration-400">
            <div className="flex items-center justify-between">
@@ -73,11 +69,7 @@ export const CharactersGrid: React.FC<CharactersGridProps> = ({ characters, onCr
               className="flex items-center space-x-3 text-white/40 hover:text-white transition-colors group"
              >
                <span className="material-symbols-rounded group-hover:-translate-x-1 transition-transform">arrow_back</span>
-               <span className="text-[10px] font-black uppercase tracking-widest">Voltar para pastas</span>
-             </button>
-             <button onClick={onCreateClick} className="flex items-center space-x-2 text-primary active:scale-95 transition-all">
-                <span className="material-symbols-rounded text-lg">add_circle</span>
-                <span className="text-[10px] font-black uppercase tracking-widest">Novo</span>
+               <span className="text-[10px] font-black uppercase tracking-widest">Voltar</span>
              </button>
            </div>
 
@@ -115,17 +107,6 @@ export const CharactersGrid: React.FC<CharactersGridProps> = ({ characters, onCr
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-5">
-          {/* Card Especial para CRIAR PERSONAGEM - Sempre Visível */}
-          <button 
-            onClick={onCreateClick}
-            className="relative group aspect-square rounded-[48px] bg-primary/5 border-2 border-dashed border-primary/20 flex flex-col items-center justify-center p-8 hover:bg-primary/10 hover:border-primary/40 transition-all duration-500 shadow-2xl active:scale-95"
-          >
-            <div className="w-16 h-16 rounded-[24px] bg-primary text-white flex items-center justify-center shadow-[0_10px_30px_rgba(139,92,246,0.4)] mb-4">
-               <span className="material-symbols-rounded text-4xl">person_add</span>
-            </div>
-            <span className="text-[12px] font-black text-primary tracking-widest uppercase italic text-center">Criar Novo</span>
-          </button>
-
           {filteredGroups.map(group => (
             <button 
               key={group}

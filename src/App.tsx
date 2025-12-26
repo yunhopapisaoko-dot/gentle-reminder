@@ -134,6 +134,12 @@ const App: React.FC = () => {
   };
 
   const handleEnterRoom = (roomId: string) => {
+    if (characters.length === 0) {
+      alert("Portal Bloqueado: Você precisa criar pelo menos um personagem para acessar os Locais de Roleplay! ✨");
+      setActiveTab(TabType.Personagens);
+      return;
+    }
+
     setSelectedLocalChat(roomId);
     const newVisited = visitedRooms.includes(roomId) ? visitedRooms : [roomId, ...visitedRooms];
     const newConfirmed = confirmedRooms.includes(roomId) ? confirmedRooms : [...confirmedRooms, roomId];
