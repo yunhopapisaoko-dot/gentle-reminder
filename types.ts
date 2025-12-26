@@ -31,6 +31,7 @@ export interface User {
   banner?: string;
   posts?: Post[];
   isLeader?: boolean;
+  money?: number;
   hp?: number;
   maxHp?: number;
   hunger?: number;

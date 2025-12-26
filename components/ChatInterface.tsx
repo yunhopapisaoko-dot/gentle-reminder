@@ -14,7 +14,7 @@ interface ChatInterfaceProps {
   onClose?: () => void;
   currentUser: User;
   onMemberClick?: (user: User) => void;
-  onUpdateStatus?: (changes: { hp?: number; hunger?: number; thirst?: number; alcohol?: number }) => void;
+  onUpdateStatus?: (changes: { hp?: number; hunger?: number; thirst?: number; alcohol?: number; money?: number }) => void;
   onConsumeItems?: (items: MenuItem[]) => void;
   onClearDisease?: (hpRestore: number) => void;
   onNavigate?: (locationId: string) => void;
@@ -77,10 +77,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [showWorkerPanel, setShowWorkerPanel] = useState(false);
   const [showGrantAccess, setShowGrantAccess] = useState(false);
   
-  // Lista de usuários para autorização (Mock para representar usuários no chat)
   const [onlineMembers, setOnlineMembers] = useState<User[]>([]);
-
-  // Sugestões de comandos
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const chatRef = useRef<any>(null);
@@ -93,11 +90,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const icon = ICONS[contextKey] || ICONS.default;
   const hasMenu = MENUS[contextKey] !== undefined;
   
-  // Filtrar locais internos baseado em acesso
   const internalLocs = (SUB_LOCATIONS[contextKey] || []).filter(loc => {
     if (!loc.restricted) return true;
-    if (workerRole) return true; // Funcionários entram em tudo do seu local
-    if (authorizedRooms.includes(loc.name)) return true; // Autorizados entram na sala específica
+    if (workerRole) return true;
+    if (authorizedRooms.includes(loc.name)) return true;
     return false;
   });
 
@@ -142,6 +138,47 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setShowSuggestions(false);
     }
   }, [input]);
+
+  const handleOrderConfirmed = async (items: MenuItem[]) => {
+    const total = items.reduce((acc, item) => acc + item.price, 0);
+    if ((currentUser.money || 0) < total) {
+      alert("Saldo insuficiente para este pedido!");
+      return;
+    }
+
+    try {
+      const newBalance = (currentUser.money || 0) - total;
+      await supabaseService.updateMoney(currentUser.id, newBalance);
+      
+      if (onUpdateStatus) onUpdateStatus({ money: -total });
+      if (onConsumeItems) onConsumeItems(items);
+      
+      handleSend(`*Fez um pedido no valor de ${total.toFixed(2)} MKC e começou a consumir as delícias...*`);
+      setShowMenu(false);
+    } catch (error: any) {
+      alert("Erro ao processar pagamento: " + error.message);
+    }
+  };
+
+  const handleTreat = async (disease: DiseaseInfo) => {
+    if ((currentUser.money || 0) < disease.treatmentCost) {
+      alert("Saldo insuficiente para o tratamento!");
+      return;
+    }
+
+    try {
+      const newBalance = (currentUser.money || 0) - disease.treatmentCost;
+      await supabaseService.updateMoney(currentUser.id, newBalance);
+      
+      if (onUpdateStatus) onUpdateStatus({ money: -disease.treatmentCost });
+      if (onClearDisease) onClearDisease(Math.abs(disease.hpImpact));
+      
+      handleSend(`*Pagou ${disease.treatmentCost} MKC pelo antídoto e está se sentindo muito melhor!*`);
+      setShowConsultations(false);
+    } catch (error: any) {
+      alert("Erro ao processar pagamento: " + error.message);
+    }
+  };
 
   const activeMessages = currentSubLoc 
     ? (roomMessages[currentSubLoc.name] || []) 
@@ -365,7 +402,24 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {showActionModal && (
         <div className="fixed inset-0 z-[160] bg-black/90 backdrop-blur-3xl flex items-end animate-in fade-in duration-400">
           <div className="w-full bg-background-dark rounded-t-[60px] border-t border-white/10 p-10 pb-16 animate-in slide-in-from-bottom duration-500 shadow-[0_-30px_120px_rgba(0,0,0,1)]">
-            <div className="w-16 h-1.5 bg-white/5 rounded-full mx-auto mb-10"></div>
+            <div className="w-16 h-1.5 bg-white/5 rounded-full mx-auto mb-6"></div>
+            
+            {/* NOVO: Exibição de Dinheiro */}
+            <div className="mb-8 bg-white/5 border border-white/10 rounded-[32px] p-6 flex items-center justify-between">
+               <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center text-amber-500 border border-amber-500/30">
+                    <span className="material-symbols-rounded text-2xl">payments</span>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Minha Carteira</p>
+                    <p className="text-xl font-black text-white italic tracking-tighter">{(currentUser.money || 0).toFixed(2)} MKC</p>
+                  </div>
+               </div>
+               <div className="bg-primary/20 px-4 py-2 rounded-xl border border-primary/20">
+                  <span className="text-[10px] font-black text-primary uppercase tracking-widest">Premium</span>
+               </div>
+            </div>
+
             <div className="space-y-8">
               <div className="flex items-center justify-between px-4">
                  <div className="flex items-center space-x-3">
@@ -396,8 +450,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {showJobModal && locationContext && <JobApplicationModal location={locationContext} userId={currentUser.id} onClose={() => setShowJobModal(false)} onSuccess={() => setShowManagerDash(true)} />}
       {showManagerDash && locationContext && <ManagerDashboard location={locationContext} onClose={() => setShowManagerDash(false)} />}
       {showWorkerPanel && locationContext && workerRole && <WorkerView location={locationContext} role={workerRole} onClose={() => setShowWorkerPanel(false)} />}
-      {showMenu && hasMenu && !currentSubLoc && <MenuView locationName={locationContext || ''} items={MENUS[contextKey]} onClose={() => setShowMenu(false)} onOrderConfirmed={() => {}} />}
-      {showConsultations && isHospital && <HospitalConsultations onClose={() => setShowConsultations(false)} onTreat={() => {}} />}
+      {showMenu && hasMenu && !currentSubLoc && <MenuView locationName={locationContext || ''} items={MENUS[contextKey]} onClose={() => setShowMenu(false)} onOrderConfirmed={handleOrderConfirmed} />}
+      {showConsultations && isHospital && <HospitalConsultations onClose={() => setShowConsultations(false)} onTreat={handleTreat} />}
     </div>
   );
 };

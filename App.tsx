@@ -90,6 +90,7 @@ const App: React.FC = () => {
       if (profile) {
         setCurrentUser({
           ...profile,
+          money: profile.money || 3000,
           hp: profile.hp || 100,
           maxHp: profile.maxHp || 100,
           hunger: profile.hunger || 50,
@@ -114,7 +115,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleUpdateStatus = (changes: { hp?: number; hunger?: number; thirst?: number; alcohol?: number }) => {
+  const handleUpdateStatus = (changes: { hp?: number; hunger?: number; thirst?: number; alcohol?: number; money?: number }) => {
     setCurrentUser(prev => {
       const maxHp = prev.maxHp || 100;
       return {
@@ -122,7 +123,8 @@ const App: React.FC = () => {
         hp: Math.max(0, Math.min(maxHp, (prev.hp || 100) + (changes.hp || 0))),
         hunger: Math.max(0, Math.min(100, (prev.hunger || 50) + (changes.hunger || 0))),
         thirst: Math.max(0, Math.min(100, (prev.thirst || 50) + (changes.thirst || 0))),
-        alcohol: Math.max(0, Math.min(100, (prev.alcohol || 0) + (changes.alcohol || 0)))
+        alcohol: Math.max(0, Math.min(100, (prev.alcohol || 0) + (changes.alcohol || 0))),
+        money: (prev.money || 0) + (changes.money || 0)
       };
     });
   };

@@ -25,6 +25,7 @@ export const supabaseService = {
             username: meta?.username || `user_${userId.substring(0, 5)}`,
             avatar_url: meta?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
             race: meta?.race || 'Draeven',
+            money: 3000,
             bio: ''
           };
           await supabase.from('profiles').insert([newProfile]);
@@ -41,9 +42,15 @@ export const supabaseService = {
         race: data.race,
         bio: data.bio || '',
         banner: data.banner_url,
-        isLeader: data.is_leader || false
+        isLeader: data.is_leader || false,
+        money: data.money || 0
       };
     } catch { return null; }
+  },
+
+  async updateMoney(userId: string, newBalance: number): Promise<void> {
+    const { error } = await supabase.from('profiles').update({ money: newBalance }).eq('id', userId);
+    if (error) throw error;
   },
 
   async applyForJob(application: Partial<JobApplication>) {
@@ -94,7 +101,6 @@ export const supabaseService = {
     return data.role;
   },
 
-  // NOVO: Controle de Acesso de Salas
   async grantRoomAccess(userId: string, location: string, roomName: string, grantedBy: string) {
     const { error } = await supabase
       .from('room_authorizations')
@@ -173,7 +179,8 @@ export const supabaseService = {
         avatar: p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
         race: p.race,
         isLeader: p.is_leader || false,
-        bio: p.bio
+        bio: p.bio,
+        money: p.money || 0
       }));
     } catch { return []; }
   },
