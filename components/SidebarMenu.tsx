@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { User } from '../types';
 
@@ -47,10 +46,8 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose,
   };
 
   const handleLogout = () => {
-    console.log("Botão de logout clicado no menu");
     setIsClosing(true);
     setTimeout(() => {
-      console.log("Chamando onLogout prop...");
       onLogout();
       onClose();
       setIsClosing(false);
@@ -94,12 +91,13 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose,
         <div className="px-6 py-4">
           <div className="bg-white/[0.03] backdrop-blur-3xl p-6 rounded-[40px] border border-white/5 space-y-6 shadow-inner">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20">Signais Vitais</h3>
+              <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20">Sinais Vitais</h3>
               <span className="material-symbols-rounded text-primary/40 text-sm">bolt</span>
             </div>
             <StatusItem label="Saúde" value={100} icon="favorite" color="bg-rose-500" />
             <StatusItem label="Fome" value={76} icon="restaurant" color="bg-orange-500" />
             <StatusItem label="Sede" value={54} icon="water_drop" color="bg-cyan-500" />
+            <StatusItem label="Alcoolismo" value={12} icon="wine_bar" color="bg-indigo-500" />
           </div>
         </div>
 
