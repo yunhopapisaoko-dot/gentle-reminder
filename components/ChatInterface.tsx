@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getCommunityChat } from '../services/geminiService';
-import { ChatMessage } from '../types';
+import { ChatMessage, User } from '../types';
 import { MENUS, SUB_LOCATIONS, SubLocation } from '../constants';
 import { MenuView } from './MenuView';
 
 interface ChatInterfaceProps {
   locationContext?: string;
   onClose?: () => void;
+  currentUser: User;
+  onMemberClick?: (user: User) => void;
 }
 
 const WALLPAPERS: Record<string, string> = {
@@ -25,7 +27,7 @@ const ICONS: Record<string, string> = {
   default: 'chat'
 };
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, onClose }) => {
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, onClose, currentUser, onMemberClick }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [roomMessages, setRoomMessages] = useState<Record<string, ChatMessage[]>>({});
   const [currentSubLoc, setCurrentSubLoc] = useState<SubLocation | null>(null);
@@ -53,7 +55,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
   };
 
   useEffect(() => {
-    // Tenta inicializar a IA se possível, mas não trava o chat
     try {
       chatRef.current = getCommunityChat();
     } catch (e) {
@@ -84,7 +85,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
     const textToSend = customMsg || input;
     if (!textToSend.trim() || isLoading) return;
 
-    const userMessage: ChatMessage = { id: Date.now().toString(), role: 'user', text: textToSend };
+    const userMessage: ChatMessage = { 
+      id: Date.now().toString(), 
+      role: 'user', 
+      text: textToSend,
+      author: currentUser
+    };
     
     if (currentSubLoc) {
       setRoomMessages(prev => ({
@@ -97,7 +103,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
     
     if (!customMsg) setInput('');
 
-    // Se a IA estiver disponível e não for apenas um chat de local genérico, ela responde
     if (chatRef.current && !currentSubLoc) {
       setIsLoading(true);
       try {
@@ -137,7 +142,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
   return (
     <div className={`fixed inset-0 z-[100] bg-black flex flex-col h-[100dvh] overflow-hidden ${isClosing ? 'animate-out slide-out-bottom' : 'animate-in slide-in-bottom'}`}>
       
-      {/* Immersive Background */}
       <div className="absolute inset-0 z-0">
         <div className="relative w-full h-full">
           <img 
@@ -151,7 +155,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
         </div>
       </div>
 
-      {/* Cinematic Header */}
       <div className="relative z-10 px-6 pt-12 pb-6 flex items-center justify-between backdrop-blur-3xl bg-black/40 border-b border-white/10">
         <div className="flex items-center space-x-4">
           {currentSubLoc ? (
@@ -201,15 +204,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
         </div>
       </div>
 
-      {/* Dynamic Messages Container */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-8 relative z-10 scrollbar-hide pb-32">
         {activeMessages.map(msg => (
           <div key={msg.id} className={`flex items-end space-x-3 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
-            {msg.role === 'model' && (
-              <div className="w-11 h-11 rounded-2xl bg-primary flex-shrink-0 border-2 border-white/40 overflow-hidden shadow-2xl flex items-center justify-center">
+            <button 
+              onClick={() => msg.author && onMemberClick?.(msg.author)}
+              className={`w-11 h-11 rounded-2xl flex-shrink-0 border-2 border-white/40 overflow-hidden shadow-2xl flex items-center justify-center transition-transform active:scale-90 ${msg.role === 'model' ? 'bg-primary cursor-default' : 'bg-surface-purple cursor-pointer'}`}
+            >
+              {msg.role === 'model' ? (
                 <span className="material-symbols-rounded text-white text-2xl">auto_awesome</span>
-              </div>
-            )}
+              ) : (
+                <img src={msg.author?.avatar} className="w-full h-full object-cover" alt="avatar" />
+              )}
+            </button>
             <div className={`max-w-[82%] px-6 py-4 rounded-[32px] shadow-2xl text-[14px] font-bold leading-relaxed animate-in zoom-in duration-500 backdrop-blur-3xl border border-white/10 ${
               msg.role === 'user' 
                 ? 'bg-primary/70 text-white rounded-br-none' 
@@ -234,7 +241,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
         )}
       </div>
 
-      {/* Floating Input Dock */}
       <div className="px-6 pb-12 pt-4 relative z-10">
         <div className="flex items-center space-x-3 bg-black/60 backdrop-blur-3xl rounded-[40px] p-2.5 pl-5 border border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.6)]">
           <button 
@@ -267,81 +273,39 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
         </div>
       </div>
 
-      {/* Action Sheet Panel */}
       {showActionModal && (
         <div className="fixed inset-0 z-[160] bg-black/90 backdrop-blur-3xl flex items-end animate-in fade-in duration-400">
           <div className="w-full bg-background-dark rounded-t-[60px] border-t border-white/10 p-10 pb-16 animate-in slide-in-from-bottom duration-500 shadow-[0_-30px_120px_rgba(0,0,0,1)]">
             <div className="w-16 h-1.5 bg-white/5 rounded-full mx-auto mb-10"></div>
-            
-            <div className="mb-10 relative overflow-hidden rounded-[48px] p-10 border border-white/5 shadow-3xl bg-gradient-to-br from-surface-purple/40 to-black group">
-              <div className="absolute top-[-20%] right-[-10%] opacity-5 group-hover:opacity-15 transition-opacity">
-                <span className="material-symbols-rounded text-[200px] text-primary rotate-12">token</span>
-              </div>
-              <div className="relative z-10">
-                <div className="flex items-center space-x-4 mb-6">
-                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-                      <span className="material-symbols-rounded text-3xl">account_balance_wallet</span>
-                   </div>
-                   <div>
-                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30">Status de Carteira</span>
-                     <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest mt-1">Roleplay Integrado</p>
-                   </div>
-                </div>
-                
-                <div className="flex items-end space-x-4">
-                  <h4 className="text-6xl font-black text-white italic tracking-tighter drop-shadow-2xl">4,250</h4>
-                  <span className="text-secondary text-base font-black uppercase tracking-widest mb-2 drop-shadow-[0_0_12px_rgba(217,70,239,0.4)]">MKC</span>
-                </div>
-              </div>
-            </div>
-
             <div className="space-y-8">
               <div className="flex items-center justify-between px-4">
                 <div className="flex items-center space-x-3">
                    <div className="w-2 h-6 bg-primary rounded-full shadow-[0_0_10px_rgba(139,92,246,0.5)]"></div>
                    <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">Mudar de Sala</h3>
                 </div>
-                <span className="text-[10px] font-black text-primary/40 uppercase tracking-widest italic">{locationContext}</span>
               </div>
-              
               <div className="grid grid-cols-2 gap-5 max-h-[40vh] overflow-y-auto scrollbar-hide pb-8">
-                {internalLocs.length > 0 ? internalLocs.map((loc, idx) => (
+                {internalLocs.map((loc, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSelectSubLoc(loc)}
                     className="relative flex flex-col items-center justify-center p-8 rounded-[40px] bg-white/[0.03] border border-white/5 hover:bg-white/10 active:scale-95 transition-all shadow-2xl group overflow-hidden"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                    <div className="relative z-10 w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center text-white mb-5 border border-white/10 group-hover:bg-primary group-hover:border-primary transition-all duration-500 group-hover:shadow-[0_15px_30px_rgba(139,92,246,0.3)]">
-                      <span className="material-symbols-rounded text-3xl group-hover:scale-110 transition-transform">{loc.icon}</span>
+                    <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center text-white mb-5 border border-white/10 group-hover:bg-primary group-hover:border-primary transition-all duration-500">
+                      <span className="material-symbols-rounded text-3xl">{loc.icon}</span>
                     </div>
-                    <span className="relative z-10 text-[11px] font-black text-white uppercase tracking-[0.25em] text-center group-hover:text-primary transition-colors duration-500">{loc.name}</span>
+                    <span className="text-[11px] font-black text-white uppercase tracking-[0.25em] text-center">{loc.name}</span>
                   </button>
-                )) : (
-                  <div className="col-span-2 py-20 text-center opacity-10 flex flex-col items-center">
-                    <span className="material-symbols-rounded text-6xl mb-4">location_off</span>
-                    <p className="text-sm font-black tracking-[0.4em] uppercase">Setor Sem Áreas</p>
-                  </div>
-                )}
+                ))}
               </div>
             </div>
-
-            <button 
-              onClick={() => setShowActionModal(false)}
-              className="w-full bg-white text-black py-7 rounded-[36px] text-[11px] font-black uppercase tracking-[0.5em] shadow-3xl active:scale-[0.97] transition-all hover:bg-gray-100"
-            >
-              Voltar ao Roleplay
-            </button>
+            <button onClick={() => setShowActionModal(false)} className="w-full bg-white text-black py-7 rounded-[36px] text-[11px] font-black uppercase tracking-[0.5em] shadow-3xl active:scale-[0.97] transition-all">Voltar ao Roleplay</button>
           </div>
         </div>
       )}
 
       {showMenu && hasMenu && !currentSubLoc && (
-        <MenuView 
-          locationName={locationContext || ''} 
-          items={MENUS[contextKey]} 
-          onClose={() => setShowMenu(false)} 
-        />
+        <MenuView locationName={locationContext || ''} items={MENUS[contextKey]} onClose={() => setShowMenu(false)} />
       )}
     </div>
   );

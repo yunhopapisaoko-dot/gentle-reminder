@@ -43,7 +43,7 @@ const App: React.FC = () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           setIsAuthenticated(true);
-          fetchInitialData(session.user.id, session.user);
+          fetchInitialData(session.user.id);
         } else {
           setIsAuthenticated(false);
           setLoading(false);
@@ -60,7 +60,7 @@ const App: React.FC = () => {
       if (session) {
         setIsAuthenticated(true);
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-          fetchInitialData(session.user.id, session.user);
+          fetchInitialData(session.user.id);
         }
       } else {
         setIsAuthenticated(false);
@@ -74,7 +74,7 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const fetchInitialData = async (userId: string, authUser?: any) => {
+  const fetchInitialData = async (userId: string) => {
     try {
       const profile = await supabaseService.getProfile(userId);
       if (profile) setCurrentUser(profile);
@@ -113,12 +113,6 @@ const App: React.FC = () => {
     setCurrentUser(CURRENT_USER);
   };
 
-  const handleRouletteResult = (id: string, name: string) => {
-    // Agora o próprio RouletteView mostra os resultados na tela.
-    // Aqui apenas tratamos mudanças de estado se necessário (ex: teleportar após a roleta fechar)
-    console.log(`Resultado da Roleta: ${name} (${id})`);
-  };
-
   const renderMainContent = () => {
     if (loading) return (
       <div className="flex flex-col items-center justify-center py-32 animate-pulse">
@@ -147,7 +141,6 @@ const App: React.FC = () => {
               <div className="px-10 py-20 text-center opacity-40">
                 <span className="material-symbols-rounded text-6xl mb-4 text-primary">auto_stories</span>
                 <p className="text-[10px] font-bold text-white uppercase tracking-widest">Nada postado ainda.</p>
-                <button onClick={() => setShowDbSetup(true)} className="mt-4 text-[9px] text-primary underline uppercase tracking-widest">Configurar Banco</button>
               </div>
             )}
           </div>
@@ -165,7 +158,6 @@ const App: React.FC = () => {
                 </div>
               </div>
             ))}
-            {posts.length === 0 && <p className="text-center text-white/20 py-20 italic">O feed está vazio.</p>}
           </div>
         );
       case TabType.Global:
@@ -182,7 +174,7 @@ const App: React.FC = () => {
       case TabType.Locais:
         return <LocaisGrid onSelect={setSelectedLocalChat} />;
       case TabType.Chat:
-        return <ChatInterface onClose={() => setActiveTab(TabType.Destaque)} />;
+        return <ChatInterface currentUser={currentUser} onMemberClick={setSelectedUser} onClose={() => setActiveTab(TabType.Destaque)} />;
       default:
         return null;
     }
@@ -197,37 +189,17 @@ const App: React.FC = () => {
   return (
     <div className="flex justify-center min-h-screen bg-[#020105]">
       <div className="w-full max-w-md bg-background-dark min-h-screen relative flex flex-col border-x border-white/5">
-        <Header
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          currentUser={currentUser}
-          onProfileClick={() => setSelectedUser(currentUser)}
-          onMenuClick={() => setIsSidebarOpen(true)}
-        />
+        <Header activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} onProfileClick={() => setSelectedUser(currentUser)} onMenuClick={() => setIsSidebarOpen(true)} />
         <PinnedBar />
-        
-        <div className="flex-1 overflow-y-auto scrollbar-hide">
-          {renderMainContent()}
-        </div>
-
+        <div className="flex-1 overflow-y-auto scrollbar-hide">{renderMainContent()}</div>
         <SidebarMenu isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} user={currentUser} onOpenProfile={() => setSelectedUser(currentUser)} onLogout={handleLogout} />
-
         {isCreateModalOpen && <CreateContentModal onClose={() => setIsCreateModalOpen(false)} onSuccess={refreshPosts} userId={currentUser.id} />}
         {showDbSetup && <DbSetupModal onClose={() => setShowDbSetup(false)} />}
         {selectedUser && <ProfileView user={selectedUser} currentUserId={currentUser.id} allPosts={posts} onClose={() => setSelectedUser(null)} onUpdate={handleUpdateUser} />}
-        {selectedLocalChat && <ChatInterface locationContext={selectedLocalChat} onClose={() => setSelectedLocalChat(null)} />}
-        
+        {selectedLocalChat && <ChatInterface currentUser={currentUser} onMemberClick={setSelectedUser} locationContext={selectedLocalChat} onClose={() => setSelectedLocalChat(null)} />}
         {isAllChatsOpen && <AllChatsView onClose={() => setIsAllChatsOpen(false)} onSelectChat={setSelectedLocalChat} />}
-        {isRouletteOpen && <RouletteView onClose={() => setIsRouletteOpen(false)} onResult={handleRouletteResult} />}
-
-        {!selectedLocalChat && !selectedUser && !isCreateModalOpen && (
-          <FloatingActionDock 
-            activeTab={activeTab}
-            onCreateClick={() => setIsCreateModalOpen(true)}
-            onAllChatsClick={() => setIsAllChatsOpen(true)}
-            onRouletteClick={() => setIsRouletteOpen(true)}
-          />
-        )}
+        {isRouletteOpen && <RouletteView onClose={() => setIsRouletteOpen(false)} onResult={() => {}} />}
+        {!selectedLocalChat && !selectedUser && !isCreateModalOpen && <FloatingActionDock activeTab={activeTab} onCreateClick={() => setIsCreateModalOpen(true)} onAllChatsClick={() => setIsAllChatsOpen(true)} onRouletteClick={() => setIsRouletteOpen(true)} />}
       </div>
     </div>
   );

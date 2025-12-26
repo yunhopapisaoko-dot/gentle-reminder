@@ -1,4 +1,3 @@
-
 export interface MenuItem {
   id: string;
   name: string;
@@ -46,6 +45,7 @@ export interface ChatMessage {
   id: string;
   role: 'user' | 'model';
   text: string;
+  author?: User;
 }
 
 export enum TabType {
