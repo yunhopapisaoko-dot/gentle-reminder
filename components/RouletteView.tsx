@@ -44,12 +44,11 @@ const OPTIONS: RouletteOption[] = [
     description: 'Fragmentação da memória recente devido ao contato com dimensões instáveis da MagicTalk.',
     symptoms: ['Esquecimento de nomes', 'Aparência levemente translúcida', 'Desorientação espacial']
   },
-  // Prêmios
-  { id: 'p1', name: '100 MKC', icon: 'payments', color: 'from-emerald-500', type: 'prize' },
-  { id: 'p2', name: '500 MKC', icon: 'local_atm', color: 'from-green-500', type: 'prize' },
-  { id: 'p3', name: '1.000 MKC', icon: 'paid', color: 'from-teal-500', type: 'prize' },
-  { id: 'p4', name: '5.000 MKC', icon: 'savings', color: 'from-amber-500', type: 'prize' },
-  { id: 'p5', name: '10.000 MKC', icon: 'diamond', color: 'from-yellow-400', type: 'prize' },
+  // Prêmios Atualizados
+  { id: 'p1', name: '1 MKC', icon: 'money', color: 'from-amber-700', type: 'prize' },
+  { id: 'p2', name: '10 MKC', icon: 'payments', color: 'from-slate-400', type: 'prize' },
+  { id: 'p3', name: '100 MKC', icon: 'local_atm', color: 'from-emerald-500', type: 'prize' },
+  { id: 'p4', name: '10.000 MKC', icon: 'diamond', color: 'from-yellow-400', type: 'prize' },
 ];
 
 export const RouletteView: React.FC<RouletteViewProps> = ({ onClose, onResult }) => {
@@ -96,7 +95,6 @@ export const RouletteView: React.FC<RouletteViewProps> = ({ onClose, onResult })
         ${isClosing ? 'animate-out zoom-out duration-500' : 'animate-in zoom-in duration-500'}`}>
         
         {showResult && currentOption.type === 'disease' ? (
-          /* TELA DE DIAGNÓSTICO MÉDICO */
           <div className="p-10 animate-in slide-in-bottom duration-700">
              <div className="flex items-center space-x-4 mb-8">
                 <div className="w-16 h-16 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-500">
@@ -136,9 +134,7 @@ export const RouletteView: React.FC<RouletteViewProps> = ({ onClose, onResult })
              </button>
           </div>
         ) : showResult && currentOption.type === 'prize' ? (
-          /* TELA DE RECOMPENSA MELHORADA */
           <div className="p-10 text-center animate-in zoom-in duration-500 relative overflow-hidden">
-             {/* Brilho de Fundo Radiante */}
              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-emerald-500/20 blur-[100px] rounded-full animate-pulse"></div>
              
              <div className="relative z-10">
@@ -163,7 +159,6 @@ export const RouletteView: React.FC<RouletteViewProps> = ({ onClose, onResult })
              </div>
           </div>
         ) : (
-          /* TELA DA ROLETA GIRANDO */
           <div className="p-10 flex flex-col items-center">
             <div className="text-center mb-10">
               <h2 className="text-xl font-black text-white italic tracking-tighter uppercase leading-none">Sorteio Magic</h2>
