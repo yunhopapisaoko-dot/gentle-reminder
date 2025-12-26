@@ -1,5 +1,21 @@
-
 import { Post, User, Comment, MenuItem } from './types';
+
+export interface DiseaseInfo {
+  id: string;
+  name: string;
+  hpImpact: number;
+  cureTime: string;
+  treatmentCost: number;
+  icon: string;
+}
+
+export const DISEASE_DETAILS: Record<string, DiseaseInfo> = {
+  d1: { id: 'd1', name: 'Febre Mágica', hpImpact: -30, cureTime: '10 min', treatmentCost: 50, icon: 'coronavirus' },
+  d2: { id: 'd2', name: 'Maldição do Silêncio', hpImpact: -20, cureTime: '15 min', treatmentCost: 75, icon: 'comments_disabled' },
+  d3: { id: 'd3', name: 'Gripe Estelar', hpImpact: -40, cureTime: '5 min', treatmentCost: 120, icon: 'ac_unit' },
+  d4: { id: 'd4', name: 'Vírus Neon', hpImpact: -50, cureTime: '20 min', treatmentCost: 200, icon: 'biotech' },
+  d5: { id: 'd5', name: 'Amnésia Espiritual', hpImpact: -15, cureTime: '12 min', treatmentCost: 45, icon: 'psychology_alt' },
+};
 
 export const CURRENT_USER: User = {
   id: 'u1',
@@ -7,7 +23,9 @@ export const CURRENT_USER: User = {
   username: 'tadachi_san',
   avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCDqcYQqxWTZorSQBeW_nj5j8VdA9ky8r-_aP0OcudmSl_leNqPqFenaQ76HNHiRgkcHw6HCKwjzg5x9FDuNWlcYVgyCqI6zXBhn84kZkZOvaFdCyrFVIgzBgDyIBTOIDYZU7rwI4BevXGRzeV56eu8x2CFVd4ntuPeyST0RgmAnHwz2Us89wdwsT4Hc_cafUk6WT0Cl3poBx4fpPXBFwWQ_FjGPUZZJYKik7cNbcxAqRUDOWK25AX1vEbOG2XBFrtqAJlAE4CiTQ',
   bio: 'Digital artist & Vocaloid enthusiast. Dreaming in purple and violet. 💜✨',
-  banner: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=1000'
+  banner: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=1000',
+  hp: 100,
+  maxHp: 100
 };
 
 export interface SubLocation {

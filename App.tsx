@@ -77,7 +77,13 @@ const App: React.FC = () => {
   const fetchInitialData = async (userId: string) => {
     try {
       const profile = await supabaseService.getProfile(userId);
-      if (profile) setCurrentUser(profile);
+      if (profile) {
+        setCurrentUser({
+          ...profile,
+          hp: profile.hp || 100,
+          maxHp: profile.maxHp || 100
+        });
+      }
       
       const dbPosts = await supabaseService.getPosts();
       setPosts(dbPosts || []);
@@ -93,6 +99,15 @@ const App: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUpdateHp = (hpChange: number) => {
+    setCurrentUser(prev => {
+      const currentHp = prev.hp || 100;
+      const maxHp = prev.maxHp || 100;
+      const newHp = Math.max(0, Math.min(maxHp, currentHp + hpChange));
+      return { ...prev, hp: newHp };
+    });
   };
 
   const refreshPosts = async () => {
@@ -174,7 +189,7 @@ const App: React.FC = () => {
       case TabType.Locais:
         return <LocaisGrid onSelect={setSelectedLocalChat} />;
       case TabType.Chat:
-        return <ChatInterface currentUser={currentUser} onMemberClick={setSelectedUser} onClose={() => setActiveTab(TabType.Destaque)} />;
+        return <ChatInterface onUpdateHp={handleUpdateHp} currentUser={currentUser} onMemberClick={setSelectedUser} onClose={() => setActiveTab(TabType.Destaque)} />;
       default:
         return null;
     }
@@ -196,9 +211,9 @@ const App: React.FC = () => {
         {isCreateModalOpen && <CreateContentModal onClose={() => setIsCreateModalOpen(false)} onSuccess={refreshPosts} userId={currentUser.id} />}
         {showDbSetup && <DbSetupModal onClose={() => setShowDbSetup(false)} />}
         {selectedUser && <ProfileView user={selectedUser} currentUserId={currentUser.id} allPosts={posts} onClose={() => setSelectedUser(null)} onUpdate={handleUpdateUser} />}
-        {selectedLocalChat && <ChatInterface currentUser={currentUser} onMemberClick={setSelectedUser} locationContext={selectedLocalChat} onClose={() => setSelectedLocalChat(null)} />}
+        {selectedLocalChat && <ChatInterface onUpdateHp={handleUpdateHp} currentUser={currentUser} onMemberClick={setSelectedUser} locationContext={selectedLocalChat} onClose={() => setSelectedLocalChat(null)} />}
         {isAllChatsOpen && <AllChatsView onClose={() => setIsAllChatsOpen(false)} onSelectChat={setSelectedLocalChat} />}
-        {isRouletteOpen && <RouletteView onClose={() => setIsRouletteOpen(false)} onResult={() => {}} />}
+        {isRouletteOpen && <RouletteView onClose={() => setIsRouletteOpen(false)} onResult={(id, name, hpImpact) => handleUpdateHp(hpImpact)} />}
         {!selectedLocalChat && !selectedUser && !isCreateModalOpen && <FloatingActionDock activeTab={activeTab} onCreateClick={() => setIsCreateModalOpen(true)} onAllChatsClick={() => setIsAllChatsOpen(true)} onRouletteClick={() => setIsRouletteOpen(true)} />}
       </div>
     </div>

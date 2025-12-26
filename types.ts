@@ -28,6 +28,8 @@ export interface User {
   banner?: string;
   posts?: Post[];
   isLeader?: boolean;
+  hp?: number;
+  maxHp?: number;
 }
 
 export interface Post {

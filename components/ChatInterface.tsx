@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getCommunityChat } from '../services/geminiService';
 import { ChatMessage, User } from '../types';
-import { MENUS, SUB_LOCATIONS, SubLocation } from '../constants';
+import { MENUS, SUB_LOCATIONS, SubLocation, DISEASE_DETAILS, DiseaseInfo } from '../constants';
 import { MenuView } from './MenuView';
+import { HospitalConsultations } from './HospitalConsultations';
 
 interface ChatInterfaceProps {
   locationContext?: string;
   onClose?: () => void;
   currentUser: User;
   onMemberClick?: (user: User) => void;
+  onUpdateHp?: (hpChange: number) => void;
 }
 
-// Configuração visual simplificada das raças para as tags
 const RACE_THEMES: Record<string, { color: string, icon: string, bg: string }> = {
   'Draeven': { color: 'text-rose-500', icon: 'local_fire_department', bg: 'bg-rose-500/10' },
   'Sylven': { color: 'text-emerald-500', icon: 'eco', bg: 'bg-emerald-500/10' },
@@ -35,7 +36,7 @@ const ICONS: Record<string, string> = {
   default: 'chat'
 };
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, onClose, currentUser, onMemberClick }) => {
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, onClose, currentUser, onMemberClick, onUpdateHp }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [roomMessages, setRoomMessages] = useState<Record<string, ChatMessage[]>>({});
   const [currentSubLoc, setCurrentSubLoc] = useState<SubLocation | null>(null);
@@ -44,14 +45,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
   const [isLoading, setIsLoading] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showConsultations, setShowConsultations] = useState(false);
   const [showActionModal, setShowActionModal] = useState(false);
   
   const chatRef = useRef<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const contextKey = locationContext?.toLowerCase() || 'default';
-  const mainWallpaper = WALLPAPERS[contextKey] || WALLPAPERS.default;
-  const activeWallpaper = currentSubLoc ? currentSubLoc.wallpaper : mainWallpaper;
+  const isHospital = contextKey === 'hospital';
+  const activeWallpaper = currentSubLoc ? currentSubLoc.wallpaper : (WALLPAPERS[contextKey] || WALLPAPERS.default);
   
   const icon = ICONS[contextKey] || ICONS.default;
   const hasMenu = MENUS[contextKey] !== undefined;
@@ -129,6 +131,27 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
     }
   };
 
+  const handleTreat = (disease: DiseaseInfo) => {
+    // Ao tratar, recuperamos o HP perdido pela doença (impacto negativo vira positivo)
+    if (onUpdateHp) onUpdateHp(Math.abs(disease.hpImpact));
+    
+    const treatMsg: ChatMessage = {
+      id: `treat-${Date.now()}`,
+      role: 'model',
+      text: `*Iniciando tratamento para ${disease.name}*\nProcedimento em andamento... Tempo estimado: ${disease.cureTime}. Sua saúde está sendo restaurada! ✨`
+    };
+
+    if (currentSubLoc) {
+      setRoomMessages(prev => ({
+        ...prev,
+        [currentSubLoc.name]: [...(prev[currentSubLoc.name] || []), treatMsg]
+      }));
+    } else {
+      setMessages(prev => [...prev, treatMsg]);
+    }
+    setShowConsultations(false);
+  };
+
   const handleSelectSubLoc = (loc: SubLocation) => {
     setCurrentSubLoc(loc);
     setShowActionModal(false);
@@ -171,7 +194,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
               <span className="material-symbols-rounded text-2xl">arrow_back</span>
             </button>
           ) : (
-            <div className="w-12 h-12 rounded-[20px] bg-primary/90 shadow-[0_0_25px_rgba(139,92,246,0.6)] border border-white/30 flex items-center justify-center text-white">
+            <div className={`w-12 h-12 rounded-[20px] shadow-[0_0_25px_rgba(139,92,246,0.6)] border border-white/30 flex items-center justify-center text-white ${isHospital ? 'bg-blue-500 shadow-blue-500/50' : 'bg-primary/90'}`}>
               <span className="material-symbols-rounded text-2xl">{icon}</span>
             </div>
           )}
@@ -192,7 +215,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
         </div>
         
         <div className="flex items-center space-x-3">
-          {hasMenu && !currentSubLoc && (
+          {isHospital && !currentSubLoc && (
+            <button 
+              onClick={() => setShowConsultations(true)}
+              className="w-11 h-11 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 active:scale-90 border border-white/20"
+            >
+              <span className="material-symbols-rounded">stethoscope</span>
+            </button>
+          )}
+          {hasMenu && !currentSubLoc && !isHospital && (
             <button 
               onClick={() => setShowMenu(true)}
               className="px-6 py-3 rounded-2xl bg-secondary text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-secondary/30 active:scale-95 transition-all border border-white/20"
@@ -230,19 +261,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
               </button>
               
               <div className={`flex flex-col space-y-2 max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                {/* IDENTIDADE ALINHADA COM A TAG */}
                 <div className={`flex items-center space-x-2 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                    <span className="text-[14px] font-black text-white italic tracking-tighter drop-shadow-md">
                      {isAI ? 'Miku AI' : (msg.author?.name || 'Viajante')}
                    </span>
-                   
                    <div className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg ${theme.bg} ${theme.color} border border-current/10 backdrop-blur-sm animate-in slide-in-from-bottom duration-500`}>
                       <span className="material-symbols-rounded text-[11px] leading-none">{theme.icon}</span>
                       <span className="text-[9px] font-black uppercase tracking-widest italic leading-none">{isAI ? 'Guia' : authorRace}</span>
                    </div>
                 </div>
                 
-                {/* BALÃO DE MENSAGEM */}
                 <div className={`px-6 py-4 rounded-[28px] shadow-2xl text-[14px] font-bold leading-relaxed animate-in zoom-in duration-500 backdrop-blur-3xl border border-white/10 ${
                   msg.role === 'user' 
                     ? 'bg-primary/60 text-white rounded-tr-none' 
@@ -278,7 +306,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
           >
             <span className="material-symbols-rounded text-3xl">add</span>
           </button>
-          
           <input
             type="text"
             value={input}
@@ -287,7 +314,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
             placeholder={currentSubLoc ? `Roleplay em ${currentSubLoc.name}...` : "O que você faz agora?"}
             className="flex-1 bg-transparent border-none text-[15px] focus:ring-0 placeholder:text-white/20 text-white font-bold py-4 px-2"
           />
-          
           <button 
             onClick={() => handleSend()}
             disabled={isLoading || !input.trim()}
@@ -336,6 +362,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
 
       {showMenu && hasMenu && !currentSubLoc && (
         <MenuView locationName={locationContext || ''} items={MENUS[contextKey]} onClose={() => setShowMenu(false)} />
+      )}
+
+      {showConsultations && isHospital && (
+        <HospitalConsultations onClose={() => setShowConsultations(false)} onTreat={handleTreat} />
       )}
     </div>
   );

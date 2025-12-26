@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { DISEASE_DETAILS } from '../constants';
 
 interface RouletteOption {
   id: string;
@@ -8,29 +9,30 @@ interface RouletteOption {
   icon: string;
   color: string;
   type: 'disease' | 'prize';
-  weight: number; // Peso para probabilidade
+  weight: number; 
   description?: string;
   symptoms?: string[];
+  hpImpact?: number;
 }
 
 interface RouletteViewProps {
   onClose: () => void;
-  onResult: (id: string, name: string) => void;
+  onResult: (id: string, name: string, hpImpact: number) => void;
 }
 
 const OPTIONS: RouletteOption[] = [
-  // Doenças (Mais comuns - Peso 15 cada = 75%)
-  { id: 'd1', name: 'Febre Mágica', icon: 'coronavirus', color: 'from-rose-600', type: 'disease', weight: 15, description: 'Oscilação de temperatura por mana residual.', symptoms: ['Olhos brilhando', 'Suor de luz', 'Calafrios'] },
-  { id: 'd2', name: 'Maldição do Silêncio', icon: 'comments_disabled', color: 'from-purple-600', type: 'disease', weight: 15, description: 'Selo que impede a fala.', symptoms: ['Mudez total', 'Brilho na garganta', 'Peso no peito'] },
-  { id: 'd3', name: 'Gripe Estelar', icon: 'ac_unit', color: 'from-cyan-600', type: 'disease', weight: 15, description: 'Infecção por poeira cósmica.', symptoms: ['Espirros de fagulhas', 'Tontura', 'Flutuação'] },
-  { id: 'd4', name: 'Vírus Neon', icon: 'biotech', color: 'from-fuchsia-600', type: 'disease', weight: 15, description: 'Falha digital física.', symptoms: ['Manchas brilhantes', 'Taquicardia', 'Visão rosa'] },
-  { id: 'd5', name: 'Amnésia Espiritual', icon: 'psychology_alt', color: 'from-indigo-600', type: 'disease', weight: 15, description: 'Fragmentação da memória.', symptoms: ['Esquecimento', 'Translucidez', 'Desorientação'] },
+  // Doenças usando constantes centralizadas
+  { ...DISEASE_DETAILS.d1, color: 'from-rose-600', type: 'disease', weight: 15, description: 'Oscilação de temperatura por mana residual.', symptoms: ['Olhos brilhando', 'Suor de luz', 'Calafrios'] },
+  { ...DISEASE_DETAILS.d2, color: 'from-purple-600', type: 'disease', weight: 15, description: 'Selo que impede a fala.', symptoms: ['Mudez total', 'Brilho na garganta', 'Peso no peito'] },
+  { ...DISEASE_DETAILS.d3, color: 'from-cyan-600', type: 'disease', weight: 15, description: 'Infecção por poeira cósmica.', symptoms: ['Espirros de fagulhas', 'Tontura', 'Flutuação'] },
+  { ...DISEASE_DETAILS.d4, color: 'from-fuchsia-600', type: 'disease', weight: 15, description: 'Falha digital física.', symptoms: ['Manchas brilhantes', 'Taquicardia', 'Visão rosa'] },
+  { ...DISEASE_DETAILS.d5, color: 'from-indigo-600', type: 'disease', weight: 15, description: 'Fragmentação da memória.', symptoms: ['Esquecimento', 'Translucidez', 'Desorientação'] },
   
-  // Prêmios (Pesos variados)
-  { id: 'p1', name: '1 MKC', icon: 'money', color: 'from-amber-700', type: 'prize', weight: 12 }, // 12%
-  { id: 'p2', name: '10 MKC', icon: 'payments', color: 'from-slate-400', type: 'prize', weight: 8 },  // 8%
-  { id: 'p3', name: '100 MKC', icon: 'local_atm', color: 'from-emerald-500', type: 'prize', weight: 4.5 }, // 4.5%
-  { id: 'p4', name: '10.000 MKC', icon: 'diamond', color: 'from-yellow-400', type: 'prize', weight: 0.5 }, // 0.5% (Lendário)
+  // Prêmios
+  { id: 'p1', name: '1 MKC', icon: 'money', color: 'from-amber-700', type: 'prize', weight: 12, hpImpact: 0 },
+  { id: 'p2', name: '10 MKC', icon: 'payments', color: 'from-slate-400', type: 'prize', weight: 8, hpImpact: 0 },
+  { id: 'p3', name: '100 MKC', icon: 'local_atm', color: 'from-emerald-500', type: 'prize', weight: 4.5, hpImpact: 0 },
+  { id: 'p4', name: '10.000 MKC', icon: 'diamond', color: 'from-yellow-400', type: 'prize', weight: 0.5, hpImpact: 0 },
 ];
 
 export const RouletteView: React.FC<RouletteViewProps> = ({ onClose, onResult }) => {
@@ -67,7 +69,8 @@ export const RouletteView: React.FC<RouletteViewProps> = ({ onClose, onResult })
         setTimeout(() => {
           setIsSpinning(false);
           setShowResult(true);
-          onResult(OPTIONS[targetIndex].id, OPTIONS[targetIndex].name);
+          const opt = OPTIONS[targetIndex];
+          onResult(opt.id, opt.name, opt.hpImpact || 0);
         }, 500);
       }
     }, 60);
@@ -96,9 +99,12 @@ export const RouletteView: React.FC<RouletteViewProps> = ({ onClose, onResult })
                 </div>
              </div>
              <div className="bg-black/40 rounded-[32px] p-6 border border-white/5 mb-8">
-                <div className="flex items-center space-x-3 mb-4">
-                  <span className="material-symbols-rounded text-rose-500">{currentOption.icon}</span>
-                  <h3 className="text-lg font-black text-white tracking-tight">{currentOption.name}</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <span className="material-symbols-rounded text-rose-500">{currentOption.icon}</span>
+                    <h3 className="text-lg font-black text-white tracking-tight">{currentOption.name}</h3>
+                  </div>
+                  <span className="text-xs font-black text-rose-500 bg-rose-500/10 px-3 py-1 rounded-full border border-rose-500/20">{currentOption.hpImpact} HP</span>
                 </div>
                 <p className="text-xs text-white/50 leading-relaxed font-medium mb-6 italic">"{currentOption.description}"</p>
                 <div className="space-y-3">
