@@ -11,23 +11,11 @@ interface ProfileViewProps {
   onUpdate?: (updatedUser: User) => void;
 }
 
-// Configuração visual das raças: Cores, Ícones e Gradientes Premium
-const RACE_CONFIG: Record<string, { theme: string; icon: string; label: string }> = {
-  'Draeven': { 
-    theme: 'from-rose-500 via-orange-500 to-rose-600 border-rose-400/40 text-rose-100 shadow-[0_0_20px_rgba(244,63,94,0.4)]', 
-    icon: 'local_fire_department',
-    label: 'Draeven'
-  },
-  'Sylven': { 
-    theme: 'from-emerald-400 via-teal-500 to-emerald-600 border-emerald-300/40 text-emerald-50/90 shadow-[0_0_20px_rgba(16,185,129,0.4)]', 
-    icon: 'eco',
-    label: 'Sylven'
-  },
-  'Lunari': { 
-    theme: 'from-cyan-400 via-blue-500 to-indigo-600 border-cyan-300/40 text-cyan-50/90 shadow-[0_0_20px_rgba(34,211,238,0.4)]', 
-    icon: 'dark_mode',
-    label: 'Lunari'
-  },
+// Configuração visual das raças: Cores e Ícones oficiais sincronizados
+const RACE_THEMES: Record<string, { color: string, icon: string, bg: string }> = {
+  'Draeven': { color: 'text-rose-500', icon: 'local_fire_department', bg: 'bg-rose-500/10' },
+  'Sylven': { color: 'text-emerald-500', icon: 'eco', bg: 'bg-emerald-500/10' },
+  'Lunari': { color: 'text-cyan-400', icon: 'dark_mode', bg: 'bg-cyan-400/10' },
 };
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, allPosts = [], onClose, onUpdate }) => {
@@ -47,7 +35,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, a
     setTimeout(onClose, 400);
   };
 
-  const race = user.race && RACE_CONFIG[user.race] ? RACE_CONFIG[user.race] : null;
+  const raceTheme = user.race ? RACE_THEMES[user.race] : null;
 
   return (
     <div className={`fixed inset-0 z-[210] bg-background-dark flex flex-col h-[100dvh] overflow-hidden ${isClosing ? 'animate-out slide-out-right' : 'animate-in slide-in-right'}`}>
@@ -109,12 +97,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, a
                     </span>
                   </div>
                 )}
-                {race && (
-                  <div className={`px-5 py-2 rounded-full bg-gradient-to-br ${race.theme} border backdrop-blur-xl transition-all hover:scale-105 active:scale-95 cursor-default`}>
-                    <div className="flex items-center space-x-2">
-                       <span className="material-symbols-rounded text-[14px]">{race.icon}</span>
-                       <span className="text-[10px] font-black uppercase tracking-[0.3em] italic">{race.label}</span>
-                    </div>
+                {raceTheme && (
+                  <div className={`px-5 py-2 rounded-full ${raceTheme.bg} border border-white/10 backdrop-blur-xl flex items-center space-x-2 transition-all hover:scale-105`}>
+                    <span className={`material-symbols-rounded text-[14px] ${raceTheme.color}`}>{raceTheme.icon}</span>
+                    <span className={`text-[10px] font-black uppercase tracking-[0.3em] italic ${raceTheme.color}`}>{user.race}</span>
                   </div>
                 )}
               </div>
