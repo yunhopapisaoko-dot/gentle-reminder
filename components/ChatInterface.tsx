@@ -11,6 +11,7 @@ interface ChatInterfaceProps {
   currentUser: User;
   onMemberClick?: (user: User) => void;
   onUpdateHp?: (hpChange: number) => void;
+  onClearDisease?: (hpRestore: number) => void;
 }
 
 const RACE_THEMES: Record<string, { color: string, icon: string, bg: string }> = {
@@ -36,7 +37,7 @@ const ICONS: Record<string, string> = {
   default: 'chat'
 };
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, onClose, currentUser, onMemberClick, onUpdateHp }) => {
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, onClose, currentUser, onMemberClick, onUpdateHp, onClearDisease }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [roomMessages, setRoomMessages] = useState<Record<string, ChatMessage[]>>({});
   const [currentSubLoc, setCurrentSubLoc] = useState<SubLocation | null>(null);
@@ -132,8 +133,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
   };
 
   const handleTreat = (disease: DiseaseInfo) => {
-    // Ao tratar, recuperamos o HP perdido pela doença (impacto negativo vira positivo)
-    if (onUpdateHp) onUpdateHp(Math.abs(disease.hpImpact));
+    // Ao tratar, removemos a doença e restauramos o HP
+    if (onClearDisease) {
+      onClearDisease(Math.abs(disease.hpImpact));
+    } else if (onUpdateHp) {
+      onUpdateHp(Math.abs(disease.hpImpact));
+    }
     
     const treatMsg: ChatMessage = {
       id: `treat-${Date.now()}`,

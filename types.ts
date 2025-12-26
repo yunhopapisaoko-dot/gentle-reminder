@@ -30,6 +30,7 @@ export interface User {
   isLeader?: boolean;
   hp?: number;
   maxHp?: number;
+  currentDisease?: string; // ID da doença ativa
 }
 
 export interface Post {

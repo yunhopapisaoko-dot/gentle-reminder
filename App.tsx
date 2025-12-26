@@ -110,6 +110,18 @@ const App: React.FC = () => {
     });
   };
 
+  const handleRouletteResult = (id: string, name: string, hpImpact: number) => {
+    handleUpdateHp(hpImpact);
+    if (hpImpact < 0) {
+      setCurrentUser(prev => ({ ...prev, currentDisease: id }));
+    }
+  };
+
+  const handleClearDisease = (hpRestore: number) => {
+    handleUpdateHp(hpRestore);
+    setCurrentUser(prev => ({ ...prev, currentDisease: undefined }));
+  };
+
   const refreshPosts = async () => {
     const dbPosts = await supabaseService.getPosts();
     setPosts(dbPosts || []);
@@ -189,7 +201,7 @@ const App: React.FC = () => {
       case TabType.Locais:
         return <LocaisGrid onSelect={setSelectedLocalChat} />;
       case TabType.Chat:
-        return <ChatInterface onUpdateHp={handleUpdateHp} currentUser={currentUser} onMemberClick={setSelectedUser} onClose={() => setActiveTab(TabType.Destaque)} />;
+        return <ChatInterface onUpdateHp={handleUpdateHp} onClearDisease={handleClearDisease} currentUser={currentUser} onMemberClick={setSelectedUser} onClose={() => setActiveTab(TabType.Destaque)} />;
       default:
         return null;
     }
@@ -211,9 +223,9 @@ const App: React.FC = () => {
         {isCreateModalOpen && <CreateContentModal onClose={() => setIsCreateModalOpen(false)} onSuccess={refreshPosts} userId={currentUser.id} />}
         {showDbSetup && <DbSetupModal onClose={() => setShowDbSetup(false)} />}
         {selectedUser && <ProfileView user={selectedUser} currentUserId={currentUser.id} allPosts={posts} onClose={() => setSelectedUser(null)} onUpdate={handleUpdateUser} />}
-        {selectedLocalChat && <ChatInterface onUpdateHp={handleUpdateHp} currentUser={currentUser} onMemberClick={setSelectedUser} locationContext={selectedLocalChat} onClose={() => setSelectedLocalChat(null)} />}
+        {selectedLocalChat && <ChatInterface onUpdateHp={handleUpdateHp} onClearDisease={handleClearDisease} currentUser={currentUser} onMemberClick={setSelectedUser} locationContext={selectedLocalChat} onClose={() => setSelectedLocalChat(null)} />}
         {isAllChatsOpen && <AllChatsView onClose={() => setIsAllChatsOpen(false)} onSelectChat={setSelectedLocalChat} />}
-        {isRouletteOpen && <RouletteView onClose={() => setIsRouletteOpen(false)} onResult={(id, name, hpImpact) => handleUpdateHp(hpImpact)} />}
+        {isRouletteOpen && <RouletteView onClose={() => setIsRouletteOpen(false)} onResult={handleRouletteResult} />}
         {!selectedLocalChat && !selectedUser && !isCreateModalOpen && <FloatingActionDock activeTab={activeTab} onCreateClick={() => setIsCreateModalOpen(true)} onAllChatsClick={() => setIsAllChatsOpen(true)} onRouletteClick={() => setIsRouletteOpen(true)} />}
       </div>
     </div>

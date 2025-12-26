@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User } from '../types';
+import { DISEASE_DETAILS } from '../constants';
 
 interface StatusItemProps {
   label: string;
@@ -36,6 +37,8 @@ interface SidebarMenuProps {
 
 export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose, onOpenProfile, onLogout }) => {
   const [isClosing, setIsClosing] = useState(false);
+
+  const activeDisease = user.currentDisease ? DISEASE_DETAILS[user.currentDisease] : null;
 
   const handleClose = () => {
     setIsClosing(true);
@@ -78,52 +81,73 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose,
             <div className="relative mb-4">
               <div className="absolute -inset-2 bg-gradient-to-tr from-primary to-secondary rounded-[32px] blur-md opacity-30 group-hover:opacity-60 transition-opacity"></div>
               <img src={user.avatar} className="relative w-20 h-20 rounded-[28px] object-cover border border-white/20 shadow-2xl" alt="avatar" />
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-4 border-background-dark rounded-full"></div>
+              <div className={`absolute -bottom-1 -right-1 w-6 h-6 border-4 border-background-dark rounded-full ${activeDisease ? 'bg-rose-500 animate-pulse' : 'bg-green-500'}`}></div>
             </div>
             <div className="text-left">
               <h4 className="text-xl font-black text-white tracking-tighter leading-none group-hover:text-primary transition-colors">{user.name}</h4>
               <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mt-1.5">@{user.username}</p>
-              <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] mt-3 italic">Membro Magic</p>
             </div>
           </button>
         </div>
 
-        <div className="px-6 py-4">
+        <div className="px-6 py-4 space-y-4 flex-1 overflow-y-auto scrollbar-hide">
+          {/* Sinais Vitais */}
           <div className="bg-white/[0.03] backdrop-blur-3xl p-6 rounded-[40px] border border-white/5 space-y-6 shadow-inner">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20">Sinais Vitais</h3>
               <span className="material-symbols-rounded text-primary/40 text-sm">bolt</span>
             </div>
-            <StatusItem label="Saúde" value={100} icon="favorite" color="bg-rose-500" />
+            <StatusItem label="Saúde" value={user.hp || 100} icon="favorite" color="bg-rose-500" />
             <StatusItem label="Fome" value={76} icon="restaurant" color="bg-orange-500" />
             <StatusItem label="Sede" value={54} icon="water_drop" color="bg-cyan-500" />
-            <StatusItem label="Alcoolismo" value={12} icon="wine_bar" color="bg-indigo-500" />
-          </div>
-        </div>
-
-        <div className="flex-1 px-4 py-8 space-y-2 overflow-y-auto scrollbar-hide">
-          <div className="px-4 mb-4">
-            <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-white/10">Menu Principal</h3>
           </div>
 
-          {[
-            { icon: 'forum', label: 'Meus Chats', count: '3' },
-            { icon: 'inventory_2', label: 'Inventário', count: '24' },
-            { icon: 'military_tech', label: 'Conquistas', count: null },
-            { icon: 'settings', label: 'Configurações', count: null }
-          ].map((item, idx) => (
-            <button key={idx} className="w-full flex items-center justify-between p-4 rounded-[24px] hover:bg-white/5 group transition-all">
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 rounded-2xl bg-white/[0.03] flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all text-white/40 border border-white/5 group-hover:border-primary/50 group-hover:shadow-[0_0_15px_rgba(139,92,246,0.3)]">
-                  <span className="material-symbols-rounded text-xl">{item.icon}</span>
+          {/* Diagnóstico Ativo */}
+          {activeDisease && (
+            <div className="bg-rose-500/10 backdrop-blur-3xl p-6 rounded-[40px] border border-rose-500/20 space-y-4 animate-in zoom-in">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <span className="material-symbols-rounded text-rose-500">warning</span>
+                  <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-rose-500">Infectado</h3>
                 </div>
-                <span className="text-xs font-black uppercase tracking-widest text-white/40 group-hover:text-white transition-colors">{item.label}</span>
               </div>
-              {item.count && (
-                <span className="bg-primary/10 text-primary text-[10px] font-black px-2 py-0.5 rounded-lg border border-primary/20">{item.count}</span>
-              )}
-            </button>
-          ))}
+              <div>
+                <p className="text-xs font-black text-white uppercase tracking-tight mb-3">{activeDisease.name}</p>
+                <div className="space-y-2">
+                  <p className="text-[8px] font-black text-rose-500/50 uppercase tracking-widest">Sintomas detectados:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {/* Sintomas fixos baseados na constante ou mockados para visualização */}
+                    <span className="px-3 py-1 bg-rose-500/10 border border-rose-500/10 rounded-full text-[8px] font-black text-rose-500 uppercase">HP {activeDisease.hpImpact}</span>
+                    <span className="px-3 py-1 bg-rose-500/10 border border-rose-500/10 rounded-full text-[8px] font-black text-rose-500 uppercase">Debilitado</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2 pt-4">
+            <div className="px-4 mb-4">
+              <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-white/10">Menu Principal</h3>
+            </div>
+
+            {[
+              { icon: 'forum', label: 'Meus Chats', count: '3' },
+              { icon: 'inventory_2', label: 'Inventário', count: '24' },
+              { icon: 'military_tech', label: 'Conquistas', count: null },
+            ].map((item, idx) => (
+              <button key={idx} className="w-full flex items-center justify-between p-4 rounded-[24px] hover:bg-white/5 group transition-all">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 rounded-2xl bg-white/[0.03] flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all text-white/40 border border-white/5">
+                    <span className="material-symbols-rounded text-xl">{item.icon}</span>
+                  </div>
+                  <span className="text-xs font-black uppercase tracking-widest text-white/40 group-hover:text-white transition-colors">{item.label}</span>
+                </div>
+                {item.count && (
+                  <span className="bg-primary/10 text-primary text-[10px] font-black px-2 py-0.5 rounded-lg border border-primary/20">{item.count}</span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="p-8 pb-12 border-t border-white/5">
