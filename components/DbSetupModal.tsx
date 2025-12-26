@@ -29,7 +29,7 @@ create table if not exists public.posts (
   created_at timestamptz default now()
 );
 
--- 2. SISTEMA DE EMPREGOS
+-- 2. SISTEMA DE EMPREGOS E ACESSOS
 create table if not exists public.job_applications (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
@@ -51,11 +51,23 @@ create table if not exists public.establishment_workers (
   unique(user_id, location)
 );
 
+-- NOVO: Autorizações Temporárias de Sala
+create table if not exists public.room_authorizations (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  location text not null,
+  room_name text not null,
+  granted_by uuid references public.profiles(id) on delete cascade not null,
+  created_at timestamptz default now(),
+  unique(user_id, location, room_name)
+);
+
 -- 3. SEGURANÇA (RLS)
 alter table public.profiles enable row level security;
 alter table public.posts enable row level security;
 alter table public.job_applications enable row level security;
 alter table public.establishment_workers enable row level security;
+alter table public.room_authorizations enable row level security;
 
 create policy "Public Select" on public.profiles for select using (true);
 create policy "Own Update" on public.profiles for update using (auth.uid() = id);
@@ -64,10 +76,14 @@ create policy "Own Insert Posts" on public.posts for insert with check (auth.uid
 
 create policy "Public Select Jobs" on public.job_applications for select using (true);
 create policy "Own Insert Jobs" on public.job_applications for insert with check (auth.uid() = user_id);
-create policy "Manager Update Jobs" on public.job_applications for update using (true); -- Simplificado para o roleplay
+create policy "Manager Update Jobs" on public.job_applications for update using (true); 
 
 create policy "Public Select Workers" on public.establishment_workers for select using (true);
 create policy "Manager Insert Workers" on public.establishment_workers for insert with check (true);
+
+create policy "Public Select Auth" on public.room_authorizations for select using (true);
+create policy "Worker Insert Auth" on public.room_authorizations for insert with check (true);
+create policy "Worker Delete Auth" on public.room_authorizations for delete using (true);
 
 -- 4. STORAGE
 insert into storage.buckets (id, name, public) values ('avatars', 'avatars', true) on conflict (id) do nothing;
@@ -108,19 +124,14 @@ create trigger on_auth_user_created after insert on auth.users for each row exec
           </div>
           <div>
             <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">Configuração</h2>
-            <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-1">Siga os passos abaixo</p>
+            <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-1">Execute o SQL atualizado</p>
           </div>
         </div>
 
         <div className="space-y-4 mb-8 overflow-y-auto pr-2 scrollbar-hide">
           <div className="bg-primary/10 p-5 rounded-3xl border border-primary/20">
-            <h4 className="text-white text-xs font-black uppercase mb-1">Passo 1: SQL Editor</h4>
-            <p className="text-[11px] text-white/50">Copie o script e execute no SQL Editor do seu Supabase.</p>
-          </div>
-          
-          <div className="bg-amber-500/10 p-5 rounded-3xl border border-amber-500/30">
-            <h4 className="text-amber-500 text-xs font-black uppercase mb-1">Passo 2: Roleplay Ativado!</h4>
-            <p className="text-[11px] text-white/70">O sistema de empregos agora requer as tabelas criadas acima para persistência.</p>
+            <h4 className="text-white text-xs font-black uppercase mb-1">Novo: Room Authorizations</h4>
+            <p className="text-[11px] text-white/50">O script agora inclui a tabela necessária para médicos liberarem salas para pacientes.</p>
           </div>
         </div>
 

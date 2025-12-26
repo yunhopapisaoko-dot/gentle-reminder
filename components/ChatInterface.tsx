@@ -64,6 +64,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [roomMessages, setRoomMessages] = useState<Record<string, ChatMessage[]>>({});
   const [currentSubLoc, setCurrentSubLoc] = useState<SubLocation | null>(null);
   const [workerRole, setWorkerRole] = useState<string | null>(null);
+  const [authorizedRooms, setAuthorizedRooms] = useState<string[]>([]);
   
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -74,7 +75,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [showJobModal, setShowJobModal] = useState(false);
   const [showManagerDash, setShowManagerDash] = useState(false);
   const [showWorkerPanel, setShowWorkerPanel] = useState(false);
+  const [showGrantAccess, setShowGrantAccess] = useState(false);
   
+  // Lista de usuários para autorização (Mock para representar usuários no chat)
+  const [onlineMembers, setOnlineMembers] = useState<User[]>([]);
+
   // Sugestões de comandos
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -87,7 +92,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   
   const icon = ICONS[contextKey] || ICONS.default;
   const hasMenu = MENUS[contextKey] !== undefined;
-  const internalLocs = SUB_LOCATIONS[contextKey] || [];
+  
+  // Filtrar locais internos baseado em acesso
+  const internalLocs = (SUB_LOCATIONS[contextKey] || []).filter(loc => {
+    if (!loc.restricted) return true;
+    if (workerRole) return true; // Funcionários entram em tudo do seu local
+    if (authorizedRooms.includes(loc.name)) return true; // Autorizados entram na sala específica
+    return false;
+  });
 
   const handleClose = () => {
     setIsClosing(true);
@@ -109,6 +121,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     
     if (locationContext) {
       supabaseService.checkWorkerStatus(currentUser.id, locationContext).then(setWorkerRole);
+      supabaseService.checkRoomAccess(currentUser.id, locationContext).then(setAuthorizedRooms);
+      supabaseService.getAllProfiles().then(setOnlineMembers);
     }
   }, [locationContext, currentUser.id]);
 
@@ -121,7 +135,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [messages, roomMessages, currentSubLoc, isLoading]);
 
-  // Monitorar input para comandos
   useEffect(() => {
     if (input === '/' || input === '*') {
       setShowSuggestions(true);
@@ -138,7 +151,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const textToSend = (customMsg || input).trim();
     if (!textToSend || isLoading) return;
 
-    // Verificar se é um comando manual de navegação
     if (textToSend.startsWith('/') || textToSend.startsWith('*')) {
       const target = textToSend.slice(1).toLowerCase();
       const loc = LOCATIONS_LIST.find(l => l.id === target || l.name.toLowerCase() === target);
@@ -183,6 +195,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       } finally {
         setIsLoading(false);
       }
+    }
+  };
+
+  const handleGrantAccess = async (targetUser: User, roomName: string) => {
+    try {
+      if (!locationContext) return;
+      await supabaseService.grantRoomAccess(targetUser.id, locationContext, roomName, currentUser.id);
+      alert(`Acesso à ${roomName} liberado para ${targetUser.name}! ✨`);
+      setShowGrantAccess(false);
+      setShowSuggestions(false);
+      setInput('');
+    } catch (error: any) {
+      alert("Erro ao liberar sala: " + error.message);
     }
   };
 
@@ -271,27 +296,62 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
 
       <div className="px-6 pb-12 pt-4 relative z-10">
-        {/* Comando Suggestions */}
         {showSuggestions && (
-          <div className="absolute bottom-[calc(100%+12px)] left-6 right-6 bg-background-dark/95 backdrop-blur-3xl rounded-[32px] border border-white/10 p-4 shadow-[0_-20px_60px_rgba(0,0,0,0.5)] animate-in slide-in-bottom duration-300">
-             <div className="flex items-center space-x-3 mb-4 px-2">
-                <span className="material-symbols-rounded text-primary text-xl">rocket_launch</span>
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40">Viagem Rápida</span>
-             </div>
-             <div className="grid grid-cols-2 gap-3">
-                {LOCATIONS_LIST.map(loc => (
+          <div className="absolute bottom-[calc(100%+12px)] left-6 right-6 bg-background-dark/95 backdrop-blur-3xl rounded-[32px] border border-white/10 p-5 shadow-[0_-20px_60px_rgba(0,0,0,0.5)] animate-in slide-in-bottom duration-300">
+             <div className="flex items-center justify-between mb-4 px-2">
+                <div className="flex items-center space-x-3">
+                  <span className="material-symbols-rounded text-primary text-xl">rocket_launch</span>
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40">Menu de Roleplay</span>
+                </div>
+                {workerRole && (
                   <button 
-                    key={loc.id}
-                    onClick={() => handleSuggestionClick(loc.id)}
-                    className="flex items-center space-x-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-primary/10 hover:border-primary/20 transition-all active:scale-95 group"
+                    onClick={() => setShowGrantAccess(true)}
+                    className="flex items-center space-x-2 bg-primary/20 text-primary px-4 py-1.5 rounded-full border border-primary/30"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40 group-hover:bg-primary group-hover:text-white transition-all">
-                       <span className="material-symbols-rounded">{loc.icon}</span>
-                    </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-white">{loc.name}</span>
+                    <span className="material-symbols-rounded text-sm">key</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest">Liberar Sala</span>
                   </button>
-                ))}
+                )}
              </div>
+             
+             {!showGrantAccess ? (
+               <div className="grid grid-cols-2 gap-3">
+                  {LOCATIONS_LIST.map(loc => (
+                    <button 
+                      key={loc.id}
+                      onClick={() => handleSuggestionClick(loc.id)}
+                      className="flex items-center space-x-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-primary/10 hover:border-primary/20 transition-all active:scale-95 group"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40 group-hover:bg-primary group-hover:text-white transition-all">
+                         <span className="material-symbols-rounded">{loc.icon}</span>
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-white">{loc.name}</span>
+                    </button>
+                  ))}
+               </div>
+             ) : (
+               <div className="space-y-4 animate-in zoom-in">
+                  <div className="px-2 mb-2">
+                    <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Selecione o Usuário no Chat</p>
+                  </div>
+                  <div className="flex space-x-3 overflow-x-auto scrollbar-hide pb-2">
+                    {onlineMembers.filter(m => m.id !== currentUser.id).map(member => (
+                      <button 
+                        key={member.id} 
+                        onClick={() => {
+                          const room = prompt(`Qual sala deseja liberar para ${member.name}?\n(${SUB_LOCATIONS[contextKey]?.filter(l => l.restricted).map(l => l.name).join(', ')})`);
+                          if (room) handleGrantAccess(member, room);
+                        }}
+                        className="flex flex-col items-center space-y-2 group flex-shrink-0"
+                      >
+                        <img src={member.avatar} className="w-12 h-12 rounded-2xl border border-white/10 group-hover:border-primary" />
+                        <span className="text-[7px] font-black text-white/40 uppercase truncate w-12">{member.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => setShowGrantAccess(false)} className="w-full py-3 rounded-xl bg-white/5 text-white/20 text-[8px] font-black uppercase tracking-widest">Voltar</button>
+               </div>
+             )}
           </div>
         )}
 
@@ -315,11 +375,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               </div>
               <div className="grid grid-cols-2 gap-5 max-h-[40vh] overflow-y-auto scrollbar-hide pb-8">
                 {internalLocs.map((loc, idx) => (
-                  <button key={idx} onClick={() => handleSelectSubLoc(loc)} className="relative flex flex-col items-center justify-center p-8 rounded-[40px] bg-white/[0.03] border border-white/5 hover:bg-white/10 active:scale-95 transition-all shadow-2xl group overflow-hidden">
+                  <button key={idx} onClick={() => setCurrentSubLoc(loc)} className="relative flex flex-col items-center justify-center p-8 rounded-[40px] bg-white/[0.03] border border-white/5 hover:bg-white/10 active:scale-95 transition-all shadow-2xl group overflow-hidden">
                     <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center text-white mb-5 border border-white/10 group-hover:bg-primary group-hover:border-primary transition-all duration-500"><span className="material-symbols-rounded text-3xl">{loc.icon}</span></div>
                     <span className="text-[11px] font-black text-white uppercase tracking-[0.25em] text-center">{loc.name}</span>
+                    {loc.restricted && (
+                      <div className="absolute top-4 right-4"><span className="material-symbols-rounded text-primary text-xs">lock</span></div>
+                    )}
                   </button>
                 ))}
+                {internalLocs.length === 0 && (
+                   <div className="col-span-2 py-10 text-center opacity-20 italic text-xs">Nenhum local acessível ou autorizado.</div>
+                )}
               </div>
             </div>
             <button onClick={() => setShowActionModal(false)} className="w-full bg-white text-black py-7 rounded-[36px] text-[11px] font-black uppercase tracking-[0.5em] shadow-3xl active:scale-[0.97] transition-all">Voltar</button>
@@ -330,8 +396,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {showJobModal && locationContext && <JobApplicationModal location={locationContext} userId={currentUser.id} onClose={() => setShowJobModal(false)} onSuccess={() => setShowManagerDash(true)} />}
       {showManagerDash && locationContext && <ManagerDashboard location={locationContext} onClose={() => setShowManagerDash(false)} />}
       {showWorkerPanel && locationContext && workerRole && <WorkerView location={locationContext} role={workerRole} onClose={() => setShowWorkerPanel(false)} />}
-      {showMenu && hasMenu && !currentSubLoc && <MenuView locationName={locationContext || ''} items={MENUS[contextKey]} onClose={() => setShowMenu(false)} onOrderConfirmed={handleOrderConfirmed} />}
-      {showConsultations && isHospital && <HospitalConsultations onClose={() => setShowConsultations(false)} onTreat={handleTreat} />}
+      {showMenu && hasMenu && !currentSubLoc && <MenuView locationName={locationContext || ''} items={MENUS[contextKey]} onClose={() => setShowMenu(false)} onOrderConfirmed={() => {}} />}
+      {showConsultations && isHospital && <HospitalConsultations onClose={() => setShowConsultations(false)} onTreat={() => {}} />}
     </div>
   );
 };

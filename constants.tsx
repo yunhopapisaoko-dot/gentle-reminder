@@ -35,6 +35,7 @@ export interface SubLocation {
   name: string;
   icon: string;
   wallpaper: string;
+  restricted?: boolean; // Se verdadeiro, apenas funcionários ou autorizados entram
 }
 
 export const SUB_LOCATIONS: Record<string, SubLocation[]> = {
@@ -42,23 +43,23 @@ export const SUB_LOCATIONS: Record<string, SubLocation[]> = {
     { name: 'Reserva VIP', icon: 'stars', wallpaper: 'https://images.unsplash.com/photo-1544124499-58912cbddaad?q=80&w=1000' },
     { name: 'Banheiro Masc.', icon: 'man', wallpaper: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=1000' },
     { name: 'Banheiro Fem.', icon: 'woman', wallpaper: 'https://images.unsplash.com/photo-1600566752355-35792bedbb5d?q=80&w=1000' },
-    { name: 'Cozinha', icon: 'cooking', wallpaper: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=1000' },
+    { name: 'Cozinha', icon: 'cooking', wallpaper: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=1000', restricted: true },
   ],
   padaria: [
     { name: 'Reserva VIP', icon: 'stars', wallpaper: 'https://images.unsplash.com/photo-1544124499-58912cbddaad?q=80&w=1000' },
     { name: 'Banheiro Masc.', icon: 'man', wallpaper: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=1000' },
     { name: 'Banheiro Fem.', icon: 'woman', wallpaper: 'https://images.unsplash.com/photo-1600566752355-35792bedbb5d?q=80&w=1000' },
-    { name: 'Cozinha', icon: 'cooking', wallpaper: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=1000' },
+    { name: 'Cozinha', icon: 'cooking', wallpaper: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=1000', restricted: true },
   ],
   hospital: [
-    { name: 'Sala de Cirurgia', icon: 'emergency', wallpaper: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?q=80&w=1000' },
-    { name: 'Sala 1', icon: 'door_front', wallpaper: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=1000' },
-    { name: 'Sala 2', icon: 'door_front', wallpaper: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=1000' },
-    { name: 'Sala 3', icon: 'door_front', wallpaper: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=1000' },
+    { name: 'Sala de Cirurgia', icon: 'emergency', wallpaper: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?q=80&w=1000', restricted: true },
+    { name: 'Sala 1', icon: 'door_front', wallpaper: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=1000', restricted: true },
+    { name: 'Sala 2', icon: 'door_front', wallpaper: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=1000', restricted: true },
+    { name: 'Sala 3', icon: 'door_front', wallpaper: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=1000', restricted: true },
   ],
   creche: [
-    { name: 'Sala de Aula', icon: 'school', wallpaper: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1000' },
-    { name: 'Parquinho', icon: 'toys', wallpaper: 'https://images.unsplash.com/photo-1596464716127-f2a82984de30?q=80&w=1000' },
+    { name: 'Sala de Aula', icon: 'school', wallpaper: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1000', restricted: true },
+    { name: 'Parquinho', icon: 'toys', wallpaper: 'https://images.unsplash.com/photo-1596464716127-f2a82984de30?q=80&w=1000', restricted: true },
   ]
 };
 
@@ -88,11 +89,6 @@ export const MENUS: Record<string, MenuItem[]> = {
   ]
 };
 
-const DUMMY_COMMENTS: Comment[] = [
-  { id: 'c1', author: { id: 'a2', name: 'Luka', username: 'luka', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBAT-yD4LQt4K_tAJAxA8XfjHH8iBAtKw_qsbYG-FjHgddsLmWbykfqY0nlR3XehkmFd9Z5U-auSvRFU5hdA-uAoYv8oX_LV8Xex8gIEUxzHalaw25f7JT1w9I5g2NCUTbgUmfspS6Q0xDbxkUGYyA2F0R425mJPhNilTCzyqKZGtjBAXmB23SR1TELAfpWeufNWTqadJzQAo1y0mGMfrFI5fFiBCifFY9za2uMnvbcFZyE_faxF6SD8FKo7l8v4gooHScFtzFdqQ' }, text: 'Isso ficou incrível! Amei as cores! 😍', timestamp: '1h' },
-  { id: 'c2', author: { id: 'a3', name: 'Rin', username: 'rin_orange', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAlEmqUd-QHgDfPqRPmJaBsepG8pVM4PCo5KhCETfwVvPXDr0FZ4_4XPZGCTlovWD2an8JLW0HraNOlx2dV8K8uiG2bsbVeQ_2vGjpSCIWd8uHMYvKBXDsQnp2d9KyhCWvZpfc-TXKRECHclYkG20b5AokRB6VxY5EmE7B5LZ5DcJ582ZnfLTDRvXYKgOEp1DF9r_NuHANQNZ57hC1CdRTMCYLVvaKbEmKz5c0lTXxlR5XFkiad7Ja2xMFMdiPFth52aXmS7voJNg' }, text: 'O próximo tem que ser laranja, hein? 😉', timestamp: '30min' }
-];
-
 export const ARTISTS: User[] = [
   { 
     id: 'a1', 
@@ -109,66 +105,6 @@ export const ARTISTS: User[] = [
     avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBAT-yD4LQt4K_tAJAxA8XfjHH8iBAtKw_qsbYG-FjHgddsLmWbykfqY0nlR3XehkmFd9Z5U-auSvRFU5hdA-uAoYv8oX_LV8Xex8gIEUxzHalaw25f7JT1w9I5g2NCUTbgUmfspS6Q0xDbxkUGYyA2F0R425mJPhNilTCzyqKZGtjBAXmB23SR1TELAfpWeufNWTqadJzQAo1y0mGMfrFI5fFiBCifFY9za2uMnvbcFZyE_faxF6SD8FKo7l8v4gooHScFtzFdqQ',
     bio: 'Pink hair, don\'t care. Tuning the best Megurine Luka tracks.',
     banner: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1000'
-  }
-];
-
-export const FEATURE_POST: Post = {
-  id: 'p1',
-  title: 'Happy Miku day!!',
-  excerpt: 'Hihi! My name is Tadachi and this is my first entry for the Miku birthday event! Estive trabalhando nisso por semanas.',
-  imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD_gRiZR8ymE4KwE7OyOOcHnflDTV84gYgOiFWc-zQ29bamm6iMr3Y74Rp9NVNkC7xQfTcvtWkZ0ceMVl0uHBB16cpORVvgPfqMT8jEg_eZQ8XvwhlHchBTTqGBL6jNUvhbOBXt3CnbDhTf8NPXOkXCLhD0ezjCb8RHB2Z6IOXAOP3W8XJiZDaZ7Si0T9W9UrN4_IzQFexaZzz8rX5jSdTyoaqX689MBW01N2fhvkWZb576HylDLTrk9KLQxvVYItr0A3gPRRMsVw',
-  author: CURRENT_USER,
-  timestamp: '3 mins ago',
-  likes: '22.2k',
-  comments: DUMMY_COMMENTS
-};
-
-export const GRID_POSTS: Post[] = [
-  {
-    id: 'p_text_1',
-    title: 'Bom dia pessoal!',
-    excerpt: 'Acabei de chegar no restaurante neon e a música está incrível hoje. Alguém por aqui querendo fazer um RP de cafeteria? ^_^',
-    author: CURRENT_USER,
-    timestamp: '10 mins ago',
-    likes: '12',
-    comments: []
-  },
-  {
-    id: 'p2',
-    title: 'Strawberry Dreams',
-    excerpt: 'Uma exploração de tons pastéis e doces.',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBAT-yD4LQt4K_tAJAxA8XfjHH8iBAtKw_qsbYG-FjHgddsLmWbykfqY0nlR3XehkmFd9Z5U-auSvRFU5hdA-uAoYv8oX_LV8Xex8gIEUxzHalaw25f7JT1w9I5g2NCUTbgUmfspS6Q0xDbxkUGYyA2F0R425mJPhNilTCzyqKZGtjBAXmB23SR1TELAfpWeufNWTqadJzQAo1y0mGMfrFI5fFiBCifFY9za2uMnvbcFZyE_faxF6SD8FKo7l8v4gooHScFtzFdqQ',
-    author: CURRENT_USER,
-    timestamp: '1h ago',
-    likes: '1.2k',
-    comments: []
-  },
-  {
-    id: 'p_text_2',
-    title: 'Pensamentos sobre Vocaloid',
-    excerpt: 'Sabe, às vezes eu paro para pensar como a tecnologia mudou a forma como consumimos música. Vocaloid não é apenas um software, é um movimento cultural global. Qual a sua opinião sobre isso? #Miku #Vocaloid',
-    author: CURRENT_USER,
-    timestamp: '2h ago',
-    likes: '450',
-    comments: DUMMY_COMMENTS
-  },
-  {
-    id: 'p3',
-    title: 'Cherry Blossom Tea',
-    excerpt: 'Chá e flores de cerejeira.',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAlEmqUd-QHgDfPqRPmJaBsepG8pVM4PCo5KhCETfwVvPXDr0FZ4_4XPZGCTlovWD2an8JLW0HraNOlx2dV8K8uiG2bsbVeQ_2vGjpSCIWd8uHMYvKBXDsQnp2d9KyhCWvZpfc-TXKRECHclYkG20b5AokRB6VxY5EmE7B5LZ5DcJ582ZnfLTDRvXYKgOEp1DF9r_NuHANQNZ57hC1CdRTMCYLVvaKbEmKz5c0lTXxlR5XFkiad7Ja2xMFMdiPFth52aXmS7voJNg',
-    author: CURRENT_USER,
-    timestamp: '3h ago',
-    likes: '3.4k'
-  },
-  {
-    id: 'p4',
-    title: 'Neon Night',
-    excerpt: 'Noites futuristas.',
-    imageUrl: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400',
-    author: CURRENT_USER,
-    timestamp: '5h ago',
-    likes: '800'
   }
 ];
 

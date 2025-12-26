@@ -63,14 +63,12 @@ export const supabaseService = {
   },
 
   async approveApplication(applicationId: string, userId: string, location: string, role: string) {
-    // 1. Atualiza status da aplicação
     const { error: appError } = await supabase
       .from('job_applications')
       .update({ status: 'approved' })
       .eq('id', applicationId);
     if (appError) throw appError;
 
-    // 2. Adiciona como trabalhador
     const { error: workerError } = await supabase
       .from('establishment_workers')
       .insert([{ user_id: userId, location, role }]);
@@ -94,6 +92,29 @@ export const supabaseService = {
       .single();
     if (error || !data) return null;
     return data.role;
+  },
+
+  // NOVO: Controle de Acesso de Salas
+  async grantRoomAccess(userId: string, location: string, roomName: string, grantedBy: string) {
+    const { error } = await supabase
+      .from('room_authorizations')
+      .upsert([{ 
+        user_id: userId, 
+        location, 
+        room_name: roomName, 
+        granted_by: grantedBy 
+      }], { onConflict: 'user_id,location,room_name' });
+    if (error) throw error;
+  },
+
+  async checkRoomAccess(userId: string, location: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from('room_authorizations')
+      .select('room_name')
+      .eq('user_id', userId)
+      .eq('location', location);
+    if (error) return [];
+    return data.map(d => d.room_name);
   },
 
   async updateProfile(userId: string, updates: any): Promise<void> {
