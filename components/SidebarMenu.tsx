@@ -111,12 +111,14 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose,
                   <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-rose-500">Infectado</h3>
                 </div>
               </div>
-              <div>
-                <p className="text-xs font-black text-white uppercase tracking-tight mb-3">{activeDisease.name}</p>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-black text-white uppercase tracking-tight mb-1">{activeDisease.name}</p>
+                  <p className="text-[10px] text-white/50 leading-relaxed italic font-medium">"{activeDisease.description}"</p>
+                </div>
                 <div className="space-y-2">
                   <p className="text-[8px] font-black text-rose-500/50 uppercase tracking-widest">Sintomas detectados:</p>
                   <div className="flex flex-wrap gap-2">
-                    {/* Sintomas fixos baseados na constante ou mockados para visualização */}
                     <span className="px-3 py-1 bg-rose-500/10 border border-rose-500/10 rounded-full text-[8px] font-black text-rose-500 uppercase">HP {activeDisease.hpImpact}</span>
                     <span className="px-3 py-1 bg-rose-500/10 border border-rose-500/10 rounded-full text-[8px] font-black text-rose-500 uppercase">Debilitado</span>
                   </div>

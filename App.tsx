@@ -199,7 +199,11 @@ const App: React.FC = () => {
           </div>
         );
       case TabType.Locais:
-        return <LocaisGrid onSelect={setSelectedLocalChat} />;
+        return (
+          <div className="h-full">
+            <LocaisGrid onSelect={setSelectedLocalChat} />
+          </div>
+        );
       case TabType.Chat:
         return <ChatInterface onUpdateHp={handleUpdateHp} onClearDisease={handleClearDisease} currentUser={currentUser} onMemberClick={setSelectedUser} onClose={() => setActiveTab(TabType.Destaque)} />;
       default:
@@ -215,10 +219,12 @@ const App: React.FC = () => {
 
   return (
     <div className="flex justify-center min-h-screen bg-[#020105]">
-      <div className="w-full max-w-md bg-background-dark min-h-screen relative flex flex-col border-x border-white/5">
+      <div className="w-full max-w-md bg-background-dark min-h-screen relative flex flex-col border-x border-white/5 overflow-hidden">
         <Header activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} onProfileClick={() => setSelectedUser(currentUser)} onMenuClick={() => setIsSidebarOpen(true)} />
         <PinnedBar />
-        <div className="flex-1 overflow-y-auto scrollbar-hide">{renderMainContent()}</div>
+        <div className="flex-1 overflow-y-auto scrollbar-hide relative">
+          {renderMainContent()}
+        </div>
         <SidebarMenu isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} user={currentUser} onOpenProfile={() => setSelectedUser(currentUser)} onLogout={handleLogout} />
         {isCreateModalOpen && <CreateContentModal onClose={() => setIsCreateModalOpen(false)} onSuccess={refreshPosts} userId={currentUser.id} />}
         {showDbSetup && <DbSetupModal onClose={() => setShowDbSetup(false)} />}
