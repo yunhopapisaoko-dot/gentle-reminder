@@ -12,9 +12,9 @@ interface ProfileViewProps {
 }
 
 const RACE_THEMES: Record<string, string> = {
-  'Draeven': 'from-rose-600 to-rose-400 border-rose-300 shadow-rose-500/30',
-  'Sylven': 'from-emerald-600 to-emerald-400 border-emerald-300 shadow-emerald-500/30',
-  'Lunari': 'from-cyan-600 to-cyan-400 border-cyan-300 shadow-cyan-500/30',
+  'Draeven': 'from-rose-500/20 to-rose-600/10 border-rose-500/30 text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.15)]',
+  'Sylven': 'from-emerald-500/20 to-emerald-600/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.15)]',
+  'Lunari': 'from-cyan-500/20 to-cyan-600/10 border-cyan-500/30 text-cyan-300 shadow-[0_0_20px_rgba(34,211,238,0.15)]',
 };
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, allPosts = [], onClose, onUpdate }) => {
@@ -92,8 +92,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, a
                   </div>
                 )}
                 {user.race && (
-                  <div className={`px-4 py-1 rounded-full bg-gradient-to-r ${RACE_THEMES[user.race] || 'from-white/10 to-white/5 border-white/10'} border shadow-lg`}>
-                    <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">{user.race}</span>
+                  <div className={`px-5 py-1.5 rounded-full bg-gradient-to-br ${RACE_THEMES[user.race] || 'from-white/10 to-white/5 border-white/10 text-white'} border backdrop-blur-md`}>
+                    <span className="text-[10px] font-black uppercase tracking-[0.25em]">{user.race}</span>
                   </div>
                 )}
               </div>

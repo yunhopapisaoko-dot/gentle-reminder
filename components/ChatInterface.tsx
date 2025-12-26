@@ -12,9 +12,9 @@ interface ChatInterfaceProps {
 }
 
 const RACE_THEMES: Record<string, string> = {
-  'Draeven': 'text-rose-500 bg-rose-500/10 border-rose-500/20',
-  'Sylven': 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
-  'Lunari': 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20',
+  'Draeven': 'text-rose-400 bg-rose-500/10 border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.2)]',
+  'Sylven': 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]',
+  'Lunari': 'text-cyan-300 bg-cyan-400/10 border-cyan-400/30 shadow-[0_0_10px_rgba(34,211,238,0.2)]',
 };
 
 const WALLPAPERS: Record<string, string> = {
@@ -225,13 +225,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
             </button>
             <div className={`flex flex-col space-y-1.5 max-w-[82%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
               {msg.author && (
-                <div className="flex items-center space-x-2 px-2">
-                  <span className="text-[11px] font-black text-white italic">@{msg.author.username}</span>
+                <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} px-2 space-y-0.5`}>
                   {msg.author.race && (
-                    <span className={`text-[8px] font-black px-2 py-0.5 rounded-md border uppercase tracking-widest ${RACE_THEMES[msg.author.race] || 'text-white/40 bg-white/5 border-white/10'}`}>
+                    <span className={`text-[7px] font-black px-2 py-0.5 rounded-full border uppercase tracking-[0.2em] ${RACE_THEMES[msg.author.race] || 'text-white/40 bg-white/5 border-white/10'}`}>
                       {msg.author.race}
                     </span>
                   )}
+                  <span className="text-[11px] font-black text-white italic opacity-90">@{msg.author.username}</span>
                 </div>
               )}
               <div className={`px-6 py-4 rounded-[32px] shadow-2xl text-[14px] font-bold leading-relaxed animate-in zoom-in duration-500 backdrop-blur-3xl border border-white/10 ${
