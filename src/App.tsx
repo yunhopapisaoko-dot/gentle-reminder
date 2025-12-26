@@ -10,10 +10,15 @@ import { LocaisGrid } from './components/LocaisGrid';
 import { ProfileView } from './components/ProfileView';
 import { SidebarMenu } from './components/SidebarMenu';
 import { CreateContentModal } from './components/CreateContentModal';
+import { CreateCharacterModal } from './components/CreateCharacterModal';
+import { CharactersGrid } from './components/CharactersGrid';
 import { AuthView } from './components/AuthView';
 import { DbSetupModal } from './components/DbSetupModal';
 import { FloatingActionDock } from './components/FloatingActionDock';
-import { TabType, User, Post } from './types';
+import { AllChatsView } from './components/AllChatsView';
+import { RouletteView } from './components/RouletteView';
+import { InventoryView } from './components/InventoryView';
+import { TabType, User, Post, MenuItem, Character } from './types';
 import { CURRENT_USER } from './constants';
 import { supabase } from './supabase';
 import { supabaseService } from './services/supabaseService';
@@ -22,6 +27,7 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [currentUser, setCurrentUser] = useState<User>(CURRENT_USER);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [characters, setCharacters] = useState<Character[]>([]);
   const [communityMembers, setCommunityMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDbSetup, setShowDbSetup] = useState(false);
@@ -31,14 +37,27 @@ const App: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateCharModalOpen, setIsCreateCharModalOpen] = useState(false);
+  
+  const [isAllChatsOpen, setIsAllChatsOpen] = useState(false);
+  const [isRouletteOpen, setIsRouletteOpen] = useState(false);
+  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
+  
+  const [visitedRooms, setVisitedRooms] = useState<string[]>([]);
+  const [confirmedRooms, setConfirmedRooms] = useState<string[]>([]);
 
   useEffect(() => {
+    const savedConfirmed = localStorage.getItem('magic_confirmed_rooms');
+    const savedVisited = localStorage.getItem('magic_visited_rooms');
+    if (savedConfirmed) setConfirmedRooms(JSON.parse(savedConfirmed));
+    if (savedVisited) setVisitedRooms(JSON.parse(savedVisited));
+
     const initAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           setIsAuthenticated(true);
-          fetchInitialData(session.user.id, session.user);
+          fetchInitialData(session.user.id);
         } else {
           setIsAuthenticated(false);
           setLoading(false);
@@ -48,70 +67,89 @@ const App: React.FC = () => {
         setLoading(false);
       }
     };
-
     initAuth();
-
-    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        setIsAuthenticated(true);
-        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-          fetchInitialData(session.user.id, session.user);
-        }
-      } else {
-        setIsAuthenticated(false);
-        setLoading(false);
-        setCurrentUser(CURRENT_USER);
-      }
-    });
-
-    return () => {
-      authSub.unsubscribe();
-    };
   }, []);
 
-  const fetchInitialData = async (userId: string, authUser?: any) => {
+  const fetchInitialData = async (userId: string) => {
     try {
       const profile = await supabaseService.getProfile(userId);
-      if (profile) setCurrentUser(profile);
-      
+      if (profile) {
+        setCurrentUser({
+          ...profile,
+          money: profile.money || 3000,
+          hp: profile.hp || 100,
+          maxHp: profile.maxHp || 100,
+          hunger: profile.hunger || 50,
+          thirst: profile.thirst || 50,
+          alcohol: profile.alcohol || 0
+        });
+      }
       const dbPosts = await supabaseService.getPosts();
       setPosts(dbPosts || []);
-
+      const dbChars = await supabaseService.getCharacters();
+      setCharacters(dbChars || []);
       const members = await supabaseService.getAllProfiles();
       setCommunityMembers(members || []);
-
     } catch (error: any) {
-      console.error("Erro ao carregar dados:", error);
-      if (error?.message?.includes('profiles') || error?.message?.includes('relation')) {
-        setShowDbSetup(true);
-      }
+      if (error?.message?.includes('profiles')) setShowDbSetup(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRoulette = () => {
-    const locations = ['hospital', 'creche', 'restaurante', 'padaria'];
-    const random = locations[Math.floor(Math.random() * locations.length)];
-    setSelectedLocalChat(random);
+  const handleUpdateStatus = (changes: { hp?: number; hunger?: number; thirst?: number; alcohol?: number; money?: number }) => {
+    setCurrentUser(prev => {
+      const maxHp = prev.maxHp || 100;
+      return {
+        ...prev,
+        hp: Math.max(0, Math.min(maxHp, (prev.hp || 100) + (changes.hp || 0))),
+        hunger: Math.max(0, Math.min(100, (prev.hunger || 50) + (changes.hunger || 0))),
+        thirst: Math.max(0, Math.min(100, (prev.thirst || 50) + (changes.thirst || 0))),
+        alcohol: Math.max(0, Math.min(100, (prev.alcohol || 0) + (changes.alcohol || 0))),
+        money: (prev.money || 0) + (changes.money || 0)
+      };
+    });
   };
 
-  const refreshPosts = async () => {
-    const dbPosts = await supabaseService.getPosts();
-    setPosts(dbPosts || []);
+  const handleBuyItems = async (items: MenuItem[]) => {
+    for (const item of items) {
+      await supabaseService.addToInventory(currentUser.id, item);
+    }
   };
 
-  const handleUpdateUser = (updatedUser: User) => {
-    setCurrentUser(updatedUser);
-    if (selectedUser?.id === updatedUser.id) setSelectedUser(updatedUser);
-    setCommunityMembers(prev => prev.map(m => m.id === updatedUser.id ? updatedUser : m));
-    refreshPosts();
+  const handleConsumeItem = (item: any) => {
+    handleUpdateStatus({
+      hp: item.attributes?.hp || 0,
+      hunger: item.attributes?.hunger || 0,
+      thirst: item.attributes?.thirst || 0,
+      alcohol: item.attributes?.alcohol || 0
+    });
+    alert(`Você usou ${item.item_name}! ✨`);
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setIsAuthenticated(false);
-    setCurrentUser(CURRENT_USER);
+  const handleRouletteResult = (id: string, name: string, hpImpact: number) => {
+    handleUpdateStatus({ hp: hpImpact });
+    if (hpImpact < 0) setCurrentUser(prev => ({ ...prev, currentDisease: id }));
+    fetchInitialData(currentUser.id);
+  };
+
+  const handleEnterRoom = (roomId: string) => {
+    setSelectedLocalChat(roomId);
+    const newVisited = visitedRooms.includes(roomId) ? visitedRooms : [roomId, ...visitedRooms];
+    const newConfirmed = confirmedRooms.includes(roomId) ? confirmedRooms : [...confirmedRooms, roomId];
+    setVisitedRooms(newVisited);
+    setConfirmedRooms(newConfirmed);
+    localStorage.setItem('magic_visited_rooms', JSON.stringify(newVisited));
+    localStorage.setItem('magic_confirmed_rooms', JSON.stringify(newConfirmed));
+  };
+
+  const handleLeaveRoom = (roomId: string) => {
+    const newVisited = visitedRooms.filter(id => id !== roomId);
+    const newConfirmed = confirmedRooms.filter(id => id !== roomId);
+    setVisitedRooms(newVisited);
+    setConfirmedRooms(newConfirmed);
+    localStorage.setItem('magic_visited_rooms', JSON.stringify(newVisited));
+    localStorage.setItem('magic_confirmed_rooms', JSON.stringify(newConfirmed));
   };
 
   const renderMainContent = () => {
@@ -142,7 +180,6 @@ const App: React.FC = () => {
               <div className="px-10 py-20 text-center opacity-40">
                 <span className="material-symbols-rounded text-6xl mb-4 text-primary">auto_stories</span>
                 <p className="text-[10px] font-bold text-white uppercase tracking-widest">Nada postado ainda.</p>
-                <button onClick={() => setShowDbSetup(true)} className="mt-4 text-[9px] text-primary underline uppercase tracking-widest">Configurar Banco</button>
               </div>
             )}
           </div>
@@ -160,7 +197,6 @@ const App: React.FC = () => {
                 </div>
               </div>
             ))}
-            {posts.length === 0 && <p className="text-center text-white/20 py-20 italic">O feed está vazio.</p>}
           </div>
         );
       case TabType.Global:
@@ -175,9 +211,20 @@ const App: React.FC = () => {
           </div>
         );
       case TabType.Locais:
-        return <LocaisGrid onSelect={setSelectedLocalChat} />;
+        return <LocaisGrid onSelect={handleEnterRoom} confirmedRooms={confirmedRooms} />;
+      case TabType.Personagens:
+        return <CharactersGrid characters={characters} onCreateClick={() => setIsCreateCharModalOpen(true)} />;
       case TabType.Chat:
-        return <ChatInterface onClose={() => setActiveTab(TabType.Destaque)} />;
+        return (
+          <ChatInterface 
+            onUpdateStatus={handleUpdateStatus} 
+            onConsumeItems={handleBuyItems}
+            currentUser={currentUser} 
+            onMemberClick={setSelectedUser} 
+            onNavigate={handleEnterRoom}
+            onClose={() => setActiveTab(TabType.Destaque)} 
+          />
+        );
       default:
         return null;
     }
@@ -190,37 +237,33 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex justify-center min-h-screen bg-[#020105]">
-      <div className="w-full max-w-md bg-background-dark min-h-screen relative flex flex-col border-x border-white/5">
-        <Header
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          currentUser={currentUser}
-          onProfileClick={() => setSelectedUser(currentUser)}
-          onMenuClick={() => setIsSidebarOpen(true)}
-        />
+    <div className="flex justify-center h-[100dvh] bg-[#020105] overflow-hidden">
+      <div className="w-full max-w-md bg-background-dark h-full relative flex flex-col border-x border-white/5 overflow-hidden">
+        <Header activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} onProfileClick={() => setSelectedUser(currentUser)} onMenuClick={() => setIsSidebarOpen(true)} />
         <PinnedBar />
-        
-        <div className="flex-1 overflow-y-auto scrollbar-hide">
+        <div className="flex-1 overflow-y-auto scrollbar-hide relative">
           {renderMainContent()}
         </div>
 
-        <SidebarMenu isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} user={currentUser} onOpenProfile={() => setSelectedUser(currentUser)} onLogout={handleLogout} />
+        <SidebarMenu 
+          isOpen={isSidebarOpen} 
+          onClose={() => setIsSidebarOpen(false)} 
+          user={currentUser} 
+          onOpenProfile={() => setSelectedUser(currentUser)}
+          onOpenInventory={() => setIsInventoryOpen(true)}
+          onOpenChats={() => setIsAllChatsOpen(true)}
+          onLogout={async () => { await supabase.auth.signOut(); setIsAuthenticated(false); }}
+        />
 
-        {isCreateModalOpen && <CreateContentModal onClose={() => setIsCreateModalOpen(false)} onSuccess={refreshPosts} userId={currentUser.id} />}
+        {isInventoryOpen && <InventoryView userId={currentUser.id} onClose={() => setIsInventoryOpen(false)} onConsume={handleConsumeItem} />}
+        {isCreateModalOpen && <CreateContentModal onClose={() => setIsCreateModalOpen(false)} onSuccess={() => fetchInitialData(currentUser.id)} userId={currentUser.id} />}
+        {isCreateCharModalOpen && <CreateCharacterModal onClose={() => setIsCreateCharModalOpen(false)} onSuccess={() => fetchInitialData(currentUser.id)} userId={currentUser.id} />}
+        {selectedUser && <ProfileView user={selectedUser} currentUserId={currentUser.id} allPosts={posts} onClose={() => setSelectedUser(null)} onUpdate={(u) => { setCurrentUser(u); fetchInitialData(u.id); }} />}
+        {selectedLocalChat && <ChatInterface onUpdateStatus={handleUpdateStatus} onConsumeItems={handleBuyItems} currentUser={currentUser} locationContext={selectedLocalChat} onNavigate={handleEnterRoom} onClose={() => setSelectedLocalChat(null)} />}
+        {isAllChatsOpen && <AllChatsView visitedRooms={visitedRooms} onClose={() => setIsAllChatsOpen(false)} onSelectChat={handleEnterRoom} onLeaveChat={handleLeaveRoom} />}
+        {isRouletteOpen && <RouletteView userId={currentUser.id} lastSpinAt={currentUser.last_spin_at} onClose={() => setIsRouletteOpen(false)} onResult={handleRouletteResult} />}
+        {!selectedLocalChat && !selectedUser && !isCreateModalOpen && !isCreateCharModalOpen && <FloatingActionDock activeTab={activeTab} onCreateClick={() => setIsCreateModalOpen(true)} onAllChatsClick={() => setIsAllChatsOpen(true)} onRouletteClick={() => setIsRouletteOpen(true)} />}
         {showDbSetup && <DbSetupModal onClose={() => setShowDbSetup(false)} />}
-        {selectedUser && <ProfileView user={selectedUser} currentUserId={currentUser.id} allPosts={posts} onClose={() => setSelectedUser(null)} onUpdate={handleUpdateUser} />}
-        {selectedLocalChat && <ChatInterface locationContext={selectedLocalChat} onClose={() => setSelectedLocalChat(null)} />}
-
-        {/* Floating Action Dock Modernizada */}
-        {!selectedLocalChat && !selectedUser && !isCreateModalOpen && (
-          <FloatingActionDock 
-            activeTab={activeTab}
-            onCreateClick={() => setIsCreateModalOpen(true)}
-            onChatClick={() => setActiveTab(TabType.Chat)}
-            onRouletteClick={handleRoulette}
-          />
-        )}
       </div>
     </div>
   );
