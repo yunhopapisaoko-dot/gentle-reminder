@@ -1,3 +1,4 @@
+"use client";
 
 import React, { useState, useMemo } from 'react';
 import { MenuItem, CartItem } from '../types';
@@ -6,6 +7,7 @@ interface MenuViewProps {
   locationName: string;
   items: MenuItem[];
   onClose: () => void;
+  onOrderConfirmed?: (items: MenuItem[]) => void;
 }
 
 interface CategoryTheme {
@@ -47,7 +49,7 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
   }
 };
 
-export const MenuView: React.FC<MenuViewProps> = ({ locationName, items, onClose }) => {
+export const MenuView: React.FC<MenuViewProps> = ({ locationName, items, onClose, onOrderConfirmed }) => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isClosing, setIsClosing] = useState(false);
@@ -86,6 +88,22 @@ export const MenuView: React.FC<MenuViewProps> = ({ locationName, items, onClose
       }
       return prev.filter(i => i.id !== id);
     });
+  };
+
+  const handleFinalize = () => {
+    if (onOrderConfirmed) {
+      // Cria uma lista flat de todos os itens consumidos (considerando quantidade)
+      const flatItems: MenuItem[] = [];
+      cart.forEach(cartItem => {
+        for (let i = 0; i < cartItem.quantity; i++) {
+          flatItems.push(cartItem);
+        }
+      });
+      onOrderConfirmed(flatItems);
+    }
+    setCart([]);
+    setShowCartOverlay(false);
+    handleClose();
   };
 
   return (
@@ -269,11 +287,7 @@ export const MenuView: React.FC<MenuViewProps> = ({ locationName, items, onClose
             </div>
 
             <button 
-              onClick={() => {
-                alert("Pedido confirmado no Roleplay! Bom apetite! ^_^");
-                setCart([]);
-                setShowCartOverlay(false);
-              }}
+              onClick={handleFinalize}
               className="w-full bg-gradient-to-r from-primary to-secondary py-6 rounded-[30px] text-[10px] font-black uppercase tracking-[0.3em] text-white shadow-2xl shadow-primary/30 active:scale-95 transition-all"
             >
               Confirmar Pedido

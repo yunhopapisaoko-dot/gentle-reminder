@@ -5,6 +5,9 @@ export interface MenuItem {
   price: number;
   image: string;
   category: string;
+  hungerRestore?: number;
+  thirstRestore?: number;
+  alcoholLevel?: number;
 }
 
 export interface CartItem extends MenuItem {
@@ -30,6 +33,9 @@ export interface User {
   isLeader?: boolean;
   hp?: number;
   maxHp?: number;
+  hunger?: number;
+  thirst?: number;
+  alcohol?: number;
   currentDisease?: string;
 }
 

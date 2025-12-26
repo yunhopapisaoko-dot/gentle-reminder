@@ -15,7 +15,7 @@ import { DbSetupModal } from './components/DbSetupModal';
 import { FloatingActionDock } from './components/FloatingActionDock';
 import { AllChatsView } from './components/AllChatsView';
 import { RouletteView } from './components/RouletteView';
-import { TabType, User, Post } from './types';
+import { TabType, User, Post, MenuItem } from './types';
 import { CURRENT_USER } from './constants';
 import { supabase } from './supabase';
 import { supabaseService } from './services/supabaseService';
@@ -81,7 +81,10 @@ const App: React.FC = () => {
         setCurrentUser({
           ...profile,
           hp: profile.hp || 100,
-          maxHp: profile.maxHp || 100
+          maxHp: profile.maxHp || 100,
+          hunger: profile.hunger || 50,
+          thirst: profile.thirst || 50,
+          alcohol: profile.alcohol || 0
         });
       }
       
@@ -101,24 +104,38 @@ const App: React.FC = () => {
     }
   };
 
-  const handleUpdateHp = (hpChange: number) => {
+  const handleUpdateStatus = (changes: { hp?: number; hunger?: number; thirst?: number; alcohol?: number }) => {
     setCurrentUser(prev => {
-      const currentHp = prev.hp || 100;
       const maxHp = prev.maxHp || 100;
-      const newHp = Math.max(0, Math.min(maxHp, currentHp + hpChange));
-      return { ...prev, hp: newHp };
+      return {
+        ...prev,
+        hp: Math.max(0, Math.min(maxHp, (prev.hp || 100) + (changes.hp || 0))),
+        hunger: Math.max(0, Math.min(100, (prev.hunger || 50) + (changes.hunger || 0))),
+        thirst: Math.max(0, Math.min(100, (prev.thirst || 50) + (changes.thirst || 0))),
+        alcohol: Math.max(0, Math.min(100, (prev.alcohol || 0) + (changes.alcohol || 0)))
+      };
+    });
+  };
+
+  const handleConsumeItems = (items: MenuItem[]) => {
+    items.forEach(item => {
+      handleUpdateStatus({
+        hunger: item.hungerRestore,
+        thirst: item.thirstRestore,
+        alcohol: item.alcoholLevel
+      });
     });
   };
 
   const handleRouletteResult = (id: string, name: string, hpImpact: number) => {
-    handleUpdateHp(hpImpact);
+    handleUpdateStatus({ hp: hpImpact });
     if (hpImpact < 0) {
       setCurrentUser(prev => ({ ...prev, currentDisease: id }));
     }
   };
 
   const handleClearDisease = (hpRestore: number) => {
-    handleUpdateHp(hpRestore);
+    handleUpdateStatus({ hp: hpRestore });
     setCurrentUser(prev => ({ ...prev, currentDisease: undefined }));
   };
 
@@ -201,7 +218,16 @@ const App: React.FC = () => {
       case TabType.Locais:
         return <LocaisGrid onSelect={setSelectedLocalChat} />;
       case TabType.Chat:
-        return <ChatInterface onUpdateHp={handleUpdateHp} onClearDisease={handleClearDisease} currentUser={currentUser} onMemberClick={setSelectedUser} onClose={() => setActiveTab(TabType.Destaque)} />;
+        return (
+          <ChatInterface 
+            onUpdateStatus={handleUpdateStatus} 
+            onConsumeItems={handleConsumeItems}
+            onClearDisease={handleClearDisease} 
+            currentUser={currentUser} 
+            onMemberClick={setSelectedUser} 
+            onClose={() => setActiveTab(TabType.Destaque)} 
+          />
+        );
       default:
         return null;
     }
@@ -225,7 +251,17 @@ const App: React.FC = () => {
         {isCreateModalOpen && <CreateContentModal onClose={() => setIsCreateModalOpen(false)} onSuccess={refreshPosts} userId={currentUser.id} />}
         {showDbSetup && <DbSetupModal onClose={() => setShowDbSetup(false)} />}
         {selectedUser && <ProfileView user={selectedUser} currentUserId={currentUser.id} allPosts={posts} onClose={() => setSelectedUser(null)} onUpdate={handleUpdateUser} />}
-        {selectedLocalChat && <ChatInterface onUpdateHp={handleUpdateHp} onClearDisease={handleClearDisease} currentUser={currentUser} onMemberClick={setSelectedUser} locationContext={selectedLocalChat} onClose={() => setSelectedLocalChat(null)} />}
+        {selectedLocalChat && (
+          <ChatInterface 
+            onUpdateStatus={handleUpdateStatus} 
+            onConsumeItems={handleConsumeItems}
+            onClearDisease={handleClearDisease} 
+            currentUser={currentUser} 
+            onMemberClick={setSelectedUser} 
+            locationContext={selectedLocalChat} 
+            onClose={() => setSelectedLocalChat(null)} 
+          />
+        )}
         {isAllChatsOpen && <AllChatsView onClose={() => setIsAllChatsOpen(false)} onSelectChat={setSelectedLocalChat} />}
         {isRouletteOpen && <RouletteView onClose={() => setIsRouletteOpen(false)} onResult={handleRouletteResult} />}
         {!selectedLocalChat && !selectedUser && !isCreateModalOpen && <FloatingActionDock activeTab={activeTab} onCreateClick={() => setIsCreateModalOpen(true)} onAllChatsClick={() => setIsAllChatsOpen(true)} onRouletteClick={() => setIsRouletteOpen(true)} />}

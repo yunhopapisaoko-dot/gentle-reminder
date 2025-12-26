@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getCommunityChat } from '../services/geminiService';
-import { ChatMessage, User } from '../types';
+import { ChatMessage, User, MenuItem } from '../types';
 import { MENUS, SUB_LOCATIONS, SubLocation, DISEASE_DETAILS, DiseaseInfo } from '../constants';
 import { MenuView } from './MenuView';
 import { HospitalConsultations } from './HospitalConsultations';
@@ -14,7 +14,8 @@ interface ChatInterfaceProps {
   onClose?: () => void;
   currentUser: User;
   onMemberClick?: (user: User) => void;
-  onUpdateHp?: (hpChange: number) => void;
+  onUpdateStatus?: (changes: { hp?: number; hunger?: number; thirst?: number; alcohol?: number }) => void;
+  onConsumeItems?: (items: MenuItem[]) => void;
   onClearDisease?: (hpRestore: number) => void;
 }
 
@@ -41,7 +42,7 @@ const ICONS: Record<string, string> = {
   default: 'chat'
 };
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, onClose, currentUser, onMemberClick, onUpdateHp, onClearDisease }) => {
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, onClose, currentUser, onMemberClick, onUpdateStatus, onConsumeItems, onClearDisease }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [roomMessages, setRoomMessages] = useState<Record<string, ChatMessage[]>>({});
   const [currentSubLoc, setCurrentSubLoc] = useState<SubLocation | null>(null);
@@ -144,11 +145,30 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
     }
   };
 
+  const handleOrderConfirmed = (items: MenuItem[]) => {
+    if (onConsumeItems) onConsumeItems(items);
+    
+    const orderMsg: ChatMessage = {
+      id: `order-${Date.now()}`,
+      role: 'model',
+      text: `*Pedido entregue!*\nVocê consumiu os itens e recuperou seus status. Bom apetite! ^_^`
+    };
+
+    if (currentSubLoc) {
+      setRoomMessages(prev => ({
+        ...prev,
+        [currentSubLoc.name]: [...(prev[currentSubLoc.name] || []), orderMsg]
+      }));
+    } else {
+      setMessages(prev => [...prev, orderMsg]);
+    }
+  };
+
   const handleTreat = (disease: DiseaseInfo) => {
     if (onClearDisease) {
       onClearDisease(Math.abs(disease.hpImpact));
-    } else if (onUpdateHp) {
-      onUpdateHp(Math.abs(disease.hpImpact));
+    } else if (onUpdateStatus) {
+      onUpdateStatus({ hp: Math.abs(disease.hpImpact) });
     }
     
     const treatMsg: ChatMessage = {
@@ -294,7 +314,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
       {showJobModal && locationContext && <JobApplicationModal location={locationContext} userId={currentUser.id} onClose={() => setShowJobModal(false)} onSuccess={() => setShowManagerDash(true)} />}
       {showManagerDash && locationContext && <ManagerDashboard location={locationContext} onClose={() => setShowManagerDash(false)} />}
       {showWorkerPanel && locationContext && workerRole && <WorkerView location={locationContext} role={workerRole} onClose={() => setShowWorkerPanel(false)} />}
-      {showMenu && hasMenu && !currentSubLoc && <MenuView locationName={locationContext || ''} items={MENUS[contextKey]} onClose={() => setShowMenu(false)} />}
+      {showMenu && hasMenu && !currentSubLoc && <MenuView locationName={locationContext || ''} items={MENUS[contextKey]} onClose={() => setShowMenu(false)} onOrderConfirmed={handleOrderConfirmed} />}
       {showConsultations && isHospital && <HospitalConsultations onClose={() => setShowConsultations(false)} onTreat={handleTreat} />}
     </div>
   );

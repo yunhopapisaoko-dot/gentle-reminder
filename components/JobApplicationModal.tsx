@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabaseService } from '../services/supabaseService';
 
 interface JobApplicationModalProps {
@@ -22,6 +22,15 @@ export const JobApplicationModal: React.FC<JobApplicationModalProps> = ({ locati
     experience: '',
     role: location === 'creche' ? 'Professor' : 'Trabalhador'
   });
+
+  useEffect(() => {
+    // Verifica se já existe uma sessão de gerente salva
+    const isManager = localStorage.getItem('magic_manager_auth') === 'true';
+    if (isManager && showManagerLogin) {
+      onSuccess();
+      onClose();
+    }
+  }, [showManagerLogin]);
 
   const handleClose = () => {
     setIsClosing(true);
@@ -54,7 +63,8 @@ export const JobApplicationModal: React.FC<JobApplicationModalProps> = ({ locati
 
   const handleManagerAccess = () => {
     if (managerPassword === 'Gerente191812') {
-      onSuccess(); // Isso sinaliza ao pai para abrir o dashboard
+      localStorage.setItem('magic_manager_auth', 'true');
+      onSuccess(); 
       onClose();
     } else {
       alert("Senha de Gerente incorreta!");

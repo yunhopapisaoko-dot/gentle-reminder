@@ -16,7 +16,7 @@ const StatusItem: React.FC<StatusItemProps> = ({ label, value, icon, color }) =>
         <span className={`material-symbols-rounded text-lg ${color.replace('bg-', 'text-')}`}>{icon}</span>
         <span className="text-[10px] font-black uppercase tracking-widest text-white/30">{label}</span>
       </div>
-      <span className="text-[10px] font-black text-white/60">{value}%</span>
+      <span className="text-[10px] font-black text-white/60">{Math.round(value)}%</span>
     </div>
     <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden p-[1px]">
       <div
@@ -98,8 +98,11 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose,
               <span className="material-symbols-rounded text-primary/40 text-sm">bolt</span>
             </div>
             <StatusItem label="Saúde" value={user.hp || 100} icon="favorite" color="bg-rose-500" />
-            <StatusItem label="Fome" value={76} icon="restaurant" color="bg-orange-500" />
-            <StatusItem label="Sede" value={54} icon="water_drop" color="bg-cyan-500" />
+            <StatusItem label="Fome" value={user.hunger || 0} icon="restaurant" color="bg-orange-500" />
+            <StatusItem label="Sede" value={user.thirst || 0} icon="water_drop" color="bg-cyan-500" />
+            {(user.alcohol || 0) > 0 && (
+              <StatusItem label="Álcool" value={user.alcohol || 0} icon="wine_bar" color="bg-purple-500" />
+            )}
           </div>
 
           {/* Diagnóstico Ativo */}
