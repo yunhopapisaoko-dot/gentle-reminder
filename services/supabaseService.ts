@@ -14,6 +14,24 @@ export const supabaseService = {
   async getProfile(userId: string): Promise<User | null> {
     try {
       const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+      
+      // Se o perfil não existir, vamos tentar criar um básico para evitar erros de chave estrangeira
+      if (error && error.code === 'PGRST116') {
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+          const meta = userData.user.user_metadata;
+          const newProfile = {
+            id: userId,
+            full_name: meta?.full_name || 'Usuário Magic',
+            username: meta?.username || `user_${userId.substring(0, 5)}`,
+            avatar_url: meta?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+            bio: ''
+          };
+          await supabase.from('profiles').insert([newProfile]);
+          return { ...newProfile, name: newProfile.full_name, avatar: newProfile.avatar_url };
+        }
+      }
+
       if (error || !data) return null;
       return {
         id: data.id,
@@ -62,46 +80,57 @@ export const supabaseService = {
   },
 
   async getAllProfiles(): Promise<User[]> {
-    const { data, error } = await supabase.from('profiles').select('*').order('updated_at', { ascending: false });
-    if (error) return [];
-    return data.map((p: any) => ({
-      id: p.id,
-      name: p.full_name || 'Usuário',
-      username: p.username || 'user',
-      avatar: p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
-      isLeader: p.is_leader || false,
-      bio: p.bio
-    }));
+    try {
+      const { data, error } = await supabase.from('profiles').select('*').order('updated_at', { ascending: false });
+      if (error) return [];
+      return data.map((p: any) => ({
+        id: p.id,
+        name: p.full_name || 'Usuário',
+        username: p.username || 'user',
+        avatar: p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
+        isLeader: p.is_leader || false,
+        bio: p.bio
+      }));
+    } catch { return []; }
   },
 
   async getPosts(): Promise<Post[]> {
-    const { data, error } = await supabase.from('posts').select(`*, profiles:author_id (*)`).order('created_at', { ascending: false });
-    if (error) return [];
-    return data.map((post: any) => ({
-      id: post.id,
-      title: post.title,
-      excerpt: post.excerpt,
-      imageUrl: post.image_url,
-      timestamp: new Date(post.created_at).toLocaleDateString(),
-      likes: '0',
-      author: {
-        id: post.profiles?.id || post.author_id,
-        name: post.profiles?.full_name || 'Membro',
-        username: post.profiles?.username || 'user',
-        avatar: post.profiles?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author_id}`,
-        isLeader: post.profiles?.is_leader || false
-      }
-    }));
+    try {
+      const { data, error } = await supabase.from('posts').select(`*, profiles:author_id (*)`).order('created_at', { ascending: false });
+      if (error) return [];
+      return data.map((post: any) => ({
+        id: post.id,
+        title: post.title,
+        excerpt: post.excerpt,
+        imageUrl: post.image_url,
+        timestamp: new Date(post.created_at).toLocaleDateString(),
+        likes: '0',
+        author: {
+          id: post.profiles?.id || post.author_id,
+          name: post.profiles?.full_name || 'Membro',
+          username: post.profiles?.username || 'user',
+          avatar: post.profiles?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author_id}`,
+          isLeader: post.profiles?.is_leader || false
+        }
+      }));
+    } catch { return []; }
   },
 
   async createPost(userId: string, title: string, excerpt: string, imageUrl?: string) {
+    // Primeiro garantimos que o perfil existe para evitar erro de Foreign Key
+    await this.getProfile(userId);
+
     const { error } = await supabase.from('posts').insert([{
       author_id: userId,
       title,
       excerpt,
       image_url: imageUrl
     }]);
-    if (error) throw error;
+    
+    if (error) {
+      console.error("Erro Supabase Insert:", error);
+      throw new Error(error.message || "Falha ao inserir post no banco de dados.");
+    }
   },
 
   async updateLeaderStatus(userId: string, isLeader: boolean) {
