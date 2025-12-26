@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { supabaseService } from '../services/supabaseService';
@@ -105,8 +104,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
             data: {
               full_name: formData.name,
               username: formData.username,
-              race: formData.race,
-              email_display: email
+              race: formData.race
             }
           }
         });
@@ -116,17 +114,12 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
         if (data.session) {
           onLogin();
         } else {
-          setSuccessMsg("Invocação completa! Agora, faça login para entrar no mundo (Se o erro persistir, desative a confirmação de e-mail no painel Auth do Supabase).");
+          setSuccessMsg("Lenda invocada! Verifique seu e-mail ou faça login agora. (Dica: Desative a confirmação de e-mail no painel do Supabase para entrada imediata)");
           setScreen('login');
         }
       }
     } catch (error: any) {
-      // Exibição clara do erro para diagnóstico do usuário
-      let msg = error.message || "Erro de conexão.";
-      if (msg.includes("Database error")) {
-        msg = "Erro Crítico: Verifique as políticas de RLS e o bucket 'avatars' no seu Supabase.";
-      }
-      setErrorMsg(msg);
+      setErrorMsg(error.message || "Erro na conexão com o portal.");
     } finally {
       setIsLoading(false);
     }

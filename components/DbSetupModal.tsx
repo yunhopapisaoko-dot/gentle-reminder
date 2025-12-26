@@ -7,9 +7,9 @@ interface DbSetupModalProps {
 export const DbSetupModal: React.FC<DbSetupModalProps> = ({ onClose }) => {
   const [copied, setCopied] = useState(false);
 
-  const sqlScript = `-- 1. TABELAS BASE
+  const sqlScript = `-- 1. TABELAS BASE (PERFIL E POSTS)
 create table if not exists public.profiles (
-  id uuid references auth.users on delete cascade not null primary key,
+  id uuid primary key,
   username text unique,
   full_name text,
   avatar_url text,
@@ -17,6 +17,8 @@ create table if not exists public.profiles (
   banner_url text,
   race text default 'Draeven',
   is_leader boolean default false,
+  money integer default 3000,
+  last_spin_at timestamptz,
   updated_at timestamptz default now()
 );
 
@@ -29,7 +31,19 @@ create table if not exists public.posts (
   created_at timestamptz default now()
 );
 
--- 2. SISTEMA DE EMPREGOS E ACESSOS
+-- 2. SISTEMA DE EMPREGOS, INVENTÁRIO E ACESSOS
+create table if not exists public.inventory (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  item_id text not null,
+  item_name text not null,
+  item_image text,
+  category text,
+  attributes jsonb default '{}'::jsonb,
+  quantity integer default 1,
+  created_at timestamptz default now()
+);
+
 create table if not exists public.job_applications (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
@@ -51,7 +65,6 @@ create table if not exists public.establishment_workers (
   unique(user_id, location)
 );
 
--- NOVO: Autorizações Temporárias de Sala
 create table if not exists public.room_authorizations (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
@@ -65,22 +78,22 @@ create table if not exists public.room_authorizations (
 -- 3. SEGURANÇA (RLS)
 alter table public.profiles enable row level security;
 alter table public.posts enable row level security;
+alter table public.inventory enable row level security;
 alter table public.job_applications enable row level security;
 alter table public.establishment_workers enable row level security;
 alter table public.room_authorizations enable row level security;
 
+-- Políticas de Acesso
 create policy "Public Select" on public.profiles for select using (true);
 create policy "Own Update" on public.profiles for update using (auth.uid() = id);
 create policy "Public Select Posts" on public.posts for select using (true);
 create policy "Own Insert Posts" on public.posts for insert with check (auth.uid() = author_id);
-
+create policy "Own Inventory" on public.inventory for all using (auth.uid() = user_id);
 create policy "Public Select Jobs" on public.job_applications for select using (true);
 create policy "Own Insert Jobs" on public.job_applications for insert with check (auth.uid() = user_id);
 create policy "Manager Update Jobs" on public.job_applications for update using (true); 
-
 create policy "Public Select Workers" on public.establishment_workers for select using (true);
 create policy "Manager Insert Workers" on public.establishment_workers for insert with check (true);
-
 create policy "Public Select Auth" on public.room_authorizations for select using (true);
 create policy "Worker Insert Auth" on public.room_authorizations for insert with check (true);
 create policy "Worker Delete Auth" on public.room_authorizations for delete using (true);
@@ -90,18 +103,19 @@ insert into storage.buckets (id, name, public) values ('avatars', 'avatars', tru
 create policy "Public Avatar Access" on storage.objects for select using ( bucket_id = 'avatars' );
 create policy "Own Avatar Upload" on storage.objects for insert with check ( bucket_id = 'avatars' );
 
--- 5. AUTOMAÇÃO
+-- 5. TRIGGER DE NOVOS USUÁRIOS
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, full_name, username, avatar_url, race)
+  insert into public.profiles (id, full_name, username, avatar_url, race, money)
   values (
     new.id, 
-    new.raw_user_meta_data->>'full_name', 
-    new.raw_user_meta_data->>'username', 
+    coalesce(new.raw_user_meta_data->>'full_name', 'Viajante'), 
+    coalesce(new.raw_user_meta_data->>'username', 'user_' || substring(new.id::text, 1, 5)), 
     'https://api.dicebear.com/7.x/avataaars/svg?seed=' || new.id,
-    coalesce(new.raw_user_meta_data->>'race', 'Draeven')
-  );
+    coalesce(new.raw_user_meta_data->>'race', 'Draeven'),
+    3000
+  ) on conflict (id) do nothing;
   return new;
 end;
 $$ language plpgsql security definer;
@@ -123,15 +137,15 @@ create trigger on_auth_user_created after insert on auth.users for each row exec
             <span className="material-symbols-rounded text-3xl">database</span>
           </div>
           <div>
-            <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">Configuração</h2>
-            <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-1">Execute o SQL atualizado</p>
+            <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">Setup Magic</h2>
+            <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-1">Sincronize sua base de dados</p>
           </div>
         </div>
 
         <div className="space-y-4 mb-8 overflow-y-auto pr-2 scrollbar-hide">
           <div className="bg-primary/10 p-5 rounded-3xl border border-primary/20">
-            <h4 className="text-white text-xs font-black uppercase mb-1">Novo: Room Authorizations</h4>
-            <p className="text-[11px] text-white/50">O script agora inclui a tabela necessária para médicos liberarem salas para pacientes.</p>
+            <h4 className="text-white text-xs font-black uppercase mb-1">Atenção!</h4>
+            <p className="text-[11px] text-white/50">Copie o script abaixo e execute-o no SQL Editor do seu Supabase para que a economia e o perfil funcionem corretamente.</p>
           </div>
         </div>
 
