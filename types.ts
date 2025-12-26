@@ -30,7 +30,19 @@ export interface User {
   isLeader?: boolean;
   hp?: number;
   maxHp?: number;
-  currentDisease?: string; // ID da doença ativa
+  currentDisease?: string;
+}
+
+export interface JobApplication {
+  id: string;
+  user_id: string;
+  location: string;
+  name: string;
+  age: string;
+  experience: string;
+  role: string;
+  status: 'pending' | 'approved' | 'rejected';
+  profiles?: any;
 }
 
 export interface Post {

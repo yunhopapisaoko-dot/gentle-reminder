@@ -7,7 +7,7 @@ interface DbSetupModalProps {
 export const DbSetupModal: React.FC<DbSetupModalProps> = ({ onClose }) => {
   const [copied, setCopied] = useState(false);
 
-  const sqlScript = `-- 1. TABELAS
+  const sqlScript = `-- 1. TABELAS BASE
 create table if not exists public.profiles (
   id uuid references auth.users on delete cascade not null primary key,
   username text unique,
@@ -29,24 +29,52 @@ create table if not exists public.posts (
   created_at timestamptz default now()
 );
 
--- 2. SEGURANÇA
+-- 2. SISTEMA DE EMPREGOS
+create table if not exists public.job_applications (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  location text not null,
+  name text not null,
+  age text not null,
+  experience text,
+  role text default 'Trabalhador',
+  status text default 'pending',
+  created_at timestamptz default now()
+);
+
+create table if not exists public.establishment_workers (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  location text not null,
+  role text not null,
+  joined_at timestamptz default now(),
+  unique(user_id, location)
+);
+
+-- 3. SEGURANÇA (RLS)
 alter table public.profiles enable row level security;
 alter table public.posts enable row level security;
-create policy "Public Select Profiles" on public.profiles for select using (true);
-create policy "Own Update Profiles" on public.profiles for update using (auth.uid() = id);
-create policy "Own Insert Profiles" on public.profiles for insert with check (auth.uid() = id);
+alter table public.job_applications enable row level security;
+alter table public.establishment_workers enable row level security;
+
+create policy "Public Select" on public.profiles for select using (true);
+create policy "Own Update" on public.profiles for update using (auth.uid() = id);
 create policy "Public Select Posts" on public.posts for select using (true);
 create policy "Own Insert Posts" on public.posts for insert with check (auth.uid() = author_id);
 
--- 3. STORAGE
-insert into storage.buckets (id, name, public) values ('avatars', 'avatars', true) on conflict (id) do nothing;
+create policy "Public Select Jobs" on public.job_applications for select using (true);
+create policy "Own Insert Jobs" on public.job_applications for insert with check (auth.uid() = user_id);
+create policy "Manager Update Jobs" on public.job_applications for update using (true); -- Simplificado para o roleplay
 
+create policy "Public Select Workers" on public.establishment_workers for select using (true);
+create policy "Manager Insert Workers" on public.establishment_workers for insert with check (true);
+
+-- 4. STORAGE
+insert into storage.buckets (id, name, public) values ('avatars', 'avatars', true) on conflict (id) do nothing;
 create policy "Public Avatar Access" on storage.objects for select using ( bucket_id = 'avatars' );
 create policy "Own Avatar Upload" on storage.objects for insert with check ( bucket_id = 'avatars' );
-create policy "Own Avatar Update" on storage.objects for update using ( bucket_id = 'avatars' );
-create policy "Own Avatar Delete" on storage.objects for delete using ( bucket_id = 'avatars' );
 
--- 4. AUTOMAÇÃO
+-- 5. AUTOMAÇÃO
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
@@ -84,23 +112,19 @@ create trigger on_auth_user_created after insert on auth.users for each row exec
           </div>
         </div>
 
-        <div className="space-y-4 mb-8">
+        <div className="space-y-4 mb-8 overflow-y-auto pr-2 scrollbar-hide">
           <div className="bg-primary/10 p-5 rounded-3xl border border-primary/20">
             <h4 className="text-white text-xs font-black uppercase mb-1">Passo 1: SQL Editor</h4>
-            <p className="text-[11px] text-white/50">Copie o script abaixo e cole no SQL Editor do Supabase para criar as tabelas e permissões.</p>
+            <p className="text-[11px] text-white/50">Copie o script e execute no SQL Editor do seu Supabase.</p>
           </div>
           
           <div className="bg-amber-500/10 p-5 rounded-3xl border border-amber-500/30">
-            <h4 className="text-amber-500 text-xs font-black uppercase mb-1">Passo 2: Storage (Obrigatório)</h4>
-            <p className="text-[11px] text-white/70">
-              Vá em <strong>Storage</strong> {'>'}  <strong>New Bucket</strong>.<br/>
-              Nome: <span className="text-amber-500 font-bold">avatars</span><br/>
-              Marque: <span className="text-white font-bold">Public bucket</span>.
-            </p>
+            <h4 className="text-amber-500 text-xs font-black uppercase mb-1">Passo 2: Roleplay Ativado!</h4>
+            <p className="text-[11px] text-white/70">O sistema de empregos agora requer as tabelas criadas acima para persistência.</p>
           </div>
         </div>
 
-        <div className="relative flex-1 min-h-0 bg-black/40 rounded-3xl border border-white/5 p-6 overflow-hidden mb-8 group">
+        <div className="relative flex-1 min-h-[150px] bg-black/40 rounded-3xl border border-white/5 p-6 overflow-hidden mb-8 group">
           <pre className="text-[9px] text-primary/70 font-mono h-full overflow-y-auto scrollbar-hide select-all whitespace-pre">
             {sqlScript}
           </pre>
