@@ -5,14 +5,14 @@ import { TabType } from '../types';
 
 interface FloatingActionDockProps {
   onCreateClick: () => void;
-  onChatClick: () => void;
+  onAllChatsClick: () => void;
   onRouletteClick: () => void;
   activeTab: TabType;
 }
 
 export const FloatingActionDock: React.FC<FloatingActionDockProps> = ({ 
   onCreateClick, 
-  onChatClick, 
+  onAllChatsClick, 
   onRouletteClick,
   activeTab 
 }) => {
@@ -51,19 +51,15 @@ export const FloatingActionDock: React.FC<FloatingActionDockProps> = ({
           </button>
         </div>
 
-        {/* Botão Chat - Direita */}
+        {/* Botão Lista de Chats - Direita */}
         <button 
-          onClick={onChatClick}
+          onClick={onAllChatsClick}
           className="group relative flex flex-col items-center justify-center w-14 h-14 rounded-full transition-all active:scale-75"
         >
-          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-300 ${
-            activeTab === TabType.Chat 
-              ? 'bg-primary/20 border-primary text-primary shadow-[0_0_20px_rgba(139,92,246,0.4)]' 
-              : 'bg-white/5 border-white/5 text-white/40 group-hover:text-primary group-hover:border-primary/30 group-hover:bg-primary/10'
-          }`}>
-            <span className="material-symbols-rounded text-2xl group-hover:scale-110 transition-transform">auto_awesome</span>
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-300 bg-white/5 border-white/5 text-white/40 group-hover:text-primary group-hover:border-primary/30 group-hover:bg-primary/10`}>
+            <span className="material-symbols-rounded text-2xl group-hover:scale-110 transition-transform">forum</span>
           </div>
-          <span className="absolute -bottom-6 text-[7px] font-black uppercase tracking-[0.2em] text-white/20 opacity-0 group-hover:opacity-100 transition-opacity">Miku</span>
+          <span className="absolute -bottom-6 text-[7px] font-black uppercase tracking-[0.2em] text-white/20 opacity-0 group-hover:opacity-100 transition-opacity">Chats</span>
         </button>
 
       </div>

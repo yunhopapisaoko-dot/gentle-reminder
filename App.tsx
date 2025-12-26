@@ -13,6 +13,8 @@ import { CreateContentModal } from './components/CreateContentModal';
 import { AuthView } from './components/AuthView';
 import { DbSetupModal } from './components/DbSetupModal';
 import { FloatingActionDock } from './components/FloatingActionDock';
+import { AllChatsView } from './components/AllChatsView';
+import { RouletteView } from './components/RouletteView';
 import { TabType, User, Post } from './types';
 import { CURRENT_USER } from './constants';
 import { supabase } from './supabase';
@@ -31,6 +33,9 @@ const App: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  
+  const [isAllChatsOpen, setIsAllChatsOpen] = useState(false);
+  const [isRouletteOpen, setIsRouletteOpen] = useState(false);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -88,12 +93,6 @@ const App: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleRoulette = () => {
-    const locations = ['hospital', 'creche', 'restaurante', 'padaria'];
-    const random = locations[Math.floor(Math.random() * locations.length)];
-    setSelectedLocalChat(random);
   };
 
   const refreshPosts = async () => {
@@ -211,14 +210,16 @@ const App: React.FC = () => {
         {showDbSetup && <DbSetupModal onClose={() => setShowDbSetup(false)} />}
         {selectedUser && <ProfileView user={selectedUser} currentUserId={currentUser.id} allPosts={posts} onClose={() => setSelectedUser(null)} onUpdate={handleUpdateUser} />}
         {selectedLocalChat && <ChatInterface locationContext={selectedLocalChat} onClose={() => setSelectedLocalChat(null)} />}
+        
+        {isAllChatsOpen && <AllChatsView onClose={() => setIsAllChatsOpen(false)} onSelectChat={setSelectedLocalChat} />}
+        {isRouletteOpen && <RouletteView onClose={() => setIsRouletteOpen(false)} onResult={setSelectedLocalChat} />}
 
-        {/* Floating Action Dock Centralizada e Sempre Visível no Menu Principal */}
         {!selectedLocalChat && !selectedUser && !isCreateModalOpen && (
           <FloatingActionDock 
             activeTab={activeTab}
             onCreateClick={() => setIsCreateModalOpen(true)}
-            onChatClick={() => setActiveTab(TabType.Chat)}
-            onRouletteClick={handleRoulette}
+            onAllChatsClick={() => setIsAllChatsOpen(true)}
+            onRouletteClick={() => setIsRouletteOpen(true)}
           />
         )}
       </div>
