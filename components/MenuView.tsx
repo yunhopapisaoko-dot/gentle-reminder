@@ -92,7 +92,6 @@ export const MenuView: React.FC<MenuViewProps> = ({ locationName, items, onClose
 
   const handleFinalize = () => {
     if (onOrderConfirmed) {
-      // Cria uma lista flat de todos os itens consumidos (considerando quantidade)
       const flatItems: MenuItem[] = [];
       cart.forEach(cartItem => {
         for (let i = 0; i < cartItem.quantity; i++) {
@@ -140,7 +139,6 @@ export const MenuView: React.FC<MenuViewProps> = ({ locationName, items, onClose
 
       <div className="flex-1 overflow-y-auto scrollbar-hide p-5 pb-40">
         {!activeCategory ? (
-          /* Grid de Categorias Quadrado (2 colunas) */
           <div className="grid grid-cols-2 gap-4 animate-in zoom-in duration-500">
             {categories.map(cat => {
               const theme = CATEGORY_THEMES[cat];
@@ -163,7 +161,6 @@ export const MenuView: React.FC<MenuViewProps> = ({ locationName, items, onClose
             })}
           </div>
         ) : (
-          /* Grid de Itens 2-cols com Descrições */
           <div className="animate-in slide-in-right duration-500">
              <div className="flex items-center justify-between mb-8 px-2">
                 <div className="flex items-center space-x-3">
@@ -182,10 +179,32 @@ export const MenuView: React.FC<MenuViewProps> = ({ locationName, items, onClose
                         <img src={item.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={item.name} />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                         
+                        {/* Status Badges Overlay */}
+                        <div className="absolute bottom-2 left-3 flex flex-col gap-1">
+                          {item.hungerRestore && (
+                            <div className="flex items-center space-x-1 bg-orange-500/80 backdrop-blur-md px-2 py-0.5 rounded-full border border-orange-400/30">
+                              <span className="material-symbols-rounded text-[8px] text-white">restaurant</span>
+                              <span className="text-[7px] font-black text-white">+{item.hungerRestore}</span>
+                            </div>
+                          )}
+                          {item.thirstRestore && (
+                            <div className="flex items-center space-x-1 bg-cyan-500/80 backdrop-blur-md px-2 py-0.5 rounded-full border border-cyan-400/30">
+                              <span className="material-symbols-rounded text-[8px] text-white">water_drop</span>
+                              <span className="text-[7px] font-black text-white">+{item.thirstRestore}</span>
+                            </div>
+                          )}
+                          {item.alcoholLevel && (
+                            <div className="flex items-center space-x-1 bg-purple-500/80 backdrop-blur-md px-2 py-0.5 rounded-full border border-purple-400/30">
+                              <span className="material-symbols-rounded text-[8px] text-white">wine_bar</span>
+                              <span className="text-[7px] font-black text-white">+{item.alcoholLevel}</span>
+                            </div>
+                          )}
+                        </div>
+
                         {/* Botão flutuante de adicionar */}
                         <div className="absolute top-3 right-3">
                            {inCart ? (
-                             <div className={`flex flex-col items-center bg-white text-black rounded-2xl p-1.5 space-y-2 shadow-2xl`}>
+                             <div className="flex flex-col items-center bg-white text-black rounded-2xl p-1.5 space-y-2 shadow-2xl">
                                <button onClick={() => addToCart(item)} className="active:scale-75"><span className="material-symbols-rounded text-xs font-black">add</span></button>
                                <span className="text-[10px] font-black">{inCart.quantity}</span>
                                <button onClick={() => removeFromCart(item.id)} className="active:scale-75"><span className="material-symbols-rounded text-xs font-black">remove</span></button>
@@ -220,7 +239,6 @@ export const MenuView: React.FC<MenuViewProps> = ({ locationName, items, onClose
         )}
       </div>
 
-      {/* Botão de Finalizar Checkout */}
       {cartCount > 0 && (
         <div className="absolute bottom-10 left-6 right-6 z-50 animate-in slide-in-from-bottom duration-500">
           <button 
@@ -241,7 +259,6 @@ export const MenuView: React.FC<MenuViewProps> = ({ locationName, items, onClose
         </div>
       )}
 
-      {/* Cart Modal Overlay */}
       {showCartOverlay && (
         <div className="fixed inset-0 z-[160] bg-black/80 backdrop-blur-xl flex items-end animate-in fade-in duration-300">
           <div className="w-full bg-background-dark rounded-t-[50px] border-t border-white/5 p-10 animate-in slide-in-from-bottom duration-500 shadow-[0_-30px_100px_rgba(0,0,0,1)]">
