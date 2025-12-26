@@ -199,11 +199,7 @@ const App: React.FC = () => {
           </div>
         );
       case TabType.Locais:
-        return (
-          <div className="h-full">
-            <LocaisGrid onSelect={setSelectedLocalChat} />
-          </div>
-        );
+        return <LocaisGrid onSelect={setSelectedLocalChat} />;
       case TabType.Chat:
         return <ChatInterface onUpdateHp={handleUpdateHp} onClearDisease={handleClearDisease} currentUser={currentUser} onMemberClick={setSelectedUser} onClose={() => setActiveTab(TabType.Destaque)} />;
       default:
