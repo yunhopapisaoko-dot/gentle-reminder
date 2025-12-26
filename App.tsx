@@ -113,6 +113,16 @@ const App: React.FC = () => {
     setCurrentUser(CURRENT_USER);
   };
 
+  const handleRouletteResult = (id: string, name: string) => {
+    if (id.startsWith('d')) {
+      alert(`⚠️ CUIDADO! Você contraiu: ${name}. Procure o Hospital para Roleplay!`);
+    } else if (id.startsWith('p')) {
+      alert(`✨ PARABÉNS! Você ganhou: ${name}. O valor foi creditado em sua conta fictícia.`);
+    } else {
+      setSelectedLocalChat(id);
+    }
+  };
+
   const renderMainContent = () => {
     if (loading) return (
       <div className="flex flex-col items-center justify-center py-32 animate-pulse">
@@ -212,7 +222,7 @@ const App: React.FC = () => {
         {selectedLocalChat && <ChatInterface locationContext={selectedLocalChat} onClose={() => setSelectedLocalChat(null)} />}
         
         {isAllChatsOpen && <AllChatsView onClose={() => setIsAllChatsOpen(false)} onSelectChat={setSelectedLocalChat} />}
-        {isRouletteOpen && <RouletteView onClose={() => setIsRouletteOpen(false)} onResult={setSelectedLocalChat} />}
+        {isRouletteOpen && <RouletteView onClose={() => setIsRouletteOpen(false)} onResult={handleRouletteResult} />}
 
         {!selectedLocalChat && !selectedUser && !isCreateModalOpen && (
           <FloatingActionDock 
