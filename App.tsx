@@ -36,9 +36,18 @@ const App: React.FC = () => {
   
   const [isAllChatsOpen, setIsAllChatsOpen] = useState(false);
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
+  
+  // Salas visitadas e confirmadas
   const [visitedRooms, setVisitedRooms] = useState<string[]>([]);
+  const [confirmedRooms, setConfirmedRooms] = useState<string[]>([]);
 
   useEffect(() => {
+    // Carregar preferências locais
+    const savedConfirmed = localStorage.getItem('magic_confirmed_rooms');
+    const savedVisited = localStorage.getItem('magic_visited_rooms');
+    if (savedConfirmed) setConfirmedRooms(JSON.parse(savedConfirmed));
+    if (savedVisited) setVisitedRooms(JSON.parse(savedVisited));
+
     const initAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -142,9 +151,27 @@ const App: React.FC = () => {
 
   const handleEnterRoom = (roomId: string) => {
     setSelectedLocalChat(roomId);
-    if (!visitedRooms.includes(roomId)) {
-      setVisitedRooms(prev => [roomId, ...prev]);
-    }
+    
+    // Marcar como visitado e confirmado
+    const newVisited = visitedRooms.includes(roomId) ? visitedRooms : [roomId, ...visitedRooms];
+    const newConfirmed = confirmedRooms.includes(roomId) ? confirmedRooms : [...confirmedRooms, roomId];
+    
+    setVisitedRooms(newVisited);
+    setConfirmedRooms(newConfirmed);
+    
+    localStorage.setItem('magic_visited_rooms', JSON.stringify(newVisited));
+    localStorage.setItem('magic_confirmed_rooms', JSON.stringify(newConfirmed));
+  };
+
+  const handleLeaveRoom = (roomId: string) => {
+    const newVisited = visitedRooms.filter(id => id !== roomId);
+    const newConfirmed = confirmedRooms.filter(id => id !== roomId);
+    
+    setVisitedRooms(newVisited);
+    setConfirmedRooms(newConfirmed);
+    
+    localStorage.setItem('magic_visited_rooms', JSON.stringify(newVisited));
+    localStorage.setItem('magic_confirmed_rooms', JSON.stringify(newConfirmed));
   };
 
   const refreshPosts = async () => {
@@ -224,7 +251,7 @@ const App: React.FC = () => {
           </div>
         );
       case TabType.Locais:
-        return <LocaisGrid onSelect={handleEnterRoom} />;
+        return <LocaisGrid onSelect={handleEnterRoom} confirmedRooms={confirmedRooms} />;
       case TabType.Chat:
         return (
           <ChatInterface 
@@ -272,7 +299,7 @@ const App: React.FC = () => {
             onClose={() => setSelectedLocalChat(null)} 
           />
         )}
-        {isAllChatsOpen && <AllChatsView visitedRooms={visitedRooms} onClose={() => setIsAllChatsOpen(false)} onSelectChat={handleEnterRoom} />}
+        {isAllChatsOpen && <AllChatsView visitedRooms={visitedRooms} onClose={() => setIsAllChatsOpen(false)} onSelectChat={handleEnterRoom} onLeaveChat={handleLeaveRoom} />}
         {isRouletteOpen && <RouletteView onClose={() => setIsRouletteOpen(false)} onResult={handleRouletteResult} />}
         {!selectedLocalChat && !selectedUser && !isCreateModalOpen && <FloatingActionDock activeTab={activeTab} onCreateClick={() => setIsCreateModalOpen(true)} onAllChatsClick={() => setIsAllChatsOpen(true)} onRouletteClick={() => setIsRouletteOpen(true)} />}
       </div>

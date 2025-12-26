@@ -16,11 +16,15 @@ const LOCAIS_DATA: Local[] = [
   { id: 'padaria', name: 'Padaria', icon: 'bakery_dining', color: 'from-yellow-600', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400&auto=format&fit=crop', activeCount: '15 online' },
 ];
 
-export const LocaisGrid: React.FC<{ onSelect: (id: string) => void }> = ({ onSelect }) => {
+export const LocaisGrid: React.FC<{ onSelect: (id: string) => void, confirmedRooms: string[] }> = ({ onSelect, confirmedRooms }) => {
   const [confirmingLocal, setConfirmingLocal] = useState<Local | null>(null);
 
   const handleSelect = (local: Local) => {
-    setConfirmingLocal(local);
+    if (confirmedRooms.includes(local.id)) {
+      onSelect(local.id);
+    } else {
+      setConfirmingLocal(local);
+    }
   };
 
   return (

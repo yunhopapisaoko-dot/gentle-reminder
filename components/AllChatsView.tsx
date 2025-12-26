@@ -1,21 +1,11 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-
-interface RecentChat {
-  id: string;
-  name: string;
-  lastMessage: string;
-  timestamp: string;
-  unreadCount?: number;
-  icon: string;
-  color: string;
-  wallpaper: string;
-}
+import React, { useState, useMemo, useRef } from 'react';
 
 interface AllChatsViewProps {
   onClose: () => void;
   onSelectChat: (id: string) => void;
+  onLeaveChat: (id: string) => void;
   visitedRooms: string[];
 }
 
@@ -26,9 +16,11 @@ const LOCAIS_METADATA: Record<string, any> = {
   creche: { name: 'Sweet Kids', icon: 'child_care', color: 'from-pink-500 to-fuchsia-400', wallpaper: 'https://images.unsplash.com/photo-1560523160-754a9e25c68f?q=80&w=400' },
 };
 
-export const AllChatsView: React.FC<AllChatsViewProps> = ({ onClose, onSelectChat, visitedRooms }) => {
+export const AllChatsView: React.FC<AllChatsViewProps> = ({ onClose, onSelectChat, onLeaveChat, visitedRooms }) => {
   const [isClosing, setIsClosing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [optionsFor, setOptionsFor] = useState<string | null>(null);
+  const pressTimer = useRef<any>(null);
 
   const handleClose = () => {
     setIsClosing(true);
@@ -41,8 +33,25 @@ export const AllChatsView: React.FC<AllChatsViewProps> = ({ onClose, onSelectCha
       ...LOCAIS_METADATA[id],
       lastMessage: 'Histórico de roleplay ativo...',
       timestamp: 'Agora'
-    })).filter(chat => chat.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    })).filter(chat => chat.name?.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [visitedRooms, searchQuery]);
+
+  // Handlers para pressionamento longo (Hold)
+  const startPress = (id: string) => {
+    pressTimer.current = setTimeout(() => {
+      setOptionsFor(id);
+      if (navigator.vibrate) navigator.vibrate(50);
+    }, 600);
+  };
+
+  const endPress = () => {
+    if (pressTimer.current) clearTimeout(pressTimer.current);
+  };
+
+  const handleLeave = (id: string) => {
+    onLeaveChat(id);
+    setOptionsFor(null);
+  };
 
   return (
     <div className={`fixed inset-0 z-[550] bg-background-dark flex flex-col h-[100dvh] overflow-hidden ${isClosing ? 'animate-out slide-out-right' : 'animate-in slide-in-right'}`}>
@@ -84,7 +93,12 @@ export const AllChatsView: React.FC<AllChatsViewProps> = ({ onClose, onSelectCha
         {activeChats.length > 0 ? activeChats.map((chat) => (
           <button
             key={chat.id}
-            onClick={() => { onSelectChat(chat.id); handleClose(); }}
+            onMouseDown={() => startPress(chat.id)}
+            onMouseUp={endPress}
+            onMouseLeave={endPress}
+            onTouchStart={() => startPress(chat.id)}
+            onTouchEnd={endPress}
+            onClick={() => !optionsFor && onSelectChat(chat.id)}
             className="w-full group relative flex items-center space-x-5 p-5 rounded-[36px] bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-white/10 transition-all active:scale-[0.98] overflow-hidden"
           >
             <div className="relative">
@@ -99,9 +113,17 @@ export const AllChatsView: React.FC<AllChatsViewProps> = ({ onClose, onSelectCha
               </div>
               <p className="text-xs text-white/40 font-bold truncate italic leading-relaxed">"{chat.lastMessage}"</p>
             </div>
-            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/10 group-hover:bg-primary group-hover:text-white transition-all">
-              <span className="material-symbols-rounded text-lg">chevron_right</span>
-            </div>
+            
+            {/* Options Overlay (Hold to exit) */}
+            {optionsFor === chat.id && (
+              <div className="absolute inset-0 bg-primary/95 backdrop-blur-xl flex items-center justify-between px-8 animate-in zoom-in duration-300">
+                <p className="text-[10px] font-black text-white uppercase tracking-widest">Deseja sair deste chat?</p>
+                <div className="flex space-x-3">
+                   <button onClick={(e) => { e.stopPropagation(); setOptionsFor(null); }} className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white"><span className="material-symbols-rounded">close</span></button>
+                   <button onClick={(e) => { e.stopPropagation(); handleLeave(chat.id); }} className="px-5 py-2 rounded-xl bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg">Sair</button>
+                </div>
+              </div>
+            )}
           </button>
         )) : (
           <div className="py-32 flex flex-col items-center justify-center text-center opacity-20">
@@ -109,6 +131,10 @@ export const AllChatsView: React.FC<AllChatsViewProps> = ({ onClose, onSelectCha
             <p className="text-sm font-black uppercase tracking-[0.3em]">Nenhuma aventura ainda</p>
           </div>
         )}
+      </div>
+
+      <div className="px-10 pb-12 text-center">
+         <p className="text-[8px] font-black text-white/10 uppercase tracking-widest">Dica: Pressione e segure um chat para sair</p>
       </div>
     </div>
   );
