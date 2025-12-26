@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { PinnedBar } from './components/PinnedBar';
@@ -10,6 +12,7 @@ import { SidebarMenu } from './components/SidebarMenu';
 import { CreateContentModal } from './components/CreateContentModal';
 import { AuthView } from './components/AuthView';
 import { DbSetupModal } from './components/DbSetupModal';
+import { FloatingActionDock } from './components/FloatingActionDock';
 import { TabType, User, Post } from './types';
 import { CURRENT_USER } from './constants';
 import { supabase } from './supabase';
@@ -67,22 +70,10 @@ const App: React.FC = () => {
   }, []);
 
   const fetchInitialData = async (userId: string, authUser?: any) => {
-    // Não travamos o loading aqui, deixamos ele ser resolvido no final
     try {
-      // Carregamento sequencial para evitar que uma falha trave tudo
       const profile = await supabaseService.getProfile(userId);
       if (profile) setCurrentUser(profile);
-      else if (authUser) {
-        const meta = authUser.user_metadata;
-        setCurrentUser({
-          id: userId,
-          name: meta?.full_name || 'Explorador',
-          username: meta?.username || 'user',
-          avatar: meta?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
-          bio: ''
-        });
-      }
-
+      
       const dbPosts = await supabaseService.getPosts();
       setPosts(dbPosts || []);
 
@@ -97,6 +88,12 @@ const App: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRoulette = () => {
+    const locations = ['hospital', 'creche', 'restaurante', 'padaria'];
+    const random = locations[Math.floor(Math.random() * locations.length)];
+    setSelectedLocalChat(random);
   };
 
   const refreshPosts = async () => {
@@ -179,6 +176,8 @@ const App: React.FC = () => {
         );
       case TabType.Locais:
         return <LocaisGrid onSelect={setSelectedLocalChat} />;
+      case TabType.Chat:
+        return <ChatInterface onClose={() => setActiveTab(TabType.Destaque)} />;
       default:
         return null;
     }
@@ -213,10 +212,14 @@ const App: React.FC = () => {
         {selectedUser && <ProfileView user={selectedUser} currentUserId={currentUser.id} allPosts={posts} onClose={() => setSelectedUser(null)} onUpdate={handleUpdateUser} />}
         {selectedLocalChat && <ChatInterface locationContext={selectedLocalChat} onClose={() => setSelectedLocalChat(null)} />}
 
+        {/* Floating Action Dock Centralizada e Sempre Visível no Menu Principal */}
         {!selectedLocalChat && !selectedUser && !isCreateModalOpen && (
-          <button onClick={() => setIsCreateModalOpen(true)} className="fixed bottom-10 right-10 w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white shadow-2xl z-30 active:scale-95 transition-transform">
-            <span className="material-symbols-rounded text-4xl">add</span>
-          </button>
+          <FloatingActionDock 
+            activeTab={activeTab}
+            onCreateClick={() => setIsCreateModalOpen(true)}
+            onChatClick={() => setActiveTab(TabType.Chat)}
+            onRouletteClick={handleRoulette}
+          />
         )}
       </div>
     </div>
