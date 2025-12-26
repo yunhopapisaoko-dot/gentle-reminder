@@ -240,8 +240,8 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex justify-center min-h-screen bg-[#020105]">
-      <div className="w-full max-w-md bg-background-dark min-h-screen relative flex flex-col border-x border-white/5 overflow-hidden">
+    <div className="flex justify-center h-[100dvh] bg-[#020105] overflow-hidden">
+      <div className="w-full max-w-md bg-background-dark h-full relative flex flex-col border-x border-white/5 overflow-hidden">
         <Header activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} onProfileClick={() => setSelectedUser(currentUser)} onMenuClick={() => setIsSidebarOpen(true)} />
         <PinnedBar />
         <div className="flex-1 overflow-y-auto scrollbar-hide relative">
