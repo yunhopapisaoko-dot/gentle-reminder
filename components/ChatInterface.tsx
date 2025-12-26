@@ -220,7 +220,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
             <div key={msg.id} className={`flex items-start space-x-4 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
               <button 
                 onClick={() => msg.author && onMemberClick?.(msg.author)}
-                className={`w-12 h-12 rounded-[22px] mt-12 flex-shrink-0 border-2 border-white/40 overflow-hidden shadow-2xl flex items-center justify-center transition-transform active:scale-90 ${isAI ? 'bg-primary cursor-default' : 'bg-surface-purple cursor-pointer'}`}
+                className={`w-12 h-12 rounded-[22px] flex-shrink-0 border-2 border-white/40 overflow-hidden shadow-2xl flex items-center justify-center transition-transform active:scale-90 ${isAI ? 'bg-primary cursor-default' : 'bg-surface-purple cursor-pointer'}`}
               >
                 {isAI ? (
                   <span className="material-symbols-rounded text-white text-2xl">auto_awesome</span>
@@ -229,22 +229,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
                 )}
               </button>
               
-              <div className={`flex flex-col space-y-3 max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                {/* IDENTIDADE CENTRALIZADA ACIMA DO BALÃO */}
-                <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} space-y-1.5 px-1`}>
-                   {/* TAG DE RAÇA (ACIMA DE TUDO) */}
-                   <div className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full border ${style.border} ${style.bg} ${style.color} shadow-lg backdrop-blur-md animate-in slide-in-from-top duration-500`}>
-                      <span className="material-symbols-rounded text-[12px]">{style.icon}</span>
-                      <span className="text-[9px] font-black uppercase tracking-[0.3em] italic">{isAI ? 'Guia Digital' : authorRace}</span>
-                   </div>
-                   {/* NOME REAL DA PESSOA */}
+              <div className={`flex flex-col space-y-1.5 max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                {/* IDENTIDADE MINIMALISTA EM LINHA ÚNICA */}
+                <div className={`flex items-center space-x-2 px-1 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                    <span className="text-sm font-black text-white italic tracking-tighter drop-shadow-md">
                      {isAI ? 'Miku AI' : (msg.author?.name || 'Viajante')}
                    </span>
+                   
+                   <div className={`flex items-center space-x-1 px-2 py-0.5 rounded-lg border ${style.border} ${style.bg} ${style.color} backdrop-blur-md animate-in slide-in-from-bottom duration-500`}>
+                      <span className="material-symbols-rounded text-[10px]">{style.icon}</span>
+                      <span className="text-[8px] font-black uppercase tracking-widest italic">{isAI ? 'Guia' : authorRace}</span>
+                   </div>
                 </div>
                 
                 {/* BALÃO DE MENSAGEM */}
-                <div className={`px-6 py-5 rounded-[32px] shadow-2xl text-[14px] font-bold leading-relaxed animate-in zoom-in duration-700 backdrop-blur-3xl border border-white/10 ${
+                <div className={`px-6 py-4 rounded-[28px] shadow-2xl text-[14px] font-bold leading-relaxed animate-in zoom-in duration-500 backdrop-blur-3xl border border-white/10 ${
                   msg.role === 'user' 
                     ? 'bg-primary/60 text-white rounded-tr-none' 
                     : 'bg-black/70 text-white rounded-tl-none'
