@@ -13,9 +13,12 @@ const withTimeout = <T>(promise: Promise<T>, timeoutMs: number = 30000): Promise
 export const supabaseService = {
   async getProfile(userId: string): Promise<User | null> {
     try {
+      // Busca o perfil
       const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
       
-      if (error && error.code === 'PGRST116') {
+      // Se o perfil não existir (erro PGRST116), vamos criá-lo manualmente
+      if (error && (error.code === 'PGRST116' || error.message.includes('JSON'))) {
+        console.log("Perfil não encontrado, tentando criar manualmente...");
         const { data: userData } = await supabase.auth.getUser();
         if (userData?.user) {
           const meta = userData.user.user_metadata;
@@ -28,7 +31,12 @@ export const supabaseService = {
             money: 3000,
             bio: ''
           };
-          await supabase.from('profiles').insert([newProfile]);
+          
+          const { error: insertError } = await supabase.from('profiles').insert([newProfile]);
+          if (insertError) {
+            console.error("Erro ao criar perfil manual:", insertError);
+            return { ...newProfile, name: newProfile.full_name, avatar: newProfile.avatar_url, race: newProfile.race as any };
+          }
           return { ...newProfile, name: newProfile.full_name, avatar: newProfile.avatar_url, race: newProfile.race as any };
         }
       }
@@ -46,7 +54,10 @@ export const supabaseService = {
         money: data.money || 0,
         last_spin_at: data.last_spin_at
       };
-    } catch { return null; }
+    } catch (e) { 
+      console.error("Erro no getProfile:", e);
+      return null; 
+    }
   },
 
   async updateMoney(userId: string, newBalance: number): Promise<void> {
@@ -60,18 +71,17 @@ export const supabaseService = {
   },
 
   async addToInventory(userId: string, item: MenuItem): Promise<void> {
-    // Tenta encontrar se o item já existe para aumentar a quantidade
     const { data: existing } = await supabase
       .from('inventory')
       .select('id, quantity')
       .eq('user_id', userId)
       .eq('item_id', item.id)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       await supabase
         .from('inventory')
-        .update({ quantity: existing.quantity + 1 })
+        .update({ quantity: (existing.quantity || 1) + 1 })
         .eq('id', existing.id);
     } else {
       await supabase.from('inventory').insert([{
@@ -91,7 +101,7 @@ export const supabaseService = {
   },
 
   async getInventory(userId: string): Promise<any[]> {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('inventory')
       .select('*')
       .eq('user_id', userId)
@@ -150,7 +160,7 @@ export const supabaseService = {
       .select('role')
       .eq('user_id', userId)
       .eq('location', location)
-      .single();
+      .maybeSingle();
     if (error || !data) return null;
     return data.role;
   },
