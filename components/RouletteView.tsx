@@ -136,25 +136,31 @@ export const RouletteView: React.FC<RouletteViewProps> = ({ onClose, onResult })
              </button>
           </div>
         ) : showResult && currentOption.type === 'prize' ? (
-          /* TELA DE RECOMPENSA */
-          <div className="p-10 text-center animate-in zoom-in duration-500">
-             <div className="w-24 h-24 bg-emerald-500/20 rounded-full border border-emerald-500/30 flex items-center justify-center text-emerald-500 mx-auto mb-6 shadow-[0_0_50px_rgba(16,185,129,0.2)]">
-                <span className="material-symbols-rounded text-6xl">card_giftcard</span>
-             </div>
-             <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase mb-2">Parabéns!</h2>
-             <p className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-8">Você recebeu um prêmio</p>
+          /* TELA DE RECOMPENSA MELHORADA */
+          <div className="p-10 text-center animate-in zoom-in duration-500 relative overflow-hidden">
+             {/* Brilho de Fundo Radiante */}
+             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-emerald-500/20 blur-[100px] rounded-full animate-pulse"></div>
              
-             <div className="bg-emerald-500/10 rounded-[32px] py-8 border border-emerald-500/20 mb-8">
-                <span className="text-5xl font-black text-white italic">{currentOption.name.split(' ')[0]}</span>
-                <span className="text-emerald-400 font-black ml-2">{currentOption.name.split(' ')[1]}</span>
-             </div>
+             <div className="relative z-10">
+               <div className="w-24 h-24 bg-emerald-500/20 rounded-full border border-emerald-500/30 flex items-center justify-center text-emerald-500 mx-auto mb-6 shadow-[0_0_50px_rgba(16,185,129,0.4)] animate-bounce">
+                  <span className="material-symbols-rounded text-6xl">card_giftcard</span>
+               </div>
+               <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase mb-2 drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">Parabéns!</h2>
+               <p className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-10">Recompensa Magic</p>
+               
+               <div className="bg-emerald-500/10 rounded-[40px] py-10 border border-emerald-500/20 mb-10 shadow-inner group overflow-hidden relative">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                  <span className="text-6xl font-black text-white italic tracking-tighter drop-shadow-2xl">{currentOption.name.split(' ')[0]}</span>
+                  <span className="text-emerald-400 font-black ml-3 text-2xl uppercase tracking-widest">{currentOption.name.split(' ')[1]}</span>
+               </div>
 
-             <button 
-                onClick={handleClose}
-                className="w-full py-6 rounded-3xl bg-emerald-500 text-white text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-emerald-500/20 active:scale-95 transition-all"
-             >
-                Resgatar
-             </button>
+               <button 
+                  onClick={handleClose}
+                  className="w-full py-6 rounded-3xl bg-gradient-to-r from-emerald-600 to-emerald-400 text-white text-[11px] font-black uppercase tracking-[0.5em] shadow-[0_20px_50px_rgba(16,185,129,0.3)] active:scale-95 transition-all"
+               >
+                  Resgatar Agora
+               </button>
+             </div>
           </div>
         ) : (
           /* TELA DA ROLETA GIRANDO */

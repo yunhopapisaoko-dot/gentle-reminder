@@ -114,13 +114,9 @@ const App: React.FC = () => {
   };
 
   const handleRouletteResult = (id: string, name: string) => {
-    if (id.startsWith('d')) {
-      alert(`⚠️ CUIDADO! Você contraiu: ${name}. Procure o Hospital para Roleplay!`);
-    } else if (id.startsWith('p')) {
-      alert(`✨ PARABÉNS! Você ganhou: ${name}. O valor foi creditado em sua conta fictícia.`);
-    } else {
-      setSelectedLocalChat(id);
-    }
+    // Agora o próprio RouletteView mostra os resultados na tela.
+    // Aqui apenas tratamos mudanças de estado se necessário (ex: teleportar após a roleta fechar)
+    console.log(`Resultado da Roleta: ${name} (${id})`);
   };
 
   const renderMainContent = () => {
