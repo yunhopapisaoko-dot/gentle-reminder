@@ -1,3 +1,4 @@
+
 export interface MenuItem {
   id: string;
   name: string;
@@ -27,7 +28,6 @@ export interface User {
   banner?: string;
   posts?: Post[];
   isLeader?: boolean;
-  race?: string;
 }
 
 export interface Post {
@@ -46,7 +46,6 @@ export interface ChatMessage {
   id: string;
   role: 'user' | 'model';
   text: string;
-  author?: User; // Adicionado para identificar quem enviou a mensagem
 }
 
 export enum TabType {
