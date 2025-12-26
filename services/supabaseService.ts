@@ -1,5 +1,5 @@
 import { supabase } from '../supabase';
-import { Post, User, JobApplication } from '../types';
+import { Post, User, JobApplication, MenuItem } from '../types';
 
 const withTimeout = <T>(promise: Promise<T>, timeoutMs: number = 30000): Promise<T> => {
   return Promise.race([
@@ -43,7 +43,8 @@ export const supabaseService = {
         bio: data.bio || '',
         banner: data.banner_url,
         isLeader: data.is_leader || false,
-        money: data.money || 0
+        money: data.money || 0,
+        last_spin_at: data.last_spin_at
       };
     } catch { return null; }
   },
@@ -51,6 +52,59 @@ export const supabaseService = {
   async updateMoney(userId: string, newBalance: number): Promise<void> {
     const { error } = await supabase.from('profiles').update({ money: newBalance }).eq('id', userId);
     if (error) throw error;
+  },
+
+  async updateLastSpin(userId: string): Promise<void> {
+    const { error } = await supabase.from('profiles').update({ last_spin_at: new Date().toISOString() }).eq('id', userId);
+    if (error) throw error;
+  },
+
+  async addToInventory(userId: string, item: MenuItem): Promise<void> {
+    // Tenta encontrar se o item já existe para aumentar a quantidade
+    const { data: existing } = await supabase
+      .from('inventory')
+      .select('id, quantity')
+      .eq('user_id', userId)
+      .eq('item_id', item.id)
+      .single();
+
+    if (existing) {
+      await supabase
+        .from('inventory')
+        .update({ quantity: existing.quantity + 1 })
+        .eq('id', existing.id);
+    } else {
+      await supabase.from('inventory').insert([{
+        user_id: userId,
+        item_id: item.id,
+        item_name: item.name,
+        item_image: item.image,
+        category: item.category,
+        attributes: {
+          hunger: item.hungerRestore,
+          thirst: item.thirstRestore,
+          alcohol: item.alcoholLevel,
+          description: item.description
+        }
+      }]);
+    }
+  },
+
+  async getInventory(userId: string): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('inventory')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    return data || [];
+  },
+
+  async consumeFromInventory(inventoryId: string, quantity: number): Promise<void> {
+    if (quantity > 1) {
+      await supabase.from('inventory').update({ quantity: quantity - 1 }).eq('id', inventoryId);
+    } else {
+      await supabase.from('inventory').delete().eq('id', inventoryId);
+    }
   },
 
   async applyForJob(application: Partial<JobApplication>) {
@@ -180,7 +234,8 @@ export const supabaseService = {
         race: p.race,
         isLeader: p.is_leader || false,
         bio: p.bio,
-        money: p.money || 0
+        money: p.money || 0,
+        last_spin_at: p.last_spin_at
       }));
     } catch { return []; }
   },

@@ -32,10 +32,12 @@ interface SidebarMenuProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenProfile: () => void;
+  onOpenInventory: () => void;
+  onOpenChats: () => void;
   onLogout: () => void;
 }
 
-export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose, onOpenProfile, onLogout }) => {
+export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose, onOpenProfile, onOpenInventory, onOpenChats, onLogout }) => {
   const [isClosing, setIsClosing] = useState(false);
 
   const activeDisease = user.currentDisease ? DISEASE_DETAILS[user.currentDisease] : null;
@@ -71,7 +73,7 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose,
           ${isClosing ? 'animate-[slideOutLeft_400ms_cubic-bezier(0.32,0.72,0,1)_both]' : 'animate-[slideInLeft_500ms_cubic-bezier(0.32,0.72,0,1)_both]'}`}
       >
 
-        <div className="p-8 pt-20 relative overflow-hidden">
+        <div className="p-8 pt-20 relative overflow-hidden shrink-0">
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-30"></div>
 
           <button
@@ -105,7 +107,6 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose,
             )}
           </div>
 
-          {/* Diagnóstico Ativo */}
           {activeDisease && (
             <div className="bg-rose-500/10 backdrop-blur-3xl p-6 rounded-[40px] border border-rose-500/20 space-y-4 animate-in zoom-in">
               <div className="flex items-center justify-between">
@@ -115,17 +116,8 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose,
                 </div>
               </div>
               <div className="space-y-3">
-                <div>
-                  <p className="text-xs font-black text-white uppercase tracking-tight mb-1">{activeDisease.name}</p>
-                  <p className="text-[10px] text-white/50 leading-relaxed italic font-medium">"{activeDisease.description}"</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-[8px] font-black text-rose-500/50 uppercase tracking-widest">Sintomas detectados:</p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-3 py-1 bg-rose-500/10 border border-rose-500/10 rounded-full text-[8px] font-black text-rose-500 uppercase">HP {activeDisease.hpImpact}</span>
-                    <span className="px-3 py-1 bg-rose-500/10 border border-rose-500/10 rounded-full text-[8px] font-black text-rose-500 uppercase">Debilitado</span>
-                  </div>
-                </div>
+                <p className="text-xs font-black text-white uppercase tracking-tight">{activeDisease.name}</p>
+                <p className="text-[10px] text-white/50 italic">"{activeDisease.description}"</p>
               </div>
             </div>
           )}
@@ -135,27 +127,36 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose,
               <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-white/10">Menu Principal</h3>
             </div>
 
-            {[
-              { icon: 'forum', label: 'Meus Chats', count: '3' },
-              { icon: 'inventory_2', label: 'Inventário', count: '24' },
-              { icon: 'military_tech', label: 'Conquistas', count: null },
-            ].map((item, idx) => (
-              <button key={idx} className="w-full flex items-center justify-between p-4 rounded-[24px] hover:bg-white/5 group transition-all">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 rounded-2xl bg-white/[0.03] flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all text-white/40 border border-white/5">
-                    <span className="material-symbols-rounded text-xl">{item.icon}</span>
-                  </div>
-                  <span className="text-xs font-black uppercase tracking-widest text-white/40 group-hover:text-white transition-colors">{item.label}</span>
+            <button onClick={() => { handleClose(); onOpenChats(); }} className="w-full flex items-center justify-between p-4 rounded-[24px] hover:bg-white/5 group transition-all">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-2xl bg-white/[0.03] flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all text-white/40 border border-white/5">
+                  <span className="material-symbols-rounded text-xl">forum</span>
                 </div>
-                {item.count && (
-                  <span className="bg-primary/10 text-primary text-[10px] font-black px-2 py-0.5 rounded-lg border border-primary/20">{item.count}</span>
-                )}
-              </button>
-            ))}
+                <span className="text-xs font-black uppercase tracking-widest text-white/40 group-hover:text-white transition-colors">Meus Chats</span>
+              </div>
+            </button>
+
+            <button onClick={() => { handleClose(); onOpenInventory(); }} className="w-full flex items-center justify-between p-4 rounded-[24px] hover:bg-white/5 group transition-all">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-2xl bg-white/[0.03] flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all text-white/40 border border-white/5">
+                  <span className="material-symbols-rounded text-xl">inventory_2</span>
+                </div>
+                <span className="text-xs font-black uppercase tracking-widest text-white/40 group-hover:text-white transition-colors">Inventário</span>
+              </div>
+            </button>
+
+            <button className="w-full flex items-center justify-between p-4 rounded-[24px] hover:bg-white/5 group transition-all">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-2xl bg-white/[0.03] flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all text-white/40 border border-white/5">
+                  <span className="material-symbols-rounded text-xl">military_tech</span>
+                </div>
+                <span className="text-xs font-black uppercase tracking-widest text-white/40 group-hover:text-white transition-colors">Conquistas</span>
+              </div>
+            </button>
           </div>
         </div>
 
-        <div className="p-8 pb-12 border-t border-white/5">
+        <div className="p-8 pb-12 border-t border-white/5 shrink-0">
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center space-x-3 py-4 rounded-2xl bg-rose-500/10 text-rose-500 text-[10px] font-black uppercase tracking-[0.3em] border border-rose-500/20 active:scale-95 transition-all"
