@@ -86,7 +86,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
     
     setMessages([{ id: 'main-welcome', role: 'model', text: welcomeText }]);
     
-    // Verifica se o usuário trabalha aqui
     if (locationContext) {
       supabaseService.checkWorkerStatus(currentUser.id, locationContext).then(setWorkerRole);
     }
@@ -169,6 +168,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
     setShowConsultations(false);
   };
 
+  const handleSelectSubLoc = (loc: SubLocation) => {
+    setCurrentSubLoc(loc);
+    setShowActionModal(false);
+    
+    if (!roomMessages[loc.name]) {
+      const welcome: ChatMessage = {
+        id: `welcome-${loc.name}`,
+        role: 'model',
+        text: `*Você entrou no(a) ${loc.name}*\nEste lugar está tranquilo. O que pretende fazer por aqui?`
+      };
+      setRoomMessages(prev => ({ ...prev, [loc.name]: [welcome] }));
+    }
+  };
+
   return (
     <div className={`fixed inset-0 z-[100] bg-black flex flex-col h-[100dvh] overflow-hidden ${isClosing ? 'animate-out slide-out-bottom' : 'animate-in slide-in-bottom'}`}>
       <div className="absolute inset-0 z-0">
@@ -198,7 +211,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
         </div>
         
         <div className="flex items-center space-x-2">
-          {/* Ícones de Emprego e Trabalho */}
           {locationContext && !currentSubLoc && (
             <>
               {workerRole ? (
@@ -206,7 +218,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
                   <span className="material-symbols-rounded">assignment</span>
                 </button>
               ) : (
-                <button onClick={() => setShowJobModal(true)} className="w-11 h-11 rounded-2xl bg-white/5 text-white flex items-center justify-center border border-white/10 active:scale-90 transition-all hover:bg-white/10">
+                <button onClick={() => setShowJobModal(true)} className="w-11 h-11 rounded-2xl bg-white/5 text-white flex items-center justify-center border border-white/10 active:scale-90 transition-all">
                   <span className="material-symbols-rounded">work</span>
                 </button>
               )}
@@ -253,6 +265,31 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
           <button onClick={() => handleSend()} disabled={isLoading || !input.trim()} className={`w-13 h-13 rounded-full flex items-center justify-center transition-all ${isLoading || !input.trim() ? 'bg-white/5 text-white/10' : 'bg-primary text-white active:scale-90'}`}><span className="material-symbols-rounded text-3xl">send</span></button>
         </div>
       </div>
+
+      {showActionModal && (
+        <div className="fixed inset-0 z-[160] bg-black/90 backdrop-blur-3xl flex items-end animate-in fade-in duration-400">
+          <div className="w-full bg-background-dark rounded-t-[60px] border-t border-white/10 p-10 pb-16 animate-in slide-in-from-bottom duration-500 shadow-[0_-30px_120px_rgba(0,0,0,1)]">
+            <div className="w-16 h-1.5 bg-white/5 rounded-full mx-auto mb-10"></div>
+            <div className="space-y-8">
+              <div className="flex items-center justify-between px-4">
+                 <div className="flex items-center space-x-3">
+                   <div className="w-2 h-6 bg-primary rounded-full shadow-[0_0_10px_rgba(139,92,246,0.5)]"></div>
+                   <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">Ações de Local</h3>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-5 max-h-[40vh] overflow-y-auto scrollbar-hide pb-8">
+                {internalLocs.map((loc, idx) => (
+                  <button key={idx} onClick={() => handleSelectSubLoc(loc)} className="relative flex flex-col items-center justify-center p-8 rounded-[40px] bg-white/[0.03] border border-white/5 hover:bg-white/10 active:scale-95 transition-all shadow-2xl group overflow-hidden">
+                    <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center text-white mb-5 border border-white/10 group-hover:bg-primary group-hover:border-primary transition-all duration-500"><span className="material-symbols-rounded text-3xl">{loc.icon}</span></div>
+                    <span className="text-[11px] font-black text-white uppercase tracking-[0.25em] text-center">{loc.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button onClick={() => setShowActionModal(false)} className="w-full bg-white text-black py-7 rounded-[36px] text-[11px] font-black uppercase tracking-[0.5em] shadow-3xl active:scale-[0.97] transition-all">Voltar</button>
+          </div>
+        </div>
+      )}
 
       {showJobModal && locationContext && <JobApplicationModal location={locationContext} userId={currentUser.id} onClose={() => setShowJobModal(false)} onSuccess={() => setShowManagerDash(true)} />}
       {showManagerDash && locationContext && <ManagerDashboard location={locationContext} onClose={() => setShowManagerDash(false)} />}
