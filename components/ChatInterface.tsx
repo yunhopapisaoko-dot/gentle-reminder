@@ -11,7 +11,7 @@ interface ChatInterfaceProps {
   onMemberClick?: (user: User) => void;
 }
 
-// Configuração visual das raças: Cores e Ícones oficiais sincronizados
+// Configuração visual das raças
 const RACE_STLYES: Record<string, { color: string, icon: string, bg: string, border: string }> = {
   'Draeven': { color: 'text-rose-500', icon: 'local_fire_department', bg: 'bg-rose-500/10', border: 'border-rose-500/20' },
   'Sylven': { color: 'text-emerald-500', icon: 'eco', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
@@ -20,11 +20,11 @@ const RACE_STLYES: Record<string, { color: string, icon: string, bg: string, bor
 };
 
 const WALLPAPERS: Record<string, string> = {
-  hospital: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=1000&auto=format&fit=crop',
-  creche: 'https://images.unsplash.com/photo-1560523160-754a9e25c68f?q=80&w=1000&auto=format&fit=crop',
-  restaurante: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop',
-  padaria: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=1000&auto=format&fit=crop',
-  default: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=1000&auto=format&fit=crop'
+  hospital: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=1000',
+  creche: 'https://images.unsplash.com/photo-1560523160-754a9e25c68f?q=80&w=1000',
+  restaurante: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000',
+  padaria: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=1000',
+  default: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=1000'
 };
 
 const ICONS: Record<string, string> = {
@@ -143,13 +143,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
     }
   };
 
-  const handleExitSubLoc = () => {
-    setCurrentSubLoc(null);
-  };
-
   return (
     <div className={`fixed inset-0 z-[100] bg-black flex flex-col h-[100dvh] overflow-hidden ${isClosing ? 'animate-out slide-out-bottom' : 'animate-in slide-in-bottom'}`}>
       
+      {/* Background Section */}
       <div className="absolute inset-0 z-0">
         <div className="relative w-full h-full">
           <img 
@@ -163,12 +160,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
         </div>
       </div>
 
+      {/* Header */}
       <div className="relative z-10 px-6 pt-12 pb-6 flex items-center justify-between backdrop-blur-3xl bg-black/40 border-b border-white/10">
         <div className="flex items-center space-x-4">
           {currentSubLoc ? (
             <button 
-              onClick={handleExitSubLoc}
-              className="w-12 h-12 rounded-[20px] bg-white/10 flex items-center justify-center text-white active:scale-90 transition-all border border-white/20 hover:bg-white/20"
+              onClick={() => setCurrentSubLoc(null)}
+              className="w-12 h-12 rounded-[20px] bg-white/10 flex items-center justify-center text-white active:scale-90 transition-all border border-white/20"
             >
               <span className="material-symbols-rounded text-2xl">arrow_back</span>
             </button>
@@ -183,12 +181,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
               <h3 className="text-xl font-black text-white leading-none capitalize tracking-tighter">
                 {currentSubLoc ? currentSubLoc.name : (locationContext || 'Magic Chat')}
               </h3>
-              {currentSubLoc && <span className="bg-secondary/20 text-secondary text-[8px] font-black px-2.5 py-1 rounded-full border border-secondary/30 uppercase tracking-widest">Sala Privada</span>}
             </div>
             <div className="flex items-center mt-1.5 space-x-2">
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_#22c55e]"></div>
               <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em]">
-                {currentSubLoc ? `Região: ${locationContext}` : 'Cenário Ativo'}
+                {currentSubLoc ? `Cenário: ${locationContext}` : 'Canal Ativo'}
               </span>
             </div>
           </div>
@@ -198,20 +195,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
           {hasMenu && !currentSubLoc && (
             <button 
               onClick={() => setShowMenu(true)}
-              className="px-6 py-3 rounded-2xl bg-secondary text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-secondary/30 active:scale-95 transition-all border border-white/20 hover:brightness-110"
+              className="px-6 py-3 rounded-2xl bg-secondary text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-secondary/30 active:scale-95 transition-all border border-white/20"
             >
               Menu
             </button>
           )}
           <button 
             onClick={handleClose}
-            className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-2xl flex items-center justify-center border border-white/10 text-white shadow-lg active:scale-90 hover:bg-white/10"
+            className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-2xl flex items-center justify-center border border-white/10 text-white shadow-lg active:scale-90"
           >
             <span className="material-symbols-rounded text-2xl">close</span>
           </button>
         </div>
       </div>
 
+      {/* Messages Feed */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-12 relative z-10 scrollbar-hide pb-32">
         {activeMessages.map(msg => {
           const isAI = msg.role === 'model';
@@ -219,10 +217,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
           const style = RACE_STLYES[authorRace] || RACE_STLYES['Draeven'];
 
           return (
-            <div key={msg.id} className={`flex items-start space-x-3 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
+            <div key={msg.id} className={`flex items-start space-x-4 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
               <button 
                 onClick={() => msg.author && onMemberClick?.(msg.author)}
-                className={`w-11 h-11 rounded-2xl mt-10 flex-shrink-0 border-2 border-white/40 overflow-hidden shadow-2xl flex items-center justify-center transition-transform active:scale-90 ${isAI ? 'bg-primary cursor-default' : 'bg-surface-purple cursor-pointer'}`}
+                className={`w-12 h-12 rounded-[22px] mt-12 flex-shrink-0 border-2 border-white/40 overflow-hidden shadow-2xl flex items-center justify-center transition-transform active:scale-90 ${isAI ? 'bg-primary cursor-default' : 'bg-surface-purple cursor-pointer'}`}
               >
                 {isAI ? (
                   <span className="material-symbols-rounded text-white text-2xl">auto_awesome</span>
@@ -231,23 +229,25 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
                 )}
               </button>
               
-              <div className={`flex flex-col space-y-2 max-w-[82%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                {/* CABEÇALHO DA MENSAGEM: TAG + USERNAME (CENTRALIZADO SOBRE O BALÃO) */}
-                <div className={`flex flex-col ${msg.role === 'user' ? 'items-center' : 'items-center'} w-full space-y-1.5`}>
-                   <div className={`flex items-center space-x-2 px-4 py-1.5 rounded-full border ${style.border} ${style.bg} ${style.color} shadow-lg backdrop-blur-md animate-in zoom-in duration-500`}>
+              <div className={`flex flex-col space-y-3 max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                {/* IDENTIDADE CENTRALIZADA ACIMA DO BALÃO */}
+                <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} space-y-1.5 px-1`}>
+                   {/* TAG DE RAÇA (ACIMA DE TUDO) */}
+                   <div className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full border ${style.border} ${style.bg} ${style.color} shadow-lg backdrop-blur-md animate-in slide-in-from-top duration-500`}>
                       <span className="material-symbols-rounded text-[12px]">{style.icon}</span>
-                      <span className="text-[9px] font-black uppercase tracking-[0.3em]">{isAI ? 'Miku AI' : authorRace}</span>
-                      <div className="w-[1px] h-3 bg-white/10 mx-1"></div>
-                      <span className="text-[10px] font-black text-white italic tracking-tight">
-                        {isAI ? '@miku_bot' : `@${msg.author?.username || 'user'}`}
-                      </span>
+                      <span className="text-[9px] font-black uppercase tracking-[0.3em] italic">{isAI ? 'Guia Digital' : authorRace}</span>
                    </div>
+                   {/* NOME REAL DA PESSOA */}
+                   <span className="text-sm font-black text-white italic tracking-tighter drop-shadow-md">
+                     {isAI ? 'Miku AI' : (msg.author?.name || 'Viajante')}
+                   </span>
                 </div>
                 
+                {/* BALÃO DE MENSAGEM */}
                 <div className={`px-6 py-5 rounded-[32px] shadow-2xl text-[14px] font-bold leading-relaxed animate-in zoom-in duration-700 backdrop-blur-3xl border border-white/10 ${
                   msg.role === 'user' 
-                    ? 'bg-primary/60 text-white' 
-                    : 'bg-black/70 text-white'
+                    ? 'bg-primary/60 text-white rounded-tr-none' 
+                    : 'bg-black/70 text-white rounded-tl-none'
                 }`}>
                   {msg.text.split('\n').map((line, i) => (
                     <p key={i} className={line.startsWith('*') ? 'italic text-white/50 text-[12px] mb-2 block' : 'mb-1'}>{line}</p>
@@ -270,6 +270,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
         )}
       </div>
 
+      {/* Input Section */}
       <div className="px-6 pb-12 pt-4 relative z-10">
         <div className="flex items-center space-x-3 bg-black/60 backdrop-blur-3xl rounded-[40px] p-2.5 pl-5 border border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.6)]">
           <button 
@@ -284,7 +285,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            placeholder={currentSubLoc ? `Roleplay em ${currentSubLoc.name}...` : "Sua próxima ação..."}
+            placeholder={currentSubLoc ? `Roleplay em ${currentSubLoc.name}...` : "O que você faz agora?"}
             className="flex-1 bg-transparent border-none text-[15px] focus:ring-0 placeholder:text-white/20 text-white font-bold py-4 px-2"
           />
           
@@ -302,6 +303,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
         </div>
       </div>
 
+      {/* Modals */}
       {showActionModal && (
         <div className="fixed inset-0 z-[160] bg-black/90 backdrop-blur-3xl flex items-end animate-in fade-in duration-400">
           <div className="w-full bg-background-dark rounded-t-[60px] border-t border-white/10 p-10 pb-16 animate-in slide-in-from-bottom duration-500 shadow-[0_-30px_120px_rgba(0,0,0,1)]">
@@ -310,14 +312,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
               <div className="flex items-center justify-between px-4">
                 <div className="flex items-center space-x-3">
                    <div className="w-2 h-6 bg-primary rounded-full shadow-[0_0_10px_rgba(139,92,246,0.5)]"></div>
-                   <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">Mudar de Sala</h3>
+                   <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">Explorar Local</h3>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-5 max-h-[40vh] overflow-y-auto scrollbar-hide pb-8">
                 {internalLocs.map((loc, idx) => (
                   <button
                     key={idx}
-                    onClick={() => handleSelectSubLoc(loc)}
+                    onClick={() => { handleSelectSubLoc(loc); setShowActionModal(false); }}
                     className="relative flex flex-col items-center justify-center p-8 rounded-[40px] bg-white/[0.03] border border-white/5 hover:bg-white/10 active:scale-95 transition-all shadow-2xl group overflow-hidden"
                   >
                     <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center text-white mb-5 border border-white/10 group-hover:bg-primary group-hover:border-primary transition-all duration-500">
@@ -328,7 +330,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
                 ))}
               </div>
             </div>
-            <button onClick={() => setShowActionModal(false)} className="w-full bg-white text-black py-7 rounded-[36px] text-[11px] font-black uppercase tracking-[0.5em] shadow-3xl active:scale-[0.97] transition-all">Voltar ao Roleplay</button>
+            <button onClick={() => setShowActionModal(false)} className="w-full bg-white text-black py-7 rounded-[36px] text-[11px] font-black uppercase tracking-[0.5em] shadow-3xl active:scale-[0.97] transition-all">Voltar</button>
           </div>
         </div>
       )}
