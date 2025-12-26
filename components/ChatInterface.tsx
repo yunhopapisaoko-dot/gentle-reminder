@@ -11,6 +11,12 @@ interface ChatInterfaceProps {
   onMemberClick?: (user: User) => void;
 }
 
+const RACE_THEMES: Record<string, string> = {
+  'Draeven': 'text-rose-500 bg-rose-500/10 border-rose-500/20',
+  'Sylven': 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
+  'Lunari': 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20',
+};
+
 const WALLPAPERS: Record<string, string> = {
   hospital: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=1000&auto=format&fit=crop',
   creche: 'https://images.unsplash.com/photo-1560523160-754a9e25c68f?q=80&w=1000&auto=format&fit=crop',
@@ -204,12 +210,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
         </div>
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-8 relative z-10 scrollbar-hide pb-32">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-10 relative z-10 scrollbar-hide pb-32">
         {activeMessages.map(msg => (
-          <div key={msg.id} className={`flex items-end space-x-3 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
+          <div key={msg.id} className={`flex items-start space-x-3 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
             <button 
               onClick={() => msg.author && onMemberClick?.(msg.author)}
-              className={`w-11 h-11 rounded-2xl flex-shrink-0 border-2 border-white/40 overflow-hidden shadow-2xl flex items-center justify-center transition-transform active:scale-90 ${msg.role === 'model' ? 'bg-primary cursor-default' : 'bg-surface-purple cursor-pointer'}`}
+              className={`w-11 h-11 rounded-2xl mt-1 flex-shrink-0 border-2 border-white/40 overflow-hidden shadow-2xl flex items-center justify-center transition-transform active:scale-90 ${msg.role === 'model' ? 'bg-primary cursor-default' : 'bg-surface-purple cursor-pointer'}`}
             >
               {msg.role === 'model' ? (
                 <span className="material-symbols-rounded text-white text-2xl">auto_awesome</span>
@@ -217,14 +223,26 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ locationContext, o
                 <img src={msg.author?.avatar} className="w-full h-full object-cover" alt="avatar" />
               )}
             </button>
-            <div className={`max-w-[82%] px-6 py-4 rounded-[32px] shadow-2xl text-[14px] font-bold leading-relaxed animate-in zoom-in duration-500 backdrop-blur-3xl border border-white/10 ${
-              msg.role === 'user' 
-                ? 'bg-primary/70 text-white rounded-br-none' 
-                : 'bg-black/70 text-white rounded-bl-none'
-            }`}>
-              {msg.text.split('\n').map((line, i) => (
-                <p key={i} className={line.startsWith('*') ? 'italic text-white/50 text-[12px] mb-1.5 block' : 'mb-1'}>{line}</p>
-              ))}
+            <div className={`flex flex-col space-y-1.5 max-w-[82%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+              {msg.author && (
+                <div className="flex items-center space-x-2 px-2">
+                  <span className="text-[11px] font-black text-white italic">@{msg.author.username}</span>
+                  {msg.author.race && (
+                    <span className={`text-[8px] font-black px-2 py-0.5 rounded-md border uppercase tracking-widest ${RACE_THEMES[msg.author.race] || 'text-white/40 bg-white/5 border-white/10'}`}>
+                      {msg.author.race}
+                    </span>
+                  )}
+                </div>
+              )}
+              <div className={`px-6 py-4 rounded-[32px] shadow-2xl text-[14px] font-bold leading-relaxed animate-in zoom-in duration-500 backdrop-blur-3xl border border-white/10 ${
+                msg.role === 'user' 
+                  ? 'bg-primary/70 text-white rounded-tr-none' 
+                  : 'bg-black/70 text-white rounded-tl-none'
+              }`}>
+                {msg.text.split('\n').map((line, i) => (
+                  <p key={i} className={line.startsWith('*') ? 'italic text-white/50 text-[12px] mb-1.5 block' : 'mb-1'}>{line}</p>
+                ))}
+              </div>
             </div>
           </div>
         ))}

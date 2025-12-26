@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 
 interface DbSetupModalProps {
@@ -16,6 +15,7 @@ create table if not exists public.profiles (
   avatar_url text,
   bio text,
   banner_url text,
+  race text default 'Draeven',
   is_leader boolean default false,
   updated_at timestamptz default now()
 );
@@ -38,7 +38,7 @@ create policy "Own Insert Profiles" on public.profiles for insert with check (au
 create policy "Public Select Posts" on public.posts for select using (true);
 create policy "Own Insert Posts" on public.posts for insert with check (auth.uid() = author_id);
 
--- 3. STORAGE (Execute isso e também crie o bucket no painel)
+-- 3. STORAGE
 insert into storage.buckets (id, name, public) values ('avatars', 'avatars', true) on conflict (id) do nothing;
 
 create policy "Public Avatar Access" on storage.objects for select using ( bucket_id = 'avatars' );
@@ -50,8 +50,14 @@ create policy "Own Avatar Delete" on storage.objects for delete using ( bucket_i
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, full_name, username, avatar_url)
-  values (new.id, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'username', 'https://api.dicebear.com/7.x/avataaars/svg?seed=' || new.id);
+  insert into public.profiles (id, full_name, username, avatar_url, race)
+  values (
+    new.id, 
+    new.raw_user_meta_data->>'full_name', 
+    new.raw_user_meta_data->>'username', 
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=' || new.id,
+    coalesce(new.raw_user_meta_data->>'race', 'Draeven')
+  );
   return new;
 end;
 $$ language plpgsql security definer;

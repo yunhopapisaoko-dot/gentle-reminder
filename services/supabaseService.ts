@@ -15,7 +15,6 @@ export const supabaseService = {
     try {
       const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
       
-      // Se o perfil não existir, vamos tentar criar um básico para evitar erros de chave estrangeira
       if (error && error.code === 'PGRST116') {
         const { data: userData } = await supabase.auth.getUser();
         if (userData?.user) {
@@ -25,10 +24,11 @@ export const supabaseService = {
             full_name: meta?.full_name || 'Usuário Magic',
             username: meta?.username || `user_${userId.substring(0, 5)}`,
             avatar_url: meta?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+            race: meta?.race || 'Draeven',
             bio: ''
           };
           await supabase.from('profiles').insert([newProfile]);
-          return { ...newProfile, name: newProfile.full_name, avatar: newProfile.avatar_url };
+          return { ...newProfile, name: newProfile.full_name, avatar: newProfile.avatar_url, race: newProfile.race as any };
         }
       }
 
@@ -38,6 +38,7 @@ export const supabaseService = {
         name: data.full_name || 'Usuário Magic',
         username: data.username || 'anonimo',
         avatar: data.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.id}`,
+        race: data.race,
         bio: data.bio || '',
         banner: data.banner_url,
         isLeader: data.is_leader || false
@@ -51,6 +52,7 @@ export const supabaseService = {
       username: updates.username,
       bio: updates.bio,
       avatar_url: updates.avatar_url,
+      race: updates.race,
       updated_at: new Date().toISOString()
     }).eq('id', userId));
     if (error) throw error;
@@ -88,6 +90,7 @@ export const supabaseService = {
         name: p.full_name || 'Usuário',
         username: p.username || 'user',
         avatar: p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
+        race: p.race,
         isLeader: p.is_leader || false,
         bio: p.bio
       }));
@@ -110,6 +113,7 @@ export const supabaseService = {
           name: post.profiles?.full_name || 'Membro',
           username: post.profiles?.username || 'user',
           avatar: post.profiles?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author_id}`,
+          race: post.profiles?.race,
           isLeader: post.profiles?.is_leader || false
         }
       }));
@@ -117,20 +121,14 @@ export const supabaseService = {
   },
 
   async createPost(userId: string, title: string, excerpt: string, imageUrl?: string) {
-    // Primeiro garantimos que o perfil existe para evitar erro de Foreign Key
     await this.getProfile(userId);
-
     const { error } = await supabase.from('posts').insert([{
       author_id: userId,
       title,
       excerpt,
       image_url: imageUrl
     }]);
-    
-    if (error) {
-      console.error("Erro Supabase Insert:", error);
-      throw new Error(error.message || "Falha ao inserir post no banco de dados.");
-    }
+    if (error) throw new Error(error.message || "Falha ao inserir post.");
   },
 
   async updateLeaderStatus(userId: string, isLeader: boolean) {

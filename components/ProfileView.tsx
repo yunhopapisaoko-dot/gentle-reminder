@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { User, Post } from '../types';
 import { PostDetailView } from './PostDetailView';
@@ -12,13 +11,18 @@ interface ProfileViewProps {
   onUpdate?: (updatedUser: User) => void;
 }
 
+const RACE_THEMES: Record<string, string> = {
+  'Draeven': 'from-rose-600 to-rose-400 border-rose-300 shadow-rose-500/30',
+  'Sylven': 'from-emerald-600 to-emerald-400 border-emerald-300 shadow-emerald-500/30',
+  'Lunari': 'from-cyan-600 to-cyan-400 border-cyan-300 shadow-cyan-500/30',
+};
+
 export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, allPosts = [], onClose, onUpdate }) => {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isClosing, setIsClosing] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [activeCategory, setActiveCategory] = useState<'Posts' | 'Mídia' | 'Coleção'>('Posts');
   
-  // Normaliza IDs para comparação segura (sem espaços ou diferenças de case inesperadas)
   const isOwnProfile = String(user.id).toLowerCase() === String(currentUserId).toLowerCase();
 
   const userPosts = useMemo(() => {
@@ -80,14 +84,21 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, a
               )}
             </div>
             
-            <div className="flex flex-col items-center">
-              {user.isLeader && (
-                <div className="mb-2 px-4 py-1 rounded-full bg-gradient-to-r from-amber-600 to-amber-400 border border-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.5)]">
-                  <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Líder</span>
-                </div>
-              )}
+            <div className="flex flex-col items-center space-y-3">
+              <div className="flex items-center space-x-3">
+                 {user.isLeader && (
+                  <div className="px-4 py-1 rounded-full bg-gradient-to-r from-amber-600 to-amber-400 border border-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.5)]">
+                    <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Líder</span>
+                  </div>
+                )}
+                {user.race && (
+                  <div className={`px-4 py-1 rounded-full bg-gradient-to-r ${RACE_THEMES[user.race] || 'from-white/10 to-white/5 border-white/10'} border shadow-lg`}>
+                    <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">{user.race}</span>
+                  </div>
+                )}
+              </div>
               <h2 className="text-3xl font-black text-white tracking-tighter italic uppercase text-center leading-none">{user.name}</h2>
-              <span className="text-xs font-black text-primary tracking-widest uppercase italic mt-2">@{user.username}</span>
+              <span className="text-xs font-black text-primary tracking-widest uppercase italic mt-1">@{user.username}</span>
             </div>
           </div>
         </div>

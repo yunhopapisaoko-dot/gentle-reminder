@@ -23,6 +23,7 @@ export interface User {
   name: string;
   username: string;
   avatar: string;
+  race?: 'Draeven' | 'Sylven' | 'Lunari';
   bio?: string;
   banner?: string;
   posts?: Post[];
