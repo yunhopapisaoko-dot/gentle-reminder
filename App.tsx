@@ -49,22 +49,35 @@ const App: React.FC = () => {
     if (savedConfirmed) setConfirmedRooms(JSON.parse(savedConfirmed));
     if (savedVisited) setVisitedRooms(JSON.parse(savedVisited));
 
-    const initAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
+    // Escuta mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
         if (session) {
           setIsAuthenticated(true);
-          fetchInitialData(session.user.id);
+          // Defer para evitar deadlock
+          setTimeout(() => {
+            fetchInitialData(session.user.id);
+          }, 0);
         } else {
           setIsAuthenticated(false);
+          setCurrentUser(null);
           setLoading(false);
         }
-      } catch (e) {
+      }
+    );
+
+    // Verifica sessão existente
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setIsAuthenticated(true);
+        fetchInitialData(session.user.id);
+      } else {
         setIsAuthenticated(false);
         setLoading(false);
       }
-    };
-    initAuth();
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const fetchInitialData = async (userId: string) => {
