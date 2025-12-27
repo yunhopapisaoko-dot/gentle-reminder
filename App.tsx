@@ -39,6 +39,8 @@ const App: React.FC = () => {
   const [isAllChatsOpen, setIsAllChatsOpen] = useState(false);
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
+  const [isCreateCharacterOpen, setIsCreateCharacterOpen] = useState(false);
+  const [characters, setCharacters] = useState<any[]>([]);
   
   const [visitedRooms, setVisitedRooms] = useState<string[]>([]);
   const [confirmedRooms, setConfirmedRooms] = useState<string[]>([]);
@@ -80,6 +82,33 @@ const App: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Decaimento automático de status: 1 ponto por minuto em fome e sede
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    const interval = setInterval(() => {
+      setCurrentUser(prev => {
+        if (!prev) return prev;
+        const newHunger = Math.max(0, (prev.hunger ?? 100) - 1);
+        const newThirst = Math.max(0, (prev.thirst ?? 100) - 1);
+        
+        // Atualiza no banco também periodicamente
+        supabaseService.updateVitalStatus(prev.id, {
+          hunger: newHunger,
+          energy: newThirst
+        });
+        
+        return {
+          ...prev,
+          hunger: newHunger,
+          thirst: newThirst
+        };
+      });
+    }, 60000); // 1 minuto
+    
+    return () => clearInterval(interval);
+  }, [currentUser?.id]);
+
   const fetchInitialData = async (userId: string) => {
     try {
       const profile = await supabaseService.getProfile(userId);
@@ -87,17 +116,19 @@ const App: React.FC = () => {
         setCurrentUser({
           ...profile,
           money: profile.money || 3000,
-          hp: profile.hp || 100,
+          hp: profile.hp ?? 100,
           maxHp: profile.maxHp || 100,
-          hunger: profile.hunger || 50,
-          thirst: profile.thirst || 50,
-          alcohol: profile.alcohol || 0
+          hunger: profile.hunger ?? 100,
+          thirst: profile.thirst ?? 100,
+          alcohol: profile.alcohol ?? 0
         });
       }
       const dbPosts = await supabaseService.getPosts();
       setPosts(dbPosts || []);
       const members = await supabaseService.getAllProfiles();
       setCommunityMembers(members || []);
+      const chars = await supabaseService.getCharacters();
+      setCharacters(chars || []);
     } catch (error: any) {
       if (error?.message?.includes('profiles')) setShowDbSetup(true);
     } finally {
@@ -223,6 +254,13 @@ const App: React.FC = () => {
         );
       case TabType.Locais:
         return <LocaisGrid onSelect={handleEnterRoom} confirmedRooms={confirmedRooms} />;
+      case TabType.Personagens:
+        return (
+          <CharactersGrid 
+            characters={characters} 
+            onCreateClick={() => setIsCreateCharacterOpen(true)} 
+          />
+        );
       case TabType.Chat:
         return (
           <ChatInterface 
@@ -269,6 +307,16 @@ const App: React.FC = () => {
 
         {isInventoryOpen && <InventoryView userId={currentUser.id} onClose={() => setIsInventoryOpen(false)} onConsume={handleConsumeItem} />}
         {isCreateModalOpen && <CreateContentModal onClose={() => setIsCreateModalOpen(false)} onSuccess={() => fetchInitialData(currentUser.id)} userId={currentUser.id} />}
+        {isCreateCharacterOpen && (
+          <CreateCharacterModal 
+            userId={currentUser.id}
+            onClose={() => setIsCreateCharacterOpen(false)} 
+            onSuccess={() => {
+              setIsCreateCharacterOpen(false);
+              fetchInitialData(currentUser.id);
+            }} 
+          />
+        )}
         {selectedUser && <ProfileView user={selectedUser} currentUserId={currentUser.id} allPosts={posts} onClose={() => setSelectedUser(null)} onUpdate={(u) => { setCurrentUser(u); fetchInitialData(u.id); }} />}
         {selectedLocalChat && <ChatInterface onUpdateStatus={handleUpdateStatus} onConsumeItems={handleBuyItems} currentUser={currentUser} locationContext={selectedLocalChat} onNavigate={handleEnterRoom} onClose={() => setSelectedLocalChat(null)} />}
         {isAllChatsOpen && <AllChatsView visitedRooms={visitedRooms} onClose={() => setIsAllChatsOpen(false)} onSelectChat={handleEnterRoom} onLeaveChat={handleLeaveRoom} />}

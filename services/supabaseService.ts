@@ -29,6 +29,10 @@ export const supabaseService = {
             avatar_url: meta?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
             race: (meta?.race?.toLowerCase() || 'draeven') as 'draeven' | 'sylven' | 'lunari',
             money: 3000,
+            health: 100,
+            hunger: 100,
+            energy: 100,
+            alcoholism: 0,
             bio: ''
           };
           
@@ -71,6 +75,11 @@ export const supabaseService = {
         banner: data.banner_url,
         isLeader: data.is_leader || false,
         money: data.money || 0,
+        hp: data.health ?? 100,
+        maxHp: 100,
+        hunger: data.hunger ?? 100,
+        thirst: data.energy ?? 100,
+        alcohol: data.alcoholism ?? 0,
         last_spin_at: data.last_spin_at
       };
     } catch (e) { 
@@ -82,6 +91,11 @@ export const supabaseService = {
   async updateMoney(userId: string, newBalance: number): Promise<void> {
     const { error } = await supabase.from('profiles').update({ money: newBalance }).eq('user_id', userId);
     if (error) throw error;
+  },
+
+  async updateVitalStatus(userId: string, updates: { health?: number; hunger?: number; energy?: number; alcoholism?: number }): Promise<void> {
+    const { error } = await supabase.from('profiles').update(updates).eq('user_id', userId);
+    if (error) console.error("Erro ao atualizar status vitais:", error);
   },
 
   async updateLastSpin(userId: string): Promise<void> {
