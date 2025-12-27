@@ -3,6 +3,7 @@ import { Post, User, Comment, MenuItem } from './types';
 export interface DiseaseInfo {
   id: string;
   name: string;
+  description: string;
   hpImpact: number;
   cureTime: string;
   treatmentCost: number;
@@ -10,11 +11,11 @@ export interface DiseaseInfo {
 }
 
 export const DISEASE_DETAILS: Record<string, DiseaseInfo> = {
-  d1: { id: 'd1', name: 'Febre Mágica', hpImpact: -30, cureTime: '10 min', treatmentCost: 50, icon: 'coronavirus' },
-  d2: { id: 'd2', name: 'Maldição do Silêncio', hpImpact: -20, cureTime: '15 min', treatmentCost: 75, icon: 'comments_disabled' },
-  d3: { id: 'd3', name: 'Gripe Estelar', hpImpact: -40, cureTime: '5 min', treatmentCost: 120, icon: 'ac_unit' },
-  d4: { id: 'd4', name: 'Vírus Neon', hpImpact: -50, cureTime: '20 min', treatmentCost: 200, icon: 'biotech' },
-  d5: { id: 'd5', name: 'Amnésia Espiritual', hpImpact: -15, cureTime: '12 min', treatmentCost: 45, icon: 'psychology_alt' },
+  d1: { id: 'd1', name: 'Febre Mágica', description: 'Uma febre misteriosa que queima com energia arcana.', hpImpact: -30, cureTime: '10 min', treatmentCost: 50, icon: 'coronavirus' },
+  d2: { id: 'd2', name: 'Maldição do Silêncio', description: 'Sua voz foi selada por forças sombrias.', hpImpact: -20, cureTime: '15 min', treatmentCost: 75, icon: 'comments_disabled' },
+  d3: { id: 'd3', name: 'Gripe Estelar', description: 'Partículas cósmicas infectaram seu sistema.', hpImpact: -40, cureTime: '5 min', treatmentCost: 120, icon: 'ac_unit' },
+  d4: { id: 'd4', name: 'Vírus Neon', description: 'Um vírus digital que afeta corpo e mente.', hpImpact: -50, cureTime: '20 min', treatmentCost: 200, icon: 'biotech' },
+  d5: { id: 'd5', name: 'Amnésia Espiritual', description: 'Fragmentos da sua memória estão se perdendo.', hpImpact: -15, cureTime: '12 min', treatmentCost: 45, icon: 'psychology_alt' },
 };
 
 export const CURRENT_USER: User = {

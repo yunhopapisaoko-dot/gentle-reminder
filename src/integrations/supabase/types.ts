@@ -67,6 +67,39 @@ export type Database = {
           },
         ]
       }
+      chat_messages: {
+        Row: {
+          character_avatar: string | null
+          character_name: string | null
+          content: string
+          created_at: string
+          id: string
+          location: string
+          sub_location: string | null
+          user_id: string
+        }
+        Insert: {
+          character_avatar?: string | null
+          character_name?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          location: string
+          sub_location?: string | null
+          user_id: string
+        }
+        Update: {
+          character_avatar?: string | null
+          character_name?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          location?: string
+          sub_location?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           content: string

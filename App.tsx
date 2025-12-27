@@ -10,6 +10,8 @@ import { LocaisGrid } from './components/LocaisGrid';
 import { ProfileView } from './components/ProfileView';
 import { SidebarMenu } from './components/SidebarMenu';
 import { CreateContentModal } from './components/CreateContentModal';
+import { CharactersGrid } from './components/CharactersGrid';
+import { CreateCharacterModal } from './components/CreateCharacterModal';
 import { AuthView } from './components/AuthView';
 import { DbSetupModal } from './components/DbSetupModal';
 import { FloatingActionDock } from './components/FloatingActionDock';
