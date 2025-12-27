@@ -26,7 +26,7 @@ export interface User {
   name: string;
   username: string;
   avatar: string;
-  race?: 'Draeven' | 'Sylven' | 'Lunari';
+  race?: 'Draeven' | 'Sylven' | 'Lunari' | 'draeven' | 'sylven' | 'lunari';
   bio?: string;
   banner?: string;
   posts?: Post[];
@@ -38,6 +38,7 @@ export interface User {
   thirst?: number;
   alcohol?: number;
   currentDisease?: string;
+  last_spin_at?: string;
 }
 
 export interface JobApplication {
