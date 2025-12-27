@@ -202,7 +202,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, a
       )}
 
       {selectedPost && (
-        <PostDetailView post={selectedPost} onClose={() => setSelectedPost(null)} />
+        <PostDetailView post={selectedPost} currentUser={user} onClose={() => setSelectedPost(null)} />
       )}
     </div>
   );
