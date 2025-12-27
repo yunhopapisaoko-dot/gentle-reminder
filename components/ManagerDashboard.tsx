@@ -76,8 +76,8 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ location, on
               <div className="flex items-center space-x-4 mb-6">
                  <img src={app.profiles?.avatar_url} className="w-14 h-14 rounded-2xl object-cover border border-white/10" alt="avatar" />
                  <div>
-                    <h4 className="text-lg font-black text-white leading-none">{app.name}</h4>
-                    <p className="text-[10px] text-primary font-black uppercase tracking-widest mt-1.5">@{app.profiles?.username} • {app.age} anos</p>
+                    <h4 className="text-lg font-black text-white leading-none">{app.applicant_name}</h4>
+                    <p className="text-[10px] text-primary font-black uppercase tracking-widest mt-1.5">@{app.profiles?.username} • {app.applicant_age} anos</p>
                  </div>
               </div>
               
