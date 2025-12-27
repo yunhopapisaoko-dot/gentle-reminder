@@ -13,40 +13,59 @@ const withTimeout = <T>(promise: Promise<T>, timeoutMs: number = 30000): Promise
 export const supabaseService = {
   async getProfile(userId: string): Promise<User | null> {
     try {
-      // Busca o perfil
-      const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+      // Busca o perfil pelo user_id (não pelo id da tabela profiles)
+      const { data, error } = await supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle();
       
-      // Se o perfil não existir (erro PGRST116), vamos criá-lo manualmente
-      if (error && (error.code === 'PGRST116' || error.message.includes('JSON'))) {
-        console.log("Perfil não encontrado, tentando criar manualmente...");
+      // Se o perfil não existir, vamos criá-lo com os dados do signup
+      if (!data) {
+        console.log("Perfil não encontrado, criando novo perfil...");
         const { data: userData } = await supabase.auth.getUser();
         if (userData?.user) {
           const meta = userData.user.user_metadata;
           const newProfile = {
-            id: userId,
-            full_name: meta?.full_name || 'Usuário Magic',
+            user_id: userId,
+            full_name: meta?.full_name || meta?.name || 'Usuário Magic',
             username: meta?.username || `user_${userId.substring(0, 5)}`,
             avatar_url: meta?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
-            race: meta?.race || 'Draeven',
+            race: (meta?.race?.toLowerCase() || 'draeven') as 'draeven' | 'sylven' | 'lunari',
             money: 3000,
             bio: ''
           };
           
-          const { error: insertError } = await supabase.from('profiles').insert([newProfile]);
+          const { data: insertedProfile, error: insertError } = await supabase
+            .from('profiles')
+            .insert([newProfile])
+            .select()
+            .single();
+            
           if (insertError) {
-            console.error("Erro ao criar perfil manual:", insertError);
-            return { ...newProfile, name: newProfile.full_name, avatar: newProfile.avatar_url, race: newProfile.race as any };
+            console.error("Erro ao criar perfil:", insertError);
+            return { id: userId, name: newProfile.full_name, username: newProfile.username, avatar: newProfile.avatar_url, race: newProfile.race as any };
           }
-          return { ...newProfile, name: newProfile.full_name, avatar: newProfile.avatar_url, race: newProfile.race as any };
+          
+          return { 
+            id: insertedProfile.user_id, 
+            name: insertedProfile.full_name, 
+            username: insertedProfile.username,
+            avatar: insertedProfile.avatar_url, 
+            race: insertedProfile.race as any,
+            money: insertedProfile.money,
+            bio: insertedProfile.bio
+          };
         }
+        return null;
       }
 
-      if (error || !data) return null;
+      if (error) {
+        console.error("Erro ao buscar perfil:", error);
+        return null;
+      }
+      
       return {
-        id: data.id,
+        id: data.user_id,
         name: data.full_name || 'Usuário Magic',
         username: data.username || 'anonimo',
-        avatar: data.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.id}`,
+        avatar: data.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user_id}`,
         race: data.race,
         bio: data.bio || '',
         banner: data.banner_url,
@@ -61,12 +80,12 @@ export const supabaseService = {
   },
 
   async updateMoney(userId: string, newBalance: number): Promise<void> {
-    const { error } = await supabase.from('profiles').update({ money: newBalance }).eq('id', userId);
+    const { error } = await supabase.from('profiles').update({ money: newBalance }).eq('user_id', userId);
     if (error) throw error;
   },
 
   async updateLastSpin(userId: string): Promise<void> {
-    const { error } = await supabase.from('profiles').update({ last_spin_at: new Date().toISOString() }).eq('id', userId);
+    const { error } = await supabase.from('profiles').update({ last_spin_at: new Date().toISOString() }).eq('user_id', userId);
     if (error) throw error;
   },
 
@@ -195,7 +214,7 @@ export const supabaseService = {
       avatar_url: updates.avatar_url,
       race: updates.race,
       updated_at: new Date().toISOString()
-    }).eq('id', userId));
+    }).eq('user_id', userId));
     if (error) throw error;
   },
 
@@ -251,7 +270,7 @@ export const supabaseService = {
   },
 
   async updateLeaderStatus(userId: string, isLeader: boolean) {
-    const { error } = await supabase.from('profiles').update({ is_leader: isLeader }).eq('id', userId);
+    const { error } = await supabase.from('profiles').update({ is_leader: isLeader }).eq('user_id', userId);
     if (error) throw error;
   },
 
