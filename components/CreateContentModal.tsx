@@ -44,8 +44,7 @@ export const CreateContentModal: React.FC<CreateContentModalProps> = ({ onClose,
         const fileExt = selectedFile.name.split('.').pop();
         const fileName = `post_${Date.now()}.${fileExt}`;
         const filePath = `${userId}/${fileName}`;
-        // Usamos o bucket 'avatars' que já está configurado no seu SQL
-        imageUrl = await supabaseService.uploadFile('avatars', filePath, selectedFile);
+        imageUrl = await supabaseService.uploadFile('posts', filePath, selectedFile);
       }
 
       await supabaseService.createPost(userId, postContent.title, postContent.text, imageUrl);
