@@ -115,12 +115,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     
     setMessages([{ id: 'main-welcome', role: 'model', text: welcomeText }]);
     
-    if (locationContext) {
+    if (locationContext && currentUser?.id) {
       supabaseService.checkWorkerStatus(currentUser.id, locationContext).then(setWorkerRole);
       supabaseService.checkRoomAccess(currentUser.id, locationContext).then(setAuthorizedRooms);
       supabaseService.getAllProfiles().then(setOnlineMembers);
     }
-  }, [locationContext, currentUser.id]);
+  }, [locationContext, currentUser?.id]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -412,7 +412,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Minha Carteira</p>
-                    <p className="text-xl font-black text-white italic tracking-tighter">{(currentUser.money || 0).toFixed(2)} MKC</p>
+                    <p className="text-xl font-black text-white italic tracking-tighter">{(currentUser?.money || 0).toFixed(2)} MKC</p>
                   </div>
                </div>
                <div className="bg-primary/20 px-4 py-2 rounded-xl border border-primary/20">
