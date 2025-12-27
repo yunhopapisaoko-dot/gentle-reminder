@@ -212,7 +212,10 @@ export type Database = {
       }
       job_applications: {
         Row: {
+          applicant_age: number | null
+          applicant_name: string | null
           created_at: string
+          experience: string | null
           id: string
           location: string
           role: string
@@ -220,7 +223,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          applicant_age?: number | null
+          applicant_name?: string | null
           created_at?: string
+          experience?: string | null
           id?: string
           location: string
           role: string
@@ -228,7 +234,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          applicant_age?: number | null
+          applicant_name?: string | null
           created_at?: string
+          experience?: string | null
           id?: string
           location?: string
           role?: string
