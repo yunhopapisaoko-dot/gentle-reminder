@@ -45,8 +45,8 @@ export interface JobApplication {
   id: string;
   user_id: string;
   location: string;
-  name: string;
-  age: string;
+  applicant_name: string;
+  applicant_age: number;
   experience: string;
   role: string;
   status: 'pending' | 'approved' | 'rejected';

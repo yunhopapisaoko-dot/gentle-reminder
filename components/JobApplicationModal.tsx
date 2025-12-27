@@ -46,8 +46,8 @@ export const JobApplicationModal: React.FC<JobApplicationModalProps> = ({ locati
       await supabaseService.applyForJob({
         user_id: userId,
         location,
-        name: formData.name,
-        age: formData.age,
+        applicant_name: formData.name,
+        applicant_age: parseInt(formData.age),
         experience: formData.experience,
         role: formData.role
       });
@@ -97,7 +97,12 @@ export const JobApplicationModal: React.FC<JobApplicationModalProps> = ({ locati
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-4">Idade</label>
-                <input required type="number" className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm focus:ring-primary" value={formData.age} onChange={(e) => setFormData({...formData, age: e.target.value})} />
+                <select required className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm focus:ring-primary appearance-none" value={formData.age} onChange={(e) => setFormData({...formData, age: e.target.value})}>
+                  <option value="">Selecione</option>
+                  {Array.from({ length: 43 }, (_, i) => 18 + i).map(age => (
+                    <option key={age} value={age}>{age} anos</option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-1">
                 <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-4">Cargo</label>
