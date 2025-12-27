@@ -8,6 +8,33 @@ export interface MenuItem {
   hungerRestore?: number;
   thirstRestore?: number;
   alcoholLevel?: number;
+  preparationTime?: number; // tempo em minutos
+}
+
+export interface FoodOrder {
+  id: string;
+  customer_id: string;
+  customer_name: string;
+  location: string;
+  items: OrderItem[];
+  total_price: number;
+  preparation_time: number;
+  status: 'pending' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
+  created_at: string;
+  approved_at?: string;
+  approved_by?: string;
+  ready_at?: string;
+}
+
+export interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+  hungerRestore?: number;
+  thirstRestore?: number;
+  alcoholLevel?: number;
 }
 
 export interface CartItem extends MenuItem {

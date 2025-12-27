@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getCommunityChat } from '../services/geminiService';
-import { ChatMessage, User, MenuItem } from '../types';
+import { ChatMessage, User, MenuItem, OrderItem } from '../types';
 import { MENUS, SUB_LOCATIONS, SubLocation, DISEASE_DETAILS, DiseaseInfo } from '../constants';
 import { MenuView } from './MenuView';
 import { HospitalConsultations } from './HospitalConsultations';
@@ -139,7 +139,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [input]);
 
-  const handleOrderConfirmed = async (items: MenuItem[]) => {
+  const handleOrderConfirmed = async (items: MenuItem[], orderItems: OrderItem[], preparationTime: number) => {
     const total = items.reduce((acc, item) => acc + item.price, 0);
     if ((currentUser.money || 0) < total) {
       alert("Saldo insuficiente para este pedido!");
@@ -147,16 +147,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
 
     try {
-      const newBalance = (currentUser.money || 0) - total;
-      await supabaseService.updateMoney(currentUser.id, newBalance);
+      // Criar pedido no banco de dados (não desconta dinheiro ainda)
+      await supabaseService.createFoodOrder(
+        currentUser.id,
+        currentUser.name,
+        locationContext || 'restaurante',
+        orderItems,
+        total,
+        preparationTime
+      );
       
-      if (onUpdateStatus) onUpdateStatus({ money: -total });
-      if (onConsumeItems) onConsumeItems(items);
-      
-      handleSend(`*Fez um pedido no valor de ${total.toFixed(2)} MKC e começou a consumir as delícias...*`);
+      handleSend(`*Fez um pedido no valor de ${total.toFixed(2)} MKC. Aguardando preparo (~${preparationTime}min)...*`);
       setShowMenu(false);
     } catch (error: any) {
-      alert("Erro ao processar pagamento: " + error.message);
+      alert("Erro ao criar pedido: " + error.message);
     }
   };
 
