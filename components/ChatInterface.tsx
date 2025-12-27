@@ -28,10 +28,16 @@ const LOCATIONS_LIST = [
 ];
 
 const RACE_THEMES: Record<string, { color: string, icon: string, bg: string }> = {
-  'Draeven': { color: 'text-rose-500', icon: 'local_fire_department', bg: 'bg-rose-500/10' },
-  'Sylven': { color: 'text-emerald-500', icon: 'eco', bg: 'bg-emerald-500/10' },
-  'Lunari': { color: 'text-cyan-400', icon: 'dark_mode', bg: 'bg-cyan-400/10' },
-  'AI': { color: 'text-primary', icon: 'auto_awesome', bg: 'bg-primary/10' }
+  'draeven': { color: 'text-rose-500', icon: 'local_fire_department', bg: 'bg-rose-500/10' },
+  'sylven': { color: 'text-emerald-500', icon: 'eco', bg: 'bg-emerald-500/10' },
+  'lunari': { color: 'text-cyan-400', icon: 'dark_mode', bg: 'bg-cyan-400/10' },
+  'ai': { color: 'text-primary', icon: 'auto_awesome', bg: 'bg-primary/10' }
+};
+
+const getRaceTheme = (race?: string, isAI?: boolean) => {
+  if (isAI) return RACE_THEMES['ai'];
+  const key = (race || 'draeven').toLowerCase();
+  return RACE_THEMES[key] || RACE_THEMES['draeven'];
 };
 
 const WALLPAPERS: Record<string, string> = {
@@ -316,7 +322,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-12 relative z-10 scrollbar-hide pb-32">
         {activeMessages.map(msg => {
           const isAI = msg.role === 'model';
-          const theme = RACE_THEMES[isAI ? 'AI' : (msg.author?.race || 'Draeven')];
+          const theme = getRaceTheme(msg.author?.race, isAI);
           return (
             <div key={msg.id} className={`flex items-start space-x-4 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
               <button onClick={() => msg.author && onMemberClick?.(msg.author)} className={`w-12 h-12 rounded-[22px] flex-shrink-0 border-2 border-white/40 overflow-hidden shadow-2xl flex items-center justify-center ${isAI ? 'bg-primary cursor-default' : 'bg-surface-purple'}`}>
