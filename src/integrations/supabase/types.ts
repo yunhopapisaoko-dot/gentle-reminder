@@ -25,6 +25,7 @@ export type Database = {
           image_url: string | null
           name: string
           origin: string | null
+          profession: string | null
           relationship: string | null
           sexuality: string | null
           user_id: string
@@ -39,6 +40,7 @@ export type Database = {
           image_url?: string | null
           name: string
           origin?: string | null
+          profession?: string | null
           relationship?: string | null
           sexuality?: string | null
           user_id: string
@@ -53,6 +55,7 @@ export type Database = {
           image_url?: string | null
           name?: string
           origin?: string | null
+          profession?: string | null
           relationship?: string | null
           sexuality?: string | null
           user_id?: string
