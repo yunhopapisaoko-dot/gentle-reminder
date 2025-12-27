@@ -28,10 +28,9 @@ export const JobApplicationModal: React.FC<JobApplicationModalProps> = ({ locati
     // Verifica se já existe uma sessão de gerente salva
     const isManager = localStorage.getItem('magic_manager_auth') === 'true';
     if (isManager && showManagerLogin) {
-      onSuccess();
-      onClose();
+      onManagerAccess();
     }
-  }, [showManagerLogin]);
+  }, [showManagerLogin, onManagerAccess]);
 
   const handleClose = () => {
     setIsClosing(true);
