@@ -8,9 +8,10 @@ interface JobApplicationModalProps {
   userId: string;
   onClose: () => void;
   onSuccess: () => void;
+  onManagerAccess: () => void;
 }
 
-export const JobApplicationModal: React.FC<JobApplicationModalProps> = ({ location, userId, onClose, onSuccess }) => {
+export const JobApplicationModal: React.FC<JobApplicationModalProps> = ({ location, userId, onClose, onSuccess, onManagerAccess }) => {
   const [isClosing, setIsClosing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showManagerLogin, setShowManagerLogin] = useState(false);
@@ -64,8 +65,7 @@ export const JobApplicationModal: React.FC<JobApplicationModalProps> = ({ locati
   const handleManagerAccess = () => {
     if (managerPassword === 'Gerente191812') {
       localStorage.setItem('magic_manager_auth', 'true');
-      onSuccess(); 
-      onClose();
+      onManagerAccess();
     } else {
       alert("Senha de Gerente incorreta!");
       setManagerPassword('');

@@ -6,9 +6,10 @@ interface WorkerViewProps {
   location: string;
   role: string;
   onClose: () => void;
+  onManageTeam?: () => void;
 }
 
-export const WorkerView: React.FC<WorkerViewProps> = ({ location, role, onClose }) => {
+export const WorkerView: React.FC<WorkerViewProps> = ({ location, role, onClose, onManageTeam }) => {
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = () => {
@@ -49,8 +50,15 @@ export const WorkerView: React.FC<WorkerViewProps> = ({ location, role, onClose 
               <p className="text-[9px] font-black text-primary uppercase tracking-[0.3em] mt-1.5">{role} @ {location}</p>
             </div>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary">
-            <span className="material-symbols-rounded text-3xl">assignment</span>
+          <div className="flex items-center space-x-3">
+            {onManageTeam && (
+              <button onClick={onManageTeam} className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg border border-white/20 active:scale-90 transition-all">
+                <span className="material-symbols-rounded">manage_accounts</span>
+              </button>
+            )}
+            <div className="w-12 h-12 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary">
+              <span className="material-symbols-rounded text-3xl">assignment</span>
+            </div>
           </div>
         </div>
       </div>
