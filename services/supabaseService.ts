@@ -144,12 +144,26 @@ export const supabaseService = {
   async getJobApplications(location: string): Promise<JobApplication[]> {
     const { data, error } = await supabase
       .from('job_applications')
-      .select('*, profiles(full_name, avatar_url, username)')
+      .select('*')
       .eq('location', location)
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
-    if (error) return [];
-    return data;
+    
+    if (error || !data) return [];
+    
+    // Buscar profiles separadamente
+    const userIds = [...new Set(data.map(app => app.user_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, full_name, avatar_url, username')
+      .in('user_id', userIds);
+    
+    const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+    
+    return data.map(app => ({
+      ...app,
+      profiles: profileMap.get(app.user_id) || null
+    }));
   },
 
   async approveApplication(applicationId: string, userId: string, location: string, role: string) {
