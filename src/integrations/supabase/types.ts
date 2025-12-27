@@ -406,6 +406,45 @@ export type Database = {
         }
         Relationships: []
       }
+      treatment_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          cure_time_minutes: number
+          disease_id: string
+          disease_name: string
+          id: string
+          patient_id: string
+          status: string
+          treatment_cost: number
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          cure_time_minutes: number
+          disease_id: string
+          disease_name: string
+          id?: string
+          patient_id: string
+          status?: string
+          treatment_cost: number
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          cure_time_minutes?: number
+          disease_id?: string
+          disease_name?: string
+          id?: string
+          patient_id?: string
+          status?: string
+          treatment_cost?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

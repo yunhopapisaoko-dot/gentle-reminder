@@ -434,5 +434,159 @@ export const supabaseService = {
   async createCharacter(character: any): Promise<void> {
     const { error } = await supabase.from('characters').insert([character]);
     if (error) throw error;
+  },
+
+  // ============ TREATMENT REQUESTS ============
+  async createTreatmentRequest(patientId: string, diseaseId: string, diseaseName: string, treatmentCost: number, cureTimeMinutes: number): Promise<void> {
+    const { error } = await supabase.from('treatment_requests').insert([{
+      patient_id: patientId,
+      disease_id: diseaseId,
+      disease_name: diseaseName,
+      treatment_cost: treatmentCost,
+      cure_time_minutes: cureTimeMinutes,
+      status: 'pending'
+    }]);
+    if (error) throw error;
+  },
+
+  async getPendingTreatments(location: string = 'hospital'): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('treatment_requests')
+      .select('*')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true });
+    
+    if (error || !data) return [];
+    
+    // Buscar profiles dos pacientes
+    const patientIds = [...new Set(data.map(t => t.patient_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, full_name, avatar_url, username, money')
+      .in('user_id', patientIds);
+    
+    const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+    
+    return data.map(t => ({
+      ...t,
+      patient: profileMap.get(t.patient_id) || null
+    }));
+  },
+
+  async getUserPendingTreatment(userId: string): Promise<any | null> {
+    const { data, error } = await supabase
+      .from('treatment_requests')
+      .select('*')
+      .eq('patient_id', userId)
+      .eq('status', 'pending')
+      .maybeSingle();
+    
+    if (error || !data) return null;
+    return data;
+  },
+
+  async getUserActiveTreatment(userId: string): Promise<any | null> {
+    const { data, error } = await supabase
+      .from('treatment_requests')
+      .select('*')
+      .eq('patient_id', userId)
+      .eq('status', 'approved')
+      .maybeSingle();
+    
+    if (error || !data) return null;
+    return data;
+  },
+
+  async approveTreatment(requestId: string, approverId: string): Promise<void> {
+    // Buscar dados do tratamento
+    const { data: treatment, error: fetchError } = await supabase
+      .from('treatment_requests')
+      .select('*')
+      .eq('id', requestId)
+      .single();
+    
+    if (fetchError || !treatment) throw new Error('Tratamento não encontrado');
+    
+    // Descontar dinheiro do paciente
+    const { data: patientProfile } = await supabase
+      .from('profiles')
+      .select('money')
+      .eq('user_id', treatment.patient_id)
+      .single();
+    
+    if (!patientProfile || patientProfile.money < treatment.treatment_cost) {
+      throw new Error('Paciente sem saldo suficiente');
+    }
+    
+    const newBalance = patientProfile.money - treatment.treatment_cost;
+    
+    // Atualizar saldo do paciente
+    const { error: moneyError } = await supabase
+      .from('profiles')
+      .update({ money: newBalance })
+      .eq('user_id', treatment.patient_id);
+    
+    if (moneyError) throw moneyError;
+    
+    // Aprovar tratamento
+    const { error: approveError } = await supabase
+      .from('treatment_requests')
+      .update({ 
+        status: 'approved', 
+        approved_by: approverId,
+        approved_at: new Date().toISOString()
+      })
+      .eq('id', requestId);
+    
+    if (approveError) throw approveError;
+    
+    // Definir doença no perfil do paciente
+    const { error: diseaseError } = await supabase
+      .from('profiles')
+      .update({ 
+        current_disease: treatment.disease_id,
+        disease_started_at: new Date().toISOString()
+      })
+      .eq('user_id', treatment.patient_id);
+    
+    if (diseaseError) throw diseaseError;
+  },
+
+  async rejectTreatment(requestId: string): Promise<void> {
+    const { error } = await supabase
+      .from('treatment_requests')
+      .update({ status: 'rejected' })
+      .eq('id', requestId);
+    if (error) throw error;
+  },
+
+  async completeTreatment(requestId: string, patientId: string): Promise<void> {
+    // Marcar tratamento como completo
+    const { error: treatmentError } = await supabase
+      .from('treatment_requests')
+      .update({ status: 'completed' })
+      .eq('id', requestId);
+    
+    if (treatmentError) throw treatmentError;
+    
+    // Limpar doença do perfil
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ 
+        current_disease: null,
+        disease_started_at: null,
+        health: 100
+      })
+      .eq('user_id', patientId);
+    
+    if (profileError) throw profileError;
+  },
+
+  async cancelTreatmentRequest(requestId: string): Promise<void> {
+    const { error } = await supabase
+      .from('treatment_requests')
+      .delete()
+      .eq('id', requestId);
+    if (error) throw error;
   }
 };
