@@ -1,4 +1,4 @@
-import { Post, User, Comment, MenuItem } from './types';
+import { User, MenuItem } from './types';
 
 export interface DiseaseInfo {
   id: string;
@@ -18,19 +18,7 @@ export const DISEASE_DETAILS: Record<string, DiseaseInfo> = {
   d5: { id: 'd5', name: 'Amnésia Espiritual', description: 'Fragmentos da sua memória estão se perdendo.', hpImpact: -15, cureTime: '12 min', treatmentCost: 45, icon: 'psychology_alt' },
 };
 
-export const CURRENT_USER: User = {
-  id: 'u1',
-  name: 'Tadachi',
-  username: 'tadachi_san',
-  avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCDqcYQqxWTZorSQBeW_nj5j8VdA9ky8r-_aP0OcudmSl_leNqPqFenaQ76HNHiRgkcHw6HCKwjzg5x9FDuNWlcYVgyCqI6zXBhn84kZkZOvaFdCyrFVIgzBgDyIBTOIDYZU7rwI4BevXGRzeV56eu8x2CFVd4ntuPeyST0RgmAnHwz2Us89wdwsT4Hc_cafUk6WT0Cl3poBx4fpPXBFwWQ_FjGPUZZJYKik7cNbcxAqRUDOWK25AX1vEbOG2XBFrtqAJlAE4CiTQ',
-  bio: 'Digital artist & Vocaloid enthusiast. Dreaming in purple and violet. 💜✨',
-  banner: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=1000',
-  hp: 100,
-  maxHp: 100,
-  hunger: 50,
-  thirst: 50,
-  alcohol: 0
-};
+// CURRENT_USER removido - usar o usuário autenticado do Supabase
 
 export interface SubLocation {
   name: string;

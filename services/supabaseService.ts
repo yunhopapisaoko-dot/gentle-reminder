@@ -267,10 +267,10 @@ export const supabaseService = {
       const { data, error } = await supabase.from('profiles').select('*').order('updated_at', { ascending: false });
       if (error) return [];
       return data.map((p: any) => ({
-        id: p.id,
+        id: p.user_id,
         name: p.full_name || 'Usuário',
         username: p.username || 'user',
-        avatar: p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
+        avatar: p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.user_id}`,
         race: p.race,
         isLeader: p.is_leader || false,
         bio: p.bio,

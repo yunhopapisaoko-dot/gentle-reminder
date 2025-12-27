@@ -1,14 +1,13 @@
-
 import React, { useState } from 'react';
-import { Post, Comment } from '../types';
-import { CURRENT_USER } from '../constants';
+import { Post, Comment, User } from '../types';
 
 interface PostDetailViewProps {
   post: Post;
+  currentUser: User;
   onClose: () => void;
 }
 
-export const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onClose }) => {
+export const PostDetailView: React.FC<PostDetailViewProps> = ({ post, currentUser, onClose }) => {
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
   const [comments, setComments] = useState<Comment[]>(post.comments || []);
   const [commentInput, setCommentInput] = useState('');
@@ -16,7 +15,7 @@ export const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onClose })
 
   const handleClose = () => {
     setIsClosing(true);
-    setTimeout(onClose, 250); // Tempo da animação zoom-out
+    setTimeout(onClose, 250);
   };
 
   const handleLike = () => setIsLiked(!isLiked);
@@ -25,7 +24,7 @@ export const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onClose })
     if (!commentInput.trim()) return;
     const newComment: Comment = {
       id: Date.now().toString(),
-      author: CURRENT_USER,
+      author: currentUser,
       text: commentInput,
       timestamp: 'Agora'
     };

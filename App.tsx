@@ -19,13 +19,12 @@ import { AllChatsView } from './components/AllChatsView';
 import { RouletteView } from './components/RouletteView';
 import { InventoryView } from './components/InventoryView';
 import { TabType, User, Post, MenuItem } from './types';
-import { CURRENT_USER } from './constants';
 import { supabase } from './supabase';
 import { supabaseService } from './services/supabaseService';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [currentUser, setCurrentUser] = useState<User>(CURRENT_USER);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [communityMembers, setCommunityMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,6 +94,7 @@ const App: React.FC = () => {
 
   const handleUpdateStatus = (changes: { hp?: number; hunger?: number; thirst?: number; alcohol?: number; money?: number }) => {
     setCurrentUser(prev => {
+      if (!prev) return prev;
       const maxHp = prev.maxHp || 100;
       return {
         ...prev,
@@ -108,6 +108,7 @@ const App: React.FC = () => {
   };
 
   const handleBuyItems = async (items: MenuItem[]) => {
+    if (!currentUser) return;
     for (const item of items) {
       await supabaseService.addToInventory(currentUser.id, item);
     }
@@ -124,8 +125,9 @@ const App: React.FC = () => {
   };
 
   const handleRouletteResult = (id: string, name: string, hpImpact: number) => {
+    if (!currentUser) return;
     handleUpdateStatus({ hp: hpImpact });
-    if (hpImpact < 0) setCurrentUser(prev => ({ ...prev, currentDisease: id }));
+    if (hpImpact < 0) setCurrentUser(prev => prev ? { ...prev, currentDisease: id } : prev);
     fetchInitialData(currentUser.id);
   };
 
@@ -224,11 +226,14 @@ const App: React.FC = () => {
     }
   };
 
-  if (isAuthenticated === null) return null;
+  if (isAuthenticated === null || (isAuthenticated && !currentUser)) return null;
 
   if (!isAuthenticated) {
     return <AuthView onLogin={() => setIsAuthenticated(true)} />;
   }
+
+  // Type guard - currentUser is guaranteed to be non-null after this point
+  if (!currentUser) return null;
 
   return (
     <div className="flex justify-center h-[100dvh] bg-[#020105] overflow-hidden">
