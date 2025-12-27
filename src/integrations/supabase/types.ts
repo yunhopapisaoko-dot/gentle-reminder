@@ -166,6 +166,51 @@ export type Database = {
         }
         Relationships: []
       }
+      food_orders: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          customer_id: string
+          customer_name: string
+          id: string
+          items: Json
+          location: string
+          preparation_time: number
+          ready_at: string | null
+          status: string
+          total_price: number
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          customer_id: string
+          customer_name: string
+          id?: string
+          items?: Json
+          location: string
+          preparation_time?: number
+          ready_at?: string | null
+          status?: string
+          total_price?: number
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          customer_id?: string
+          customer_name?: string
+          id?: string
+          items?: Json
+          location?: string
+          preparation_time?: number
+          ready_at?: string | null
+          status?: string
+          total_price?: number
+        }
+        Relationships: []
+      }
       inventory: {
         Row: {
           attributes: Json | null

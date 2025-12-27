@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabaseService } from '../services/supabaseService';
 import { supabase } from '../supabase';
 import { DISEASE_DETAILS } from '../constants';
+import { FoodOrder, OrderItem } from '../types';
 
 interface WorkerViewProps {
   location: string;
@@ -16,8 +17,10 @@ interface WorkerViewProps {
 export const WorkerView: React.FC<WorkerViewProps> = ({ location, role, onClose, onManageTeam, currentUserId }) => {
   const [isClosing, setIsClosing] = useState(false);
   const [pendingTreatments, setPendingTreatments] = useState<any[]>([]);
+  const [foodOrders, setFoodOrders] = useState<FoodOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [preparingTimers, setPreparingTimers] = useState<Record<string, number>>({});
 
   const handleClose = () => {
     setIsClosing(true);
@@ -27,6 +30,31 @@ export const WorkerView: React.FC<WorkerViewProps> = ({ location, role, onClose,
   const isHospital = location === 'hospital';
   const isCreche = location === 'creche';
   const isFood = location === 'restaurante' || location === 'padaria';
+
+  // Carregar pedidos de comida
+  const loadFoodOrders = useCallback(async () => {
+    if (!isFood) return;
+    
+    try {
+      const orders = await supabaseService.getPendingFoodOrders(location);
+      setFoodOrders(orders);
+      
+      // Inicializar timers para pedidos em preparo
+      const newTimers: Record<string, number> = {};
+      orders.forEach(order => {
+        if (order.status === 'preparing' && order.approved_at) {
+          const approvedTime = new Date(order.approved_at).getTime();
+          const prepTimeMs = order.preparation_time * 60 * 1000;
+          const readyTime = approvedTime + prepTimeMs;
+          const remaining = Math.max(0, Math.ceil((readyTime - Date.now()) / 1000));
+          newTimers[order.id] = remaining;
+        }
+      });
+      setPreparingTimers(newTimers);
+    } catch (error) {
+      console.error('Erro ao carregar pedidos:', error);
+    }
+  }, [isFood, location]);
 
   // Carregar tratamentos pendentes
   useEffect(() => {
@@ -71,6 +99,53 @@ export const WorkerView: React.FC<WorkerViewProps> = ({ location, role, onClose,
     }
   }, [isHospital]);
 
+  // Carregar pedidos de comida
+  useEffect(() => {
+    if (isFood) {
+      loadFoodOrders().finally(() => setIsLoading(false));
+
+      // Realtime subscription para pedidos
+      const channel = supabase
+        .channel('worker-food-orders')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'food_orders',
+            filter: `location=eq.${location}`
+          },
+          () => {
+            loadFoodOrders();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [isFood, location, loadFoodOrders]);
+
+  // Timer countdown
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPreparingTimers(prev => {
+        const updated: Record<string, number> = {};
+        Object.entries(prev).forEach(([id, seconds]) => {
+          if (seconds > 0) {
+            updated[id] = seconds - 1;
+          } else {
+            updated[id] = 0;
+          }
+        });
+        return updated;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const handleApprove = async (treatment: any) => {
     if (!currentUserId) return;
     setProcessingId(treatment.id);
@@ -99,12 +174,73 @@ export const WorkerView: React.FC<WorkerViewProps> = ({ location, role, onClose,
     }
   };
 
-  // Mock de dados para o roleplay (para não-hospital)
+  // FOOD ORDER HANDLERS
+  const handleApproveFoodOrder = async (order: FoodOrder) => {
+    if (!currentUserId) return;
+    setProcessingId(order.id);
+    
+    try {
+      await supabaseService.approveFoodOrder(order.id, currentUserId);
+      
+      // Iniciar timer
+      setPreparingTimers(prev => ({
+        ...prev,
+        [order.id]: order.preparation_time * 60
+      }));
+      
+      await loadFoodOrders();
+    } catch (error: any) {
+      console.error('Erro ao aprovar pedido:', error);
+      alert(error.message || 'Erro ao aprovar pedido');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleDeliverOrder = async (order: FoodOrder) => {
+    setProcessingId(order.id);
+    
+    try {
+      await supabaseService.completeFoodOrder(order.id);
+      setFoodOrders(prev => prev.filter(o => o.id !== order.id));
+      setPreparingTimers(prev => {
+        const updated = { ...prev };
+        delete updated[order.id];
+        return updated;
+      });
+    } catch (error: any) {
+      console.error('Erro ao entregar pedido:', error);
+      alert(error.message || 'Erro ao entregar pedido');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleCancelFoodOrder = async (order: FoodOrder) => {
+    setProcessingId(order.id);
+    
+    try {
+      await supabaseService.cancelFoodOrder(order.id);
+      setFoodOrders(prev => prev.filter(o => o.id !== order.id));
+    } catch (error: any) {
+      console.error('Erro ao cancelar pedido:', error);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getOrderItems = (order: FoodOrder): OrderItem[] => {
+    return order.items as OrderItem[];
+  };
+
+  // Mock de dados para creche (para o roleplay)
   const tasks = {
-    food: [
-      { id: 1, item: 'Miku Ramen x2', client: 'Luka', status: 'pendente', time: '5m' },
-      { id: 2, item: 'Neon Sushi (12p)', client: 'Kaito', status: 'em preparo', time: '12m' }
-    ],
     creche: [
       { id: 1, name: 'Hatsune Jr', type: 'Aluno', level: 'Iniciante', activity: 'Pintura' },
       { id: 2, name: 'Prof. Rin', type: 'Professor', level: 'Mestre', activity: 'Música' }
@@ -140,7 +276,7 @@ export const WorkerView: React.FC<WorkerViewProps> = ({ location, role, onClose,
       <div className="flex-1 overflow-y-auto scrollbar-hide p-8 space-y-6 pb-32">
         <div className="px-2 mb-2">
           <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">
-            {isHospital ? 'Solicitações de Tratamento' : 'Fila de Atendimento'}
+            {isHospital ? 'Solicitações de Tratamento' : isFood ? 'Pedidos de Comida' : 'Fila de Atendimento'}
           </h3>
         </div>
 
@@ -150,18 +286,125 @@ export const WorkerView: React.FC<WorkerViewProps> = ({ location, role, onClose,
           </div>
         ) : (
           <>
-            {isFood && tasks.food.map(task => (
-              <div key={task.id} className="bg-white/[0.03] border border-white/5 rounded-[40px] p-8 flex items-center justify-between group hover:bg-white/[0.05] transition-all">
-                 <div>
-                    <p className="text-lg font-black text-white tracking-tight">{task.item}</p>
-                    <p className="text-[10px] text-white/40 uppercase tracking-widest mt-1">Cliente: <span className="text-primary">{task.client}</span> • {task.time}</p>
-                 </div>
-                 <div className="bg-amber-500/10 px-4 py-2 rounded-xl border border-amber-500/20">
-                    <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">{task.status}</span>
-                 </div>
-              </div>
-            ))}
+            {/* FOOD ORDERS */}
+            {isFood && (
+              foodOrders.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                    <span className="material-symbols-rounded text-4xl text-white/20">restaurant</span>
+                  </div>
+                  <p className="text-white/30 text-sm">Nenhum pedido pendente</p>
+                </div>
+              ) : (
+                foodOrders.map(order => {
+                  const isProcessing = processingId === order.id;
+                  const isPreparing = order.status === 'preparing';
+                  const timeRemaining = preparingTimers[order.id] || 0;
+                  const isReady = isPreparing && timeRemaining === 0;
+                  const items = getOrderItems(order);
+                  
+                  return (
+                    <div key={order.id} className="bg-white/[0.03] border border-white/5 rounded-[40px] p-8 group">
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center space-x-5">
+                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${
+                            isReady ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                            isPreparing ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                            'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                          }`}>
+                            <span className="material-symbols-rounded text-2xl">
+                              {isReady ? 'check_circle' : isPreparing ? 'skillet' : 'receipt_long'}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-3">
+                              <p className="text-lg font-black text-white tracking-tight">
+                                {items.map(i => `${i.name} x${i.quantity}`).join(', ')}
+                              </p>
+                              <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border ${
+                                isReady ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                                isPreparing ? 'bg-amber-500/20 text-amber-400 border-amber-500/30 animate-pulse' :
+                                'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                              }`}>
+                                {isReady ? 'Pronto!' : isPreparing ? 'Em preparo' : 'Pendente'}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-white/40 uppercase tracking-widest mt-1">
+                              Cliente: <span className="text-primary">{order.customer_name}</span>
+                              {isPreparing && !isReady && (
+                                <span className="ml-2 text-amber-400">
+                                  <span className="material-symbols-rounded text-[10px] align-middle">schedule</span> {formatTime(timeRemaining)}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">Valor</p>
+                          <p className="text-lg font-black text-white italic tracking-tighter">{order.total_price} MKC</p>
+                          <p className="text-[9px] text-white/30 mt-1">~{order.preparation_time}min preparo</p>
+                        </div>
+                      </div>
 
+                      <div className="flex gap-4">
+                        {order.status === 'pending' && (
+                          <>
+                            <button 
+                              onClick={() => handleApproveFoodOrder(order)}
+                              disabled={isProcessing}
+                              className="flex-1 py-4 rounded-2xl bg-emerald-500 text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                              {isProcessing ? (
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <>
+                                  <span className="material-symbols-rounded text-lg">skillet</span>
+                                  Iniciar Preparo
+                                </>
+                              )}
+                            </button>
+                            <button 
+                              onClick={() => handleCancelFoodOrder(order)}
+                              disabled={isProcessing}
+                              className="flex-1 py-4 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[11px] font-black uppercase tracking-[0.3em] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                              <span className="material-symbols-rounded text-lg">cancel</span>
+                              Cancelar
+                            </button>
+                          </>
+                        )}
+                        
+                        {isPreparing && isReady && (
+                          <button 
+                            onClick={() => handleDeliverOrder(order)}
+                            disabled={isProcessing}
+                            className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 animate-pulse"
+                          >
+                            {isProcessing ? (
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <>
+                                <span className="material-symbols-rounded text-lg">local_shipping</span>
+                                Entregar Pedido
+                              </>
+                            )}
+                          </button>
+                        )}
+                        
+                        {isPreparing && !isReady && (
+                          <div className="flex-1 py-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[11px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-2">
+                            <span className="material-symbols-rounded text-lg animate-spin">sync</span>
+                            Preparando... {formatTime(timeRemaining)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )
+            )}
+
+            {/* HOSPITAL */}
             {isHospital && (
               pendingTreatments.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -237,6 +480,7 @@ export const WorkerView: React.FC<WorkerViewProps> = ({ location, role, onClose,
               )
             )}
 
+            {/* CRECHE */}
             {isCreche && tasks.creche.map(task => (
                <div key={task.id} className="bg-white/[0.03] border border-white/5 rounded-[40px] p-8 flex items-center justify-between group">
                   <div className="flex items-center space-x-5">

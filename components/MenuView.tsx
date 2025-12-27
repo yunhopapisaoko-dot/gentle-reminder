@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { MenuItem, CartItem } from '../types';
+import { MenuItem, CartItem, OrderItem } from '../types';
 
 interface MenuViewProps {
   locationName: string;
   items: MenuItem[];
   onClose: () => void;
-  onOrderConfirmed?: (items: MenuItem[]) => void;
+  onOrderConfirmed?: (items: MenuItem[], orderItems: OrderItem[], preparationTime: number) => void;
 }
 
 interface CategoryTheme {
@@ -65,6 +65,11 @@ export const MenuView: React.FC<MenuViewProps> = ({ locationName, items, onClose
     cart.reduce((acc, item) => acc + item.quantity, 0),
   [cart]);
 
+  // Maior tempo de preparo entre os itens do carrinho
+  const maxPreparationTime = useMemo(() => 
+    Math.max(...cart.map(item => item.preparationTime || 5), 0),
+  [cart]);
+
   const handleClose = () => {
     setIsClosing(true);
     setTimeout(onClose, 350);
@@ -93,12 +98,23 @@ export const MenuView: React.FC<MenuViewProps> = ({ locationName, items, onClose
   const handleFinalize = () => {
     if (onOrderConfirmed) {
       const flatItems: MenuItem[] = [];
+      const orderItems: OrderItem[] = cart.map(cartItem => ({
+        id: cartItem.id,
+        name: cartItem.name,
+        price: cartItem.price,
+        quantity: cartItem.quantity,
+        image: cartItem.image,
+        hungerRestore: cartItem.hungerRestore,
+        thirstRestore: cartItem.thirstRestore,
+        alcoholLevel: cartItem.alcoholLevel
+      }));
+      
       cart.forEach(cartItem => {
         for (let i = 0; i < cartItem.quantity; i++) {
           flatItems.push(cartItem);
         }
       });
-      onOrderConfirmed(flatItems);
+      onOrderConfirmed(flatItems, orderItems, maxPreparationTime);
     }
     setCart([]);
     setShowCartOverlay(false);
@@ -223,9 +239,17 @@ export const MenuView: React.FC<MenuViewProps> = ({ locationName, items, onClose
                       <div className="p-4 flex flex-col flex-1">
                         <div className="flex flex-col mb-1.5">
                           <h4 className="text-[12px] font-black text-white leading-tight tracking-tight mb-1">{item.name}</h4>
-                          <span className={`text-[11px] font-black bg-clip-text text-transparent bg-gradient-to-r ${theme.primary} ${theme.secondary}`}>
-                            R$ {item.price.toFixed(2)}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[11px] font-black bg-clip-text text-transparent bg-gradient-to-r ${theme.primary} ${theme.secondary}`}>
+                              R$ {item.price.toFixed(2)}
+                            </span>
+                            {item.preparationTime && (
+                              <span className="text-[9px] text-white/40 flex items-center gap-0.5">
+                                <span className="material-symbols-rounded text-[10px]">schedule</span>
+                                {item.preparationTime}min
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <p className="text-[9px] text-white/30 leading-relaxed font-bold line-clamp-3 italic">
                           {item.description}
@@ -296,6 +320,13 @@ export const MenuView: React.FC<MenuViewProps> = ({ locationName, items, onClose
                <div className="flex justify-between items-center">
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Subtotal</span>
                   <span className="text-xs font-black text-white/60 tracking-widest">R$ {cartTotal.toFixed(2)}</span>
+               </div>
+               <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Tempo de Preparo</span>
+                  <span className="text-xs font-black text-amber-400 tracking-widest flex items-center gap-1">
+                    <span className="material-symbols-rounded text-sm">schedule</span>
+                    ~{maxPreparationTime} min
+                  </span>
                </div>
                <div className="flex justify-between items-center">
                   <span className="text-lg font-black text-white italic tracking-tighter uppercase">Total</span>

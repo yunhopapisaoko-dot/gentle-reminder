@@ -1,5 +1,5 @@
 import { supabase } from '../supabase';
-import { Post, User, JobApplication, MenuItem } from '../types';
+import { Post, User, JobApplication, MenuItem, FoodOrder, OrderItem } from '../types';
 
 const withTimeout = <T>(promise: Promise<T>, timeoutMs: number = 30000): Promise<T> => {
   return Promise.race([
@@ -588,5 +588,140 @@ export const supabaseService = {
       .delete()
       .eq('id', requestId);
     if (error) throw error;
+  },
+
+  // ============ FOOD ORDERS ============
+  async createFoodOrder(customerId: string, customerName: string, location: string, items: OrderItem[], totalPrice: number, preparationTime: number): Promise<void> {
+    const { error } = await supabase.from('food_orders').insert([{
+      customer_id: customerId,
+      customer_name: customerName,
+      location,
+      items,
+      total_price: totalPrice,
+      preparation_time: preparationTime,
+      status: 'pending'
+    }]);
+    if (error) throw error;
+  },
+
+  async getPendingFoodOrders(location: string): Promise<FoodOrder[]> {
+    const { data, error } = await supabase
+      .from('food_orders')
+      .select('*')
+      .eq('location', location)
+      .in('status', ['pending', 'preparing'])
+      .order('created_at', { ascending: true });
+    
+    if (error || !data) return [];
+    return data as FoodOrder[];
+  },
+
+  async approveFoodOrder(orderId: string, approverId: string): Promise<void> {
+    const { error } = await supabase
+      .from('food_orders')
+      .update({ 
+        status: 'preparing', 
+        approved_by: approverId,
+        approved_at: new Date().toISOString()
+      })
+      .eq('id', orderId);
+    
+    if (error) throw error;
+  },
+
+  async completeFoodOrder(orderId: string): Promise<void> {
+    // Buscar dados do pedido
+    const { data: order, error: fetchError } = await supabase
+      .from('food_orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+    
+    if (fetchError || !order) throw new Error('Pedido não encontrado');
+    
+    // Descontar dinheiro do cliente
+    const { data: customerProfile } = await supabase
+      .from('profiles')
+      .select('money')
+      .eq('user_id', order.customer_id)
+      .single();
+    
+    if (!customerProfile || customerProfile.money < order.total_price) {
+      throw new Error('Cliente sem saldo suficiente');
+    }
+    
+    const newBalance = customerProfile.money - order.total_price;
+    
+    // Atualizar saldo do cliente
+    const { error: moneyError } = await supabase
+      .from('profiles')
+      .update({ money: newBalance })
+      .eq('user_id', order.customer_id);
+    
+    if (moneyError) throw moneyError;
+    
+    // Adicionar itens ao inventário
+    const items = order.items as OrderItem[];
+    for (const item of items) {
+      for (let i = 0; i < item.quantity; i++) {
+        const { data: existing } = await supabase
+          .from('inventory')
+          .select('id, quantity')
+          .eq('user_id', order.customer_id)
+          .eq('item_id', item.id)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase
+            .from('inventory')
+            .update({ quantity: (existing.quantity || 1) + 1 })
+            .eq('id', existing.id);
+        } else {
+          await supabase.from('inventory').insert([{
+            user_id: order.customer_id,
+            item_id: item.id,
+            item_name: item.name,
+            item_image: item.image,
+            category: 'Comida',
+            attributes: {
+              hunger: item.hungerRestore,
+              thirst: item.thirstRestore,
+              alcohol: item.alcoholLevel
+            }
+          }]);
+        }
+      }
+    }
+    
+    // Marcar pedido como entregue
+    const { error: orderError } = await supabase
+      .from('food_orders')
+      .update({ 
+        status: 'delivered',
+        ready_at: new Date().toISOString()
+      })
+      .eq('id', orderId);
+    
+    if (orderError) throw orderError;
+  },
+
+  async cancelFoodOrder(orderId: string): Promise<void> {
+    const { error } = await supabase
+      .from('food_orders')
+      .update({ status: 'cancelled' })
+      .eq('id', orderId);
+    if (error) throw error;
+  },
+
+  async getUserPendingOrders(userId: string): Promise<FoodOrder[]> {
+    const { data, error } = await supabase
+      .from('food_orders')
+      .select('*')
+      .eq('customer_id', userId)
+      .in('status', ['pending', 'preparing'])
+      .order('created_at', { ascending: false });
+    
+    if (error || !data) return [];
+    return data as FoodOrder[];
   }
 };
