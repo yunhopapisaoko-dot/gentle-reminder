@@ -478,10 +478,25 @@ export const supabaseService = {
     return data || [];
   },
 
+  async getUserCharacter(userId: string): Promise<any | null> {
+    const { data, error } = await supabase
+      .from('characters')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    if (error) return null;
+    return data;
+  },
+
   async createCharacter(character: any): Promise<void> {
-    console.log("Criando personagem:", character);
+    // Verifica se usuário já tem personagem
+    const existing = await this.getUserCharacter(character.user_id);
+    if (existing) {
+      throw new Error("Você já possui um personagem. Cada usuário só pode ter um.");
+    }
+    
     const { data, error } = await supabase.from('characters').insert([character]).select();
-    console.log("Resultado createCharacter:", { data, error });
     if (error) throw error;
   },
 
@@ -493,6 +508,108 @@ export const supabaseService = {
   async deleteCharacter(characterId: string): Promise<void> {
     const { error } = await supabase.from('characters').delete().eq('id', characterId);
     if (error) throw error;
+  },
+
+  // ============ HOUSES ============
+  async getUserHouse(userId: string): Promise<any | null> {
+    const { data, error } = await supabase
+      .from('houses')
+      .select('*')
+      .eq('owner_id', userId)
+      .maybeSingle();
+    
+    if (error) return null;
+    return data;
+  },
+
+  async buyHouse(userId: string, ownerName: string): Promise<void> {
+    // Verifica se já tem casa
+    const existing = await this.getUserHouse(userId);
+    if (existing) {
+      throw new Error("Você já possui uma casa.");
+    }
+    
+    // Verifica se tem dinheiro suficiente
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('money')
+      .eq('user_id', userId)
+      .single();
+    
+    if (!profile || profile.money < 100000) {
+      throw new Error("Você não tem dinheiro suficiente. A casa custa 100.000.");
+    }
+    
+    // Deduz o dinheiro
+    const { error: moneyError } = await supabase
+      .from('profiles')
+      .update({ money: profile.money - 100000 })
+      .eq('user_id', userId);
+    
+    if (moneyError) throw moneyError;
+    
+    // Cria a casa
+    const { error } = await supabase.from('houses').insert([{
+      owner_id: userId,
+      owner_name: ownerName
+    }]);
+    
+    if (error) {
+      // Devolve o dinheiro se der erro
+      await supabase.from('profiles').update({ money: profile.money }).eq('user_id', userId);
+      throw error;
+    }
+  },
+
+  async getHouseInvites(userId: string): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('house_invites')
+      .select('*, houses!inner(owner_id, owner_name)')
+      .eq('invited_user_id', userId);
+    
+    if (error) return [];
+    return data || [];
+  },
+
+  async inviteToHouse(houseId: string, invitedUserId: string, invitedBy: string): Promise<void> {
+    const { error } = await supabase.from('house_invites').insert([{
+      house_id: houseId,
+      invited_user_id: invitedUserId,
+      invited_by: invitedBy
+    }]);
+    if (error) throw error;
+  },
+
+  async removeHouseInvite(houseId: string, invitedUserId: string): Promise<void> {
+    const { error } = await supabase
+      .from('house_invites')
+      .delete()
+      .eq('house_id', houseId)
+      .eq('invited_user_id', invitedUserId);
+    if (error) throw error;
+  },
+
+  async canAccessHouse(userId: string, houseOwnerId: string): Promise<boolean> {
+    // Dono sempre pode acessar
+    if (userId === houseOwnerId) return true;
+    
+    // Verifica se tem convite
+    const { data: house } = await supabase
+      .from('houses')
+      .select('id')
+      .eq('owner_id', houseOwnerId)
+      .single();
+    
+    if (!house) return false;
+    
+    const { data: invite } = await supabase
+      .from('house_invites')
+      .select('id')
+      .eq('house_id', house.id)
+      .eq('invited_user_id', userId)
+      .maybeSingle();
+    
+    return !!invite;
   },
 
   // ============ TREATMENT REQUESTS ============
