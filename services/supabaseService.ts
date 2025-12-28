@@ -676,34 +676,55 @@ export const supabaseService = {
     
     // Adicionar itens ao inventário
     const items = order.items as OrderItem[];
+    console.log('Adicionando itens ao inventário:', items, 'para usuário:', order.customer_id);
+    
     for (const item of items) {
-      for (let i = 0; i < item.quantity; i++) {
-        const { data: existing } = await supabase
-          .from('inventory')
-          .select('id, quantity')
-          .eq('user_id', order.customer_id)
-          .eq('item_id', item.id)
-          .maybeSingle();
+      // Verificar se já existe este item no inventário do usuário
+      const { data: existing, error: selectError } = await supabase
+        .from('inventory')
+        .select('id, quantity')
+        .eq('user_id', order.customer_id)
+        .eq('item_id', item.id)
+        .maybeSingle();
 
-        if (existing) {
-          await supabase
-            .from('inventory')
-            .update({ quantity: (existing.quantity || 1) + 1 })
-            .eq('id', existing.id);
-        } else {
-          await supabase.from('inventory').insert([{
-            user_id: order.customer_id,
-            item_id: item.id,
-            item_name: item.name,
-            item_image: item.image,
-            category: 'Comida',
-            attributes: {
-              hunger: item.hungerRestore,
-              thirst: item.thirstRestore,
-              alcohol: item.alcoholLevel
-            }
-          }]);
+      if (selectError) {
+        console.error('Erro ao verificar inventário existente:', selectError);
+      }
+
+      if (existing) {
+        // Atualizar quantidade
+        const newQuantity = (existing.quantity || 1) + item.quantity;
+        const { error: updateError } = await supabase
+          .from('inventory')
+          .update({ quantity: newQuantity })
+          .eq('id', existing.id);
+        
+        if (updateError) {
+          console.error('Erro ao atualizar inventário:', updateError);
+          throw updateError;
         }
+        console.log('Inventário atualizado:', item.name, 'nova quantidade:', newQuantity);
+      } else {
+        // Inserir novo item
+        const { error: insertError } = await supabase.from('inventory').insert([{
+          user_id: order.customer_id,
+          item_id: item.id,
+          item_name: item.name,
+          item_image: item.image,
+          category: 'Comida',
+          quantity: item.quantity,
+          attributes: {
+            hunger: item.hungerRestore,
+            thirst: item.thirstRestore,
+            alcohol: item.alcoholLevel
+          }
+        }]);
+        
+        if (insertError) {
+          console.error('Erro ao inserir no inventário:', insertError);
+          throw insertError;
+        }
+        console.log('Item inserido no inventário:', item.name, 'quantidade:', item.quantity);
       }
     }
     
