@@ -8,6 +8,7 @@ import { JobApplicationModal } from './JobApplicationModal';
 import { ManagerDashboard } from './ManagerDashboard';
 import { WorkerView } from './WorkerView';
 import { JYPBanditSystem } from './JYPBanditSystem';
+import { VIPReservationModal } from './VIPReservationModal';
 import { supabaseService } from '../services/supabaseService';
 
 interface ChatInterfaceProps {
@@ -86,6 +87,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [showManagerDash, setShowManagerDash] = useState(false);
   const [showWorkerPanel, setShowWorkerPanel] = useState(false);
   const [showGrantAccess, setShowGrantAccess] = useState(false);
+  const [showVIPModal, setShowVIPModal] = useState(false);
+  const [hasVIPAccess, setHasVIPAccess] = useState(false);
+  const [activeVIPReservation, setActiveVIPReservation] = useState<any>(null);
   
   const [onlineMembers, setOnlineMembers] = useState<User[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -129,6 +133,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       supabaseService.checkWorkerStatus(currentUser.id, locationContext).then(setWorkerRole);
       supabaseService.checkRoomAccess(currentUser.id, locationContext).then(setAuthorizedRooms);
       supabaseService.getAllProfiles().then(setOnlineMembers);
+      
+      // Verificar acesso VIP
+      if (locationContext === 'restaurante' || locationContext === 'padaria') {
+        supabaseService.checkVIPAccess(currentUser.id, locationContext).then(setHasVIPAccess);
+        supabaseService.getActiveVIPReservation(locationContext).then(setActiveVIPReservation);
+      }
     }
   }, [locationContext, currentUser?.id]);
 
@@ -465,15 +475,62 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-5 max-h-[40vh] overflow-y-auto scrollbar-hide pb-8">
-                {internalLocs.map((loc, idx) => (
-                  <button key={idx} onClick={() => setCurrentSubLoc(loc)} className="relative flex flex-col items-center justify-center p-8 rounded-[40px] bg-white/[0.03] border border-white/5 hover:bg-white/10 active:scale-95 transition-all shadow-2xl group overflow-hidden">
-                    <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center text-white mb-5 border border-white/10 group-hover:bg-primary group-hover:border-primary transition-all duration-500"><span className="material-symbols-rounded text-3xl">{loc.icon}</span></div>
-                    <span className="text-[11px] font-black text-white uppercase tracking-[0.25em] text-center">{loc.name}</span>
-                    {loc.restricted && (
-                      <div className="absolute top-4 right-4"><span className="material-symbols-rounded text-primary text-xs">lock</span></div>
-                    )}
-                  </button>
-                ))}
+                {internalLocs.map((loc, idx) => {
+                  const isVIPRoom = loc.name === 'Reserva VIP';
+                  const canAccessVIP = isVIPRoom && (hasVIPAccess || workerRole);
+                  const showVIPLock = isVIPRoom && !canAccessVIP && !workerRole;
+                  
+                  return (
+                    <button 
+                      key={idx} 
+                      onClick={() => {
+                        if (isVIPRoom && !canAccessVIP) {
+                          setShowActionModal(false);
+                          setShowVIPModal(true);
+                        } else {
+                          setCurrentSubLoc(loc);
+                          setShowActionModal(false);
+                        }
+                      }} 
+                      className={`relative flex flex-col items-center justify-center p-8 rounded-[40px] border hover:bg-white/10 active:scale-95 transition-all shadow-2xl group overflow-hidden ${
+                        isVIPRoom 
+                          ? 'bg-gradient-to-br from-amber-500/10 to-amber-600/5 border-amber-500/20' 
+                          : 'bg-white/[0.03] border-white/5'
+                      }`}
+                    >
+                      <div className={`w-16 h-16 rounded-3xl flex items-center justify-center mb-5 border transition-all duration-500 ${
+                        isVIPRoom
+                          ? 'bg-amber-500/20 text-amber-400 border-amber-500/30 group-hover:bg-amber-500 group-hover:text-white'
+                          : 'bg-white/5 text-white border-white/10 group-hover:bg-primary group-hover:border-primary'
+                      }`}>
+                        <span className="material-symbols-rounded text-3xl">{loc.icon}</span>
+                      </div>
+                      <span className={`text-[11px] font-black uppercase tracking-[0.25em] text-center ${isVIPRoom ? 'text-amber-400' : 'text-white'}`}>
+                        {loc.name}
+                      </span>
+                      
+                      {/* VIP Status Indicator */}
+                      {isVIPRoom && (
+                        <div className="absolute top-4 right-4">
+                          {canAccessVIP ? (
+                            <span className="material-symbols-rounded text-emerald-400 text-xs">verified</span>
+                          ) : (
+                            <span className="material-symbols-rounded text-amber-400 text-xs">lock</span>
+                          )}
+                        </div>
+                      )}
+                      
+                      {loc.restricted && !isVIPRoom && (
+                        <div className="absolute top-4 right-4"><span className="material-symbols-rounded text-primary text-xs">lock</span></div>
+                      )}
+                      
+                      {/* VIP Reserve Button Indicator */}
+                      {showVIPLock && (
+                        <span className="text-[8px] text-amber-400/60 mt-2 font-bold uppercase tracking-widest">Reservar</span>
+                      )}
+                    </button>
+                  );
+                })}
                 {internalLocs.length === 0 && (
                    <div className="col-span-2 py-10 text-center opacity-20 italic text-xs">Nenhum local acessível ou autorizado.</div>
                 )}
@@ -489,6 +546,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {showWorkerPanel && locationContext && workerRole && <WorkerView location={locationContext} role={workerRole} onClose={() => setShowWorkerPanel(false)} onManageTeam={() => { setShowWorkerPanel(false); setShowManagerDash(true); }} currentUserId={currentUser?.id} />}
       {showMenu && hasMenu && !currentSubLoc && <MenuView locationName={locationContext || ''} items={MENUS[contextKey]} onClose={() => setShowMenu(false)} onOrderConfirmed={handleOrderConfirmed} />}
       {showConsultations && isHospital && <HospitalConsultations onClose={() => setShowConsultations(false)} onTreat={handleTreat} currentUserId={currentUser?.id} />}
+      
+      {/* VIP Reservation Modal */}
+      {showVIPModal && locationContext && (
+        <VIPReservationModal
+          location={locationContext}
+          currentUser={currentUser}
+          onClose={() => setShowVIPModal(false)}
+          onSuccess={() => {
+            setShowVIPModal(false);
+            // Refresh VIP access status
+            supabaseService.checkVIPAccess(currentUser.id, locationContext).then(setHasVIPAccess);
+          }}
+          onMoneyChange={(amount) => onUpdateStatus?.({ money: amount })}
+        />
+      )}
       
       {/* JYP Bandit System - only active in Pousada */}
       {contextKey === 'pousada' && (

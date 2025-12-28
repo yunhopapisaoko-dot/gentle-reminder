@@ -972,5 +972,161 @@ export const supabaseService = {
     
     if (error) return [];
     return data || [];
+  },
+
+  // ============ VIP RESERVATIONS ============
+  async createVIPReservation(
+    location: string,
+    reserverId: string,
+    reserverName: string,
+    price: number,
+    guests: { id: string; name: string }[]
+  ): Promise<string> {
+    // Criar reserva
+    const { data: reservation, error: reservationError } = await supabase
+      .from('vip_reservations')
+      .insert([{
+        location,
+        reserver_id: reserverId,
+        reserver_name: reserverName,
+        price,
+        status: 'pending'
+      }])
+      .select()
+      .single();
+    
+    if (reservationError) throw reservationError;
+    
+    // Adicionar convidados
+    const guestInserts = guests.map(guest => ({
+      reservation_id: reservation.id,
+      user_id: guest.id,
+      user_name: guest.name
+    }));
+    
+    const { error: guestsError } = await supabase
+      .from('vip_reservation_guests')
+      .insert(guestInserts);
+    
+    if (guestsError) throw guestsError;
+    
+    return reservation.id;
+  },
+
+  async getPendingVIPReservations(location: string): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('vip_reservations')
+      .select('*')
+      .eq('location', location)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true });
+    
+    if (error || !data) return [];
+    
+    // Buscar convidados para cada reserva
+    const reservationsWithGuests = await Promise.all(data.map(async (res) => {
+      const { data: guests } = await supabase
+        .from('vip_reservation_guests')
+        .select('*')
+        .eq('reservation_id', res.id);
+      
+      return { ...res, guests: guests || [] };
+    }));
+    
+    return reservationsWithGuests;
+  },
+
+  async approveVIPReservation(reservationId: string, approverId: string): Promise<void> {
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours
+    
+    const { error } = await supabase
+      .from('vip_reservations')
+      .update({
+        status: 'approved',
+        approved_by: approverId,
+        approved_at: now.toISOString(),
+        expires_at: expiresAt.toISOString()
+      })
+      .eq('id', reservationId);
+    
+    if (error) throw error;
+  },
+
+  async rejectVIPReservation(reservationId: string, reserverId: string, price: number): Promise<void> {
+    // Devolver dinheiro ao usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('money')
+      .eq('user_id', reserverId)
+      .single();
+    
+    if (profile) {
+      await supabase
+        .from('profiles')
+        .update({ money: profile.money + price })
+        .eq('user_id', reserverId);
+    }
+    
+    // Deletar a reserva
+    const { error } = await supabase
+      .from('vip_reservations')
+      .delete()
+      .eq('id', reservationId);
+    
+    if (error) throw error;
+  },
+
+  async checkVIPAccess(userId: string, location: string): Promise<boolean> {
+    const now = new Date().toISOString();
+    
+    // Verificar se o usuário é o reservador ou convidado de uma reserva ativa
+    const { data: reservations } = await supabase
+      .from('vip_reservations')
+      .select('id, reserver_id')
+      .eq('location', location)
+      .eq('status', 'approved')
+      .gt('expires_at', now);
+    
+    if (!reservations || reservations.length === 0) return false;
+    
+    // Verificar se é o reservador
+    const isReserver = reservations.some(r => r.reserver_id === userId);
+    if (isReserver) return true;
+    
+    // Verificar se é convidado
+    const reservationIds = reservations.map(r => r.id);
+    const { data: guestEntry } = await supabase
+      .from('vip_reservation_guests')
+      .select('id')
+      .eq('user_id', userId)
+      .in('reservation_id', reservationIds)
+      .maybeSingle();
+    
+    return !!guestEntry;
+  },
+
+  async getActiveVIPReservation(location: string): Promise<any | null> {
+    const now = new Date().toISOString();
+    
+    const { data, error } = await supabase
+      .from('vip_reservations')
+      .select('*')
+      .eq('location', location)
+      .eq('status', 'approved')
+      .gt('expires_at', now)
+      .order('expires_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    
+    if (error || !data) return null;
+    
+    // Buscar convidados
+    const { data: guests } = await supabase
+      .from('vip_reservation_guests')
+      .select('*')
+      .eq('reservation_id', data.id);
+    
+    return { ...data, guests: guests || [] };
   }
 };
