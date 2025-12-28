@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      baby_deliveries: {
+        Row: {
+          baby_gender: string
+          created_at: string
+          id: string
+          mother_id: string
+          mother_name: string
+          pregnancy_id: string | null
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+        }
+        Insert: {
+          baby_gender: string
+          created_at?: string
+          id?: string
+          mother_id: string
+          mother_name: string
+          pregnancy_id?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+        }
+        Update: {
+          baby_gender?: string
+          created_at?: string
+          id?: string
+          mother_id?: string
+          mother_name?: string
+          pregnancy_id?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "baby_deliveries_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       characters: {
         Row: {
           age: number | null
@@ -144,6 +188,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      contraceptive_effects: {
+        Row: {
+          expires_at: string
+          id: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          expires_at: string
+          id?: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string
+          id?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       establishment_workers: {
         Row: {
@@ -431,6 +496,48 @@ export type Database = {
           },
         ]
       }
+      pharmacy_orders: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          customer_id: string
+          customer_name: string
+          id: string
+          item_name: string
+          item_price: number
+          item_type: string
+          quantity: number
+          status: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          customer_id: string
+          customer_name: string
+          id?: string
+          item_name: string
+          item_price: number
+          item_type: string
+          quantity?: number
+          status?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          customer_id?: string
+          customer_name?: string
+          id?: string
+          item_name?: string
+          item_price?: number
+          item_type?: string
+          quantity?: number
+          status?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           content: string
@@ -468,6 +575,74 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      pregnancies: {
+        Row: {
+          announced: boolean
+          baby_gender: string
+          created_from_test_id: string | null
+          delivered: boolean
+          ends_at: string
+          id: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          announced?: boolean
+          baby_gender: string
+          created_from_test_id?: string | null
+          delivered?: boolean
+          ends_at: string
+          id?: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          announced?: boolean
+          baby_gender?: string
+          created_from_test_id?: string | null
+          delivered?: boolean
+          ends_at?: string
+          id?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pregnancies_created_from_test_id_fkey"
+            columns: ["created_from_test_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancy_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pregnancy_tests: {
+        Row: {
+          announced: boolean
+          expires_at: string
+          id: string
+          result: string
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          announced?: boolean
+          expires_at?: string
+          id?: string
+          result: string
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          announced?: boolean
+          expires_at?: string
+          id?: string
+          result?: string
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -559,6 +734,36 @@ export type Database = {
           location?: string
           room_name?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      scratch_cards: {
+        Row: {
+          id: string
+          prize_amount: number | null
+          prize_type: string | null
+          scratched_at: string
+          slots: Json
+          user_id: string
+          won: boolean
+        }
+        Insert: {
+          id?: string
+          prize_amount?: number | null
+          prize_type?: string | null
+          scratched_at?: string
+          slots?: Json
+          user_id: string
+          won?: boolean
+        }
+        Update: {
+          id?: string
+          prize_amount?: number | null
+          prize_type?: string | null
+          scratched_at?: string
+          slots?: Json
+          user_id?: string
+          won?: boolean
         }
         Relationships: []
       }
