@@ -214,6 +214,81 @@ export type Database = {
         }
         Relationships: []
       }
+      house_invites: {
+        Row: {
+          created_at: string
+          house_id: string
+          id: string
+          invited_by: string
+          invited_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          house_id: string
+          id?: string
+          invited_by: string
+          invited_user_id: string
+        }
+        Update: {
+          created_at?: string
+          house_id?: string
+          id?: string
+          invited_by?: string
+          invited_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "house_invites_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "house_invites_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "house_invites_invited_user_id_fkey"
+            columns: ["invited_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      houses: {
+        Row: {
+          created_at: string
+          id: string
+          owner_id: string
+          owner_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_id: string
+          owner_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_id?: string
+          owner_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "houses_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       inventory: {
         Row: {
           attributes: Json | null

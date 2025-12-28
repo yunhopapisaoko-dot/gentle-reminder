@@ -253,7 +253,17 @@ const App: React.FC = () => {
           </div>
         );
       case TabType.Locais:
-        return <LocaisGrid onSelect={handleEnterRoom} confirmedRooms={confirmedRooms} />;
+        return (
+          <LocaisGrid 
+            onSelect={handleEnterRoom} 
+            confirmedRooms={confirmedRooms}
+            currentUser={currentUser}
+            characters={characters}
+            onMoneyChange={(newBalance) => {
+              setCurrentUser(prev => prev ? { ...prev, money: newBalance } : prev);
+            }}
+          />
+        );
       case TabType.Personagens:
         return (
           <CharactersGrid 
