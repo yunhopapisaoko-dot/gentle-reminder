@@ -127,7 +127,7 @@ const App: React.FC = () => {
       setPosts(dbPosts || []);
       const members = await supabaseService.getAllProfiles();
       setCommunityMembers(members || []);
-      const chars = await supabaseService.getCharacters();
+      const chars = await supabaseService.getAllCharacters();
       setCharacters(chars || []);
     } catch (error: any) {
       if (error?.message?.includes('profiles')) setShowDbSetup(true);
@@ -258,7 +258,9 @@ const App: React.FC = () => {
         return (
           <CharactersGrid 
             characters={characters} 
-            onCreateClick={() => setIsCreateCharacterOpen(true)} 
+            currentUserId={currentUser.id}
+            onCreateClick={() => setIsCreateCharacterOpen(true)}
+            onRefresh={() => fetchInitialData(currentUser.id)}
           />
         );
       case TabType.Chat:

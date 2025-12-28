@@ -21,11 +21,11 @@ export const CreateCharacterModal: React.FC<CreateCharacterModalProps> = ({ onCl
     age: '',
     gender: '',
     sexuality: '',
-    origin: '',
+    relationship: '',
     appearance_name: '',
     group_name: '',
     profession: '',
-    relationship: ''
+    origin: ''
   });
 
   const handleClose = () => {
@@ -64,11 +64,11 @@ export const CreateCharacterModal: React.FC<CreateCharacterModalProps> = ({ onCl
         age: formData.age ? parseInt(formData.age) : null,
         gender: formData.gender || null,
         sexuality: formData.sexuality || null,
-        origin: formData.origin || null,
+        relationship: formData.relationship || null,
         appearance_name: formData.appearance_name || null,
         group_name: formData.group_name || null,
         profession: formData.profession || null,
-        relationship: formData.relationship || null,
+        origin: formData.origin || null,
         image_url: imageUrl
       });
       
@@ -115,6 +115,11 @@ export const CreateCharacterModal: React.FC<CreateCharacterModalProps> = ({ onCl
               </div>
             </button>
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileSelect} />
+          </div>
+
+          {/* SEÇÃO 1: Informações Básicas */}
+          <div className="pb-2">
+            <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest ml-4 mb-3">Informações Básicas</p>
           </div>
 
           {/* Nome */}
@@ -165,40 +170,54 @@ export const CreateCharacterModal: React.FC<CreateCharacterModalProps> = ({ onCl
             />
           </div>
 
-          {/* Origem */}
+          {/* Status de Relacionamento */}
           <div className="space-y-1">
-            <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-4">Origem / Anime / Universo</label>
+            <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-4">Status de Relacionamento</label>
             <input 
               type="text" 
-              placeholder="Ex: Original, Naruto, K-Pop..."
+              placeholder="Solteiro(a), Comprometido(a)..."
               className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm focus:ring-primary placeholder:text-white/10"
-              value={formData.origin}
-              onChange={(e) => setFormData({...formData, origin: e.target.value})}
+              value={formData.relationship}
+              onChange={(e) => setFormData({...formData, relationship: e.target.value})}
             />
           </div>
 
-          {/* Aparência */}
+          {/* SEÇÃO 2: Aparência (Face Claim) */}
+          <div className="pt-4 border-t border-white/5">
+            <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest ml-4 mb-1">Aparência (Face Claim)</p>
+            <p className="text-[8px] text-white/20 font-bold ml-4 mb-3">Quem é a aparência do seu personagem?</p>
+          </div>
+
+          {/* Nome da Aparência */}
           <div className="space-y-1">
-            <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-4">Aparência (FC)</label>
+            <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-4">Nome da Aparência</label>
             <input 
               type="text" 
-              placeholder="Nome do faceclaim"
+              placeholder="Ex: Jongho, Zendaya, Ariana Grande..."
               className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm focus:ring-primary placeholder:text-white/10"
               value={formData.appearance_name}
               onChange={(e) => setFormData({...formData, appearance_name: e.target.value})}
             />
           </div>
 
-          {/* Grupo/Clã */}
+          {/* Grupo / Origem da Aparência */}
           <div className="space-y-1">
-            <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-4">Grupo / Clã / Organização</label>
+            <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-4">Grupo / Origem da Aparência</label>
             <input 
               type="text" 
-              placeholder="Ex: AKATSUKI, BTS..."
+              placeholder="Ex: ATEEZ, Atriz, Cantora, BTS..."
               className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm focus:ring-primary placeholder:text-white/10"
               value={formData.group_name}
               onChange={(e) => setFormData({...formData, group_name: e.target.value})}
             />
+            <p className="text-[8px] text-white/15 font-bold ml-4 mt-1">
+              Fichas com o mesmo grupo ficam na mesma pasta
+            </p>
+          </div>
+
+          {/* SEÇÃO 3: Informações do Personagem */}
+          <div className="pt-4 border-t border-white/5">
+            <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest ml-4 mb-3">Sobre o Personagem</p>
           </div>
 
           {/* Profissão */}
@@ -213,15 +232,15 @@ export const CreateCharacterModal: React.FC<CreateCharacterModalProps> = ({ onCl
             />
           </div>
 
-          {/* Relacionamento */}
+          {/* Origem / Universo */}
           <div className="space-y-1">
-            <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-4">Status de Relacionamento</label>
+            <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-4">Origem / Universo</label>
             <input 
               type="text" 
-              placeholder="Solteiro(a), Comprometido(a)..."
+              placeholder="Ex: Original, Naruto, K-Pop..."
               className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm focus:ring-primary placeholder:text-white/10"
-              value={formData.relationship}
-              onChange={(e) => setFormData({...formData, relationship: e.target.value})}
+              value={formData.origin}
+              onChange={(e) => setFormData({...formData, origin: e.target.value})}
             />
           </div>
         </div>
