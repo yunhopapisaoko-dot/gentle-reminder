@@ -9,6 +9,7 @@ import { ManagerDashboard } from './ManagerDashboard';
 import { WorkerView } from './WorkerView';
 import { JYPBanditSystem } from './JYPBanditSystem';
 import { VIPReservationModal } from './VIPReservationModal';
+import { PharmacyView } from './PharmacyView';
 import { supabaseService } from '../services/supabaseService';
 
 interface ChatInterfaceProps {
@@ -28,6 +29,7 @@ const LOCATIONS_LIST = [
   { id: 'restaurante', name: 'Restaurante', icon: 'restaurant' },
   { id: 'padaria', name: 'Padaria', icon: 'bakery_dining' },
   { id: 'pousada', name: 'Pousada', icon: 'hotel' },
+  { id: 'farmacia', name: 'Farmácia', icon: 'local_pharmacy' },
 ];
 
 const RACE_THEMES: Record<string, { color: string, icon: string, bg: string }> = {
@@ -49,6 +51,7 @@ const WALLPAPERS: Record<string, string> = {
   restaurante: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000',
   padaria: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400',
   pousada: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1000',
+  farmacia: 'https://images.unsplash.com/photo-1576602976047-174e57a47881?q=80&w=1000',
   default: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=1000'
 };
 
@@ -58,6 +61,7 @@ const ICONS: Record<string, string> = {
   restaurante: 'restaurant',
   padaria: 'bakery_dining',
   pousada: 'hotel',
+  farmacia: 'local_pharmacy',
   default: 'chat'
 };
 
@@ -99,10 +103,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const contextKey = locationContext?.toLowerCase() || 'default';
   const isHospital = contextKey === 'hospital';
+  const isPharmacy = contextKey === 'farmacia';
   const activeWallpaper = currentSubLoc ? currentSubLoc.wallpaper : (WALLPAPERS[contextKey] || WALLPAPERS.default);
   
   const icon = ICONS[contextKey] || ICONS.default;
   const hasMenu = MENUS[contextKey] !== undefined;
+  const [showPharmacy, setShowPharmacy] = useState(false);
   
   const internalLocs = (SUB_LOCATIONS[contextKey] || []).filter(loc => {
     if (!loc.restricted) return true;
@@ -349,7 +355,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           {isHospital && !currentSubLoc && (
             <button onClick={() => setShowConsultations(true)} className="w-11 h-11 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg border border-white/20 active:scale-90"><span className="material-symbols-rounded">stethoscope</span></button>
           )}
-          {hasMenu && !currentSubLoc && !isHospital && (
+          {isPharmacy && !currentSubLoc && (
+            <button onClick={() => setShowPharmacy(true)} className="px-5 py-3 rounded-2xl bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest shadow-xl border border-white/20 active:scale-95 transition-all">Balcão</button>
+          )}
+          {hasMenu && !currentSubLoc && !isHospital && !isPharmacy && (
             <button onClick={() => setShowMenu(true)} className="px-5 py-3 rounded-2xl bg-secondary text-white text-[10px] font-black uppercase tracking-widest shadow-xl border border-white/20 active:scale-95 transition-all">Menu</button>
           )}
           <button onClick={handleClose} className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-2xl flex items-center justify-center border border-white/10 text-white shadow-lg active:scale-90"><span className="material-symbols-rounded">close</span></button>
@@ -571,6 +580,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           onlineUsers={[currentUser, ...onlineMembers.filter(m => m.id !== currentUser.id)]}
           onRobbery={handleJYPRobbery}
           onJYPMessage={handleJYPMessage}
+        />
+      )}
+
+      {/* Pharmacy View */}
+      {showPharmacy && (
+        <PharmacyView 
+          onClose={() => setShowPharmacy(false)} 
+          currentUser={currentUser}
+          onUpdateMoney={(amount) => onUpdateStatus?.({ money: amount })}
         />
       )}
     </div>

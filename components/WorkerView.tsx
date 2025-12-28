@@ -42,6 +42,7 @@ export const WorkerView: React.FC<WorkerViewProps> = ({ location, role, onClose,
   const isHospital = location === 'hospital';
   const isCreche = location === 'creche';
   const isFood = location === 'restaurante' || location === 'padaria';
+  const isPharmacy = location === 'farmacia';
 
   // Carregar pedidos de comida
   const loadFoodOrders = useCallback(async () => {
