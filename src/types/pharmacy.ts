@@ -7,7 +7,6 @@ export interface PharmacyItem {
   price: number;
   type: 'pregnancy_test' | 'scratch_card' | 'contraceptive' | 'medicine';
   icon: string;
-  image?: string; // Image URL for the item
   restrictedTo?: 'lunari'; // Only Lunari can use pregnancy tests
   duration?: number; // Duration in days for contraceptives
 }
@@ -80,14 +79,6 @@ export interface BabyDelivery {
   created_at: string;
 }
 
-// Import pharmacy item images
-import pregnancyTestImg from '@/assets/pharmacy/pregnancy-test.png';
-import scratchCardImg from '@/assets/pharmacy/scratch-card.png';
-import contraceptiveImg from '@/assets/pharmacy/contraceptive.png';
-import medicineColdImg from '@/assets/pharmacy/medicine-cold.png';
-import medicineFeverImg from '@/assets/pharmacy/medicine-fever.png';
-import medicinePainImg from '@/assets/pharmacy/medicine-pain.png';
-
 // Pharmacy menu items
 export const PHARMACY_ITEMS: PharmacyItem[] = [
   {
@@ -97,7 +88,6 @@ export const PHARMACY_ITEMS: PharmacyItem[] = [
     price: 150,
     type: 'pregnancy_test',
     icon: '🧪',
-    image: pregnancyTestImg,
     restrictedTo: 'lunari',
   },
   {
@@ -107,7 +97,6 @@ export const PHARMACY_ITEMS: PharmacyItem[] = [
     price: 100,
     type: 'scratch_card',
     icon: '🎰',
-    image: scratchCardImg,
   },
   {
     id: 'contraceptive_7d',
@@ -116,7 +105,6 @@ export const PHARMACY_ITEMS: PharmacyItem[] = [
     price: 200,
     type: 'contraceptive',
     icon: '💊',
-    image: contraceptiveImg,
     duration: 7,
   },
   {
@@ -126,7 +114,6 @@ export const PHARMACY_ITEMS: PharmacyItem[] = [
     price: 350,
     type: 'contraceptive',
     icon: '💊',
-    image: contraceptiveImg,
     duration: 14,
   },
   {
@@ -136,7 +123,6 @@ export const PHARMACY_ITEMS: PharmacyItem[] = [
     price: 80,
     type: 'medicine',
     icon: '💉',
-    image: medicineColdImg,
   },
   {
     id: 'medicine_fever',
@@ -145,7 +131,6 @@ export const PHARMACY_ITEMS: PharmacyItem[] = [
     price: 100,
     type: 'medicine',
     icon: '🌡️',
-    image: medicineFeverImg,
   },
   {
     id: 'medicine_pain',
@@ -154,7 +139,6 @@ export const PHARMACY_ITEMS: PharmacyItem[] = [
     price: 60,
     type: 'medicine',
     icon: '💊',
-    image: medicinePainImg,
   },
 ];
 
