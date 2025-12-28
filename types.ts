@@ -107,3 +107,24 @@ export enum TabType {
   Personagens = 'Personagens',
   Chat = 'Chat Miku'
 }
+
+export interface VIPReservation {
+  id: string;
+  location: string;
+  reserver_id: string;
+  reserver_name: string;
+  price: number;
+  status: 'pending' | 'approved' | 'rejected';
+  approved_at?: string;
+  approved_by?: string;
+  expires_at?: string;
+  created_at: string;
+  guests: VIPGuest[];
+}
+
+export interface VIPGuest {
+  id: string;
+  reservation_id: string;
+  user_id: string;
+  user_name: string;
+}

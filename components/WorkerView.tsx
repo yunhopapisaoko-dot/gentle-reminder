@@ -6,6 +6,17 @@ import { supabase } from '../supabase';
 import { DISEASE_DETAILS } from '../constants';
 import { FoodOrder, OrderItem } from '../types';
 
+interface VIPReservation {
+  id: string;
+  location: string;
+  reserver_id: string;
+  reserver_name: string;
+  price: number;
+  status: string;
+  created_at: string;
+  guests: { id: string; user_id: string; user_name: string }[];
+}
+
 interface WorkerViewProps {
   location: string;
   role: string;
@@ -18,6 +29,7 @@ export const WorkerView: React.FC<WorkerViewProps> = ({ location, role, onClose,
   const [isClosing, setIsClosing] = useState(false);
   const [pendingTreatments, setPendingTreatments] = useState<any[]>([]);
   const [foodOrders, setFoodOrders] = useState<FoodOrder[]>([]);
+  const [vipReservations, setVipReservations] = useState<VIPReservation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [preparingTimers, setPreparingTimers] = useState<Record<string, number>>({});
@@ -99,13 +111,28 @@ export const WorkerView: React.FC<WorkerViewProps> = ({ location, role, onClose,
     }
   }, [isHospital]);
 
-  // Carregar pedidos de comida
+  // Carregar pedidos de comida e reservas VIP
   useEffect(() => {
-    if (isFood) {
-      loadFoodOrders().finally(() => setIsLoading(false));
+    const loadData = async () => {
+      if (isFood) {
+        await loadFoodOrders();
+        
+        // Carregar reservas VIP
+        try {
+          const reservations = await supabaseService.getPendingVIPReservations(location);
+          setVipReservations(reservations);
+        } catch (error) {
+          console.error('Erro ao carregar reservas VIP:', error);
+        }
+      }
+      setIsLoading(false);
+    };
+    
+    loadData();
 
+    if (isFood) {
       // Realtime subscription para pedidos
-      const channel = supabase
+      const orderChannel = supabase
         .channel('worker-food-orders')
         .on(
           'postgres_changes',
@@ -121,8 +148,27 @@ export const WorkerView: React.FC<WorkerViewProps> = ({ location, role, onClose,
         )
         .subscribe();
 
+      // Realtime subscription para reservas VIP
+      const vipChannel = supabase
+        .channel('worker-vip-reservations')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'vip_reservations',
+            filter: `location=eq.${location}`
+          },
+          async () => {
+            const reservations = await supabaseService.getPendingVIPReservations(location);
+            setVipReservations(reservations);
+          }
+        )
+        .subscribe();
+
       return () => {
-        supabase.removeChannel(channel);
+        supabase.removeChannel(orderChannel);
+        supabase.removeChannel(vipChannel);
       };
     }
   }, [isFood, location, loadFoodOrders]);
@@ -237,6 +283,36 @@ export const WorkerView: React.FC<WorkerViewProps> = ({ location, role, onClose,
 
   const getOrderItems = (order: FoodOrder): OrderItem[] => {
     return order.items as OrderItem[];
+  };
+
+  // VIP Reservation handlers
+  const handleApproveVIP = async (reservation: VIPReservation) => {
+    if (!currentUserId) return;
+    setProcessingId(reservation.id);
+    
+    try {
+      await supabaseService.approveVIPReservation(reservation.id, currentUserId);
+      setVipReservations(prev => prev.filter(r => r.id !== reservation.id));
+    } catch (error: any) {
+      console.error('Erro ao aprovar reserva VIP:', error);
+      alert(error.message || 'Erro ao aprovar reserva');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleRejectVIP = async (reservation: VIPReservation) => {
+    setProcessingId(reservation.id);
+    
+    try {
+      await supabaseService.rejectVIPReservation(reservation.id, reservation.reserver_id, reservation.price);
+      setVipReservations(prev => prev.filter(r => r.id !== reservation.id));
+    } catch (error: any) {
+      console.error('Erro ao rejeitar reserva VIP:', error);
+      alert(error.message || 'Erro ao rejeitar reserva');
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   // Mock de dados para creche (para o roleplay)
@@ -402,6 +478,84 @@ export const WorkerView: React.FC<WorkerViewProps> = ({ location, role, onClose,
                   );
                 })
               )
+            )}
+
+            {/* VIP RESERVATIONS */}
+            {isFood && vipReservations.length > 0 && (
+              <>
+                <div className="px-2 mt-8 mb-4">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400/60">
+                    Reservas VIP Pendentes
+                  </h3>
+                </div>
+                {vipReservations.map(reservation => {
+                  const isProcessing = processingId === reservation.id;
+                  
+                  return (
+                    <div key={reservation.id} className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20 rounded-[40px] p-8 group">
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center space-x-5">
+                          <div className="w-14 h-14 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-400 border border-amber-500/30">
+                            <span className="material-symbols-rounded text-2xl">stars</span>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-3">
+                              <p className="text-lg font-black text-white tracking-tight">Reserva VIP</p>
+                              <span className="bg-amber-500/20 text-amber-400 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border border-amber-500/30 animate-pulse">
+                                Aguardando
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-white/40 uppercase tracking-widest mt-1">
+                              Responsável: <span className="text-amber-400">{reservation.reserver_name}</span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">Valor Pago</p>
+                          <p className="text-lg font-black text-amber-400 italic tracking-tighter">{reservation.price} MKC</p>
+                        </div>
+                      </div>
+
+                      {/* Convidados */}
+                      <div className="bg-white/5 rounded-2xl p-4 mb-6">
+                        <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-3">Convidados ({reservation.guests.length})</p>
+                        <div className="flex flex-wrap gap-2">
+                          {reservation.guests.map(guest => (
+                            <span key={guest.id} className="bg-white/10 text-white text-[10px] font-bold px-3 py-1.5 rounded-xl">
+                              {guest.user_name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4">
+                        <button 
+                          onClick={() => handleApproveVIP(reservation)}
+                          disabled={isProcessing}
+                          className="flex-1 py-4 rounded-2xl bg-amber-500 text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          {isProcessing ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <>
+                              <span className="material-symbols-rounded text-lg">check_circle</span>
+                              Aprovar (24h)
+                            </>
+                          )}
+                        </button>
+                        <button 
+                          onClick={() => handleRejectVIP(reservation)}
+                          disabled={isProcessing}
+                          className="flex-1 py-4 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[11px] font-black uppercase tracking-[0.3em] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          <span className="material-symbols-rounded text-lg">cancel</span>
+                          Rejeitar
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
             )}
 
             {/* HOSPITAL */}

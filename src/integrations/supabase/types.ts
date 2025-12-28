@@ -601,6 +601,77 @@ export type Database = {
         }
         Relationships: []
       }
+      vip_reservation_guests: {
+        Row: {
+          created_at: string
+          id: string
+          reservation_id: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reservation_id: string
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reservation_id?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vip_reservation_guests_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "vip_reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vip_reservations: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          location: string
+          price: number
+          reserver_id: string
+          reserver_name: string
+          status: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          location: string
+          price: number
+          reserver_id: string
+          reserver_name: string
+          status?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          location?: string
+          price?: number
+          reserver_id?: string
+          reserver_name?: string
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
