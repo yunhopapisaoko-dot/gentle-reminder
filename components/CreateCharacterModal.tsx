@@ -78,7 +78,7 @@ export const CreateCharacterModal: React.FC<CreateCharacterModalProps> = ({ onCl
   };
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-end justify-center">
+    <div className="fixed inset-0 z-[600] flex items-end justify-center">
       <div className={`absolute inset-0 bg-black/70 backdrop-blur-xl transition-opacity duration-500 ${isClosing ? 'opacity-0' : 'opacity-100'}`} onClick={handleClose} />
       
       <div className={`relative w-full max-w-md bg-background-dark rounded-t-[60px] border-t border-white/5 shadow-[0_-30px_100px_rgba(0,0,0,1)] max-h-[90vh] overflow-hidden flex flex-col ${isClosing ? 'animate-out slide-out-bottom duration-500' : 'animate-in slide-in-bottom duration-700'}`}>

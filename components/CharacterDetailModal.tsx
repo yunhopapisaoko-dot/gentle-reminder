@@ -124,7 +124,7 @@ export const CharacterDetailModal: React.FC<CharacterDetailModalProps> = ({
   const displayImage = previewUrl || character.image_url;
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-end justify-center">
+    <div className="fixed inset-0 z-[600] flex items-end justify-center">
       <div 
         className={`absolute inset-0 bg-black/70 backdrop-blur-xl transition-opacity duration-500 ${isClosing ? 'opacity-0' : 'opacity-100'}`} 
         onClick={handleClose} 
