@@ -445,8 +445,31 @@ export const supabaseService = {
     return data || [];
   },
 
+  async getAllCharacters(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('characters')
+      .select('*, profiles:user_id (full_name, username, avatar_url)')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error("Erro ao buscar todos os personagens:", error);
+      return [];
+    }
+    return data || [];
+  },
+
   async createCharacter(character: any): Promise<void> {
     const { error } = await supabase.from('characters').insert([character]);
+    if (error) throw error;
+  },
+
+  async updateCharacter(characterId: string, updates: any): Promise<void> {
+    const { error } = await supabase.from('characters').update(updates).eq('id', characterId);
+    if (error) throw error;
+  },
+
+  async deleteCharacter(characterId: string): Promise<void> {
+    const { error } = await supabase.from('characters').delete().eq('id', characterId);
     if (error) throw error;
   },
 
