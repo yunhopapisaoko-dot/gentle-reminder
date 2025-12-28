@@ -10,6 +10,8 @@ import { WorkerView } from './WorkerView';
 import { JYPBanditSystem } from './JYPBanditSystem';
 import { VIPReservationModal } from './VIPReservationModal';
 import { PharmacyView } from './PharmacyView';
+import { FridgeModal } from './FridgeModal';
+import { RecipesModal } from './RecipesModal';
 import { supabaseService } from '../services/supabaseService';
 
 interface ChatInterfaceProps {
@@ -92,6 +94,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [showWorkerPanel, setShowWorkerPanel] = useState(false);
   const [showGrantAccess, setShowGrantAccess] = useState(false);
   const [showVIPModal, setShowVIPModal] = useState(false);
+  const [showFridge, setShowFridge] = useState(false);
+  const [showRecipes, setShowRecipes] = useState(false);
   const [hasVIPAccess, setHasVIPAccess] = useState(false);
   const [activeVIPReservation, setActiveVIPReservation] = useState<any>(null);
   
@@ -104,6 +108,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const contextKey = locationContext?.toLowerCase() || 'default';
   const isHospital = contextKey === 'hospital';
   const isPharmacy = contextKey === 'farmacia';
+  const isPousadaKitchen = contextKey === 'pousada' && currentSubLoc?.name === 'Cozinha';
   const activeWallpaper = currentSubLoc ? currentSubLoc.wallpaper : (WALLPAPERS[contextKey] || WALLPAPERS.default);
   
   const icon = ICONS[contextKey] || ICONS.default;
@@ -338,6 +343,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
         
         <div className="flex items-center space-x-2">
+          {/* Kitchen buttons - Fridge and Recipes */}
+          {isPousadaKitchen && (
+            <>
+              <button onClick={() => setShowFridge(true)} className="w-11 h-11 rounded-2xl bg-cyan-500 text-white flex items-center justify-center shadow-lg border border-white/20 active:scale-90 transition-all">
+                <span className="material-symbols-rounded">kitchen</span>
+              </button>
+              <button onClick={() => setShowRecipes(true)} className="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-lg border border-white/20 active:scale-90 transition-all">
+                <span className="material-symbols-rounded">menu_book</span>
+              </button>
+            </>
+          )}
+
           {locationContext && !currentSubLoc && (
             <>
               {workerRole ? (
@@ -589,6 +606,24 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           onClose={() => setShowPharmacy(false)} 
           currentUser={currentUser}
           onUpdateMoney={(amount) => onUpdateStatus?.({ money: amount })}
+        />
+      )}
+
+      {/* Fridge Modal */}
+      {showFridge && (
+        <FridgeModal
+          userId={currentUser.id}
+          userName={currentUser.name}
+          onClose={() => setShowFridge(false)}
+        />
+      )}
+
+      {/* Recipes Modal */}
+      {showRecipes && (
+        <RecipesModal
+          userId={currentUser.id}
+          userName={currentUser.name}
+          onClose={() => setShowRecipes(false)}
         />
       )}
     </div>
