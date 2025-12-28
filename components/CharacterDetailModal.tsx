@@ -49,10 +49,8 @@ export const CharacterDetailModal: React.FC<CharacterDetailModalProps> = ({
     age: character.age?.toString() || '',
     gender: character.gender || '',
     sexuality: character.sexuality || '',
-    origin: character.origin || '',
     appearance_name: character.appearance_name || '',
     group_name: character.group_name || '',
-    profession: character.profession || '',
     relationship: character.relationship || ''
   });
 
@@ -93,10 +91,8 @@ export const CharacterDetailModal: React.FC<CharacterDetailModalProps> = ({
         age: formData.age ? parseInt(formData.age) : null,
         gender: formData.gender || null,
         sexuality: formData.sexuality || null,
-        origin: formData.origin || null,
         appearance_name: formData.appearance_name || null,
         group_name: formData.group_name || null,
-        profession: formData.profession || null,
         relationship: formData.relationship || null,
         image_url: imageUrl
       });
@@ -261,25 +257,6 @@ export const CharacterDetailModal: React.FC<CharacterDetailModalProps> = ({
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-4">Profissão do Personagem</label>
-                <input 
-                  type="text" 
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm focus:ring-primary"
-                  value={formData.profession}
-                  onChange={(e) => setFormData({...formData, profession: e.target.value})}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-4">Origem / Universo</label>
-                <input 
-                  type="text" 
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm focus:ring-primary"
-                  value={formData.origin}
-                  onChange={(e) => setFormData({...formData, origin: e.target.value})}
-                />
-              </div>
             </>
           ) : (
             // View Mode
@@ -321,19 +298,6 @@ export const CharacterDetailModal: React.FC<CharacterDetailModalProps> = ({
                 )}
               </div>
 
-              {character.profession && (
-                <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
-                  <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Profissão</p>
-                  <p className="text-white font-bold">{character.profession}</p>
-                </div>
-              )}
-
-              {character.origin && (
-                <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
-                  <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Origem / Universo</p>
-                  <p className="text-white font-bold">{character.origin}</p>
-                </div>
-              )}
             </>
           )}
         </div>

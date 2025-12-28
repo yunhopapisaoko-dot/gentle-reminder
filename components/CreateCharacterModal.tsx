@@ -23,9 +23,7 @@ export const CreateCharacterModal: React.FC<CreateCharacterModalProps> = ({ onCl
     sexuality: '',
     relationship: '',
     appearance_name: '',
-    group_name: '',
-    profession: '',
-    origin: ''
+    group_name: ''
   });
 
   const handleClose = () => {
@@ -67,8 +65,6 @@ export const CreateCharacterModal: React.FC<CreateCharacterModalProps> = ({ onCl
         relationship: formData.relationship || null,
         appearance_name: formData.appearance_name || null,
         group_name: formData.group_name || null,
-        profession: formData.profession || null,
-        origin: formData.origin || null,
         image_url: imageUrl
       });
       
@@ -215,34 +211,6 @@ export const CreateCharacterModal: React.FC<CreateCharacterModalProps> = ({ onCl
             </p>
           </div>
 
-          {/* SEÇÃO 3: Informações do Personagem */}
-          <div className="pt-4 border-t border-white/5">
-            <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest ml-4 mb-3">Sobre o Personagem</p>
-          </div>
-
-          {/* Profissão */}
-          <div className="space-y-1">
-            <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-4">Profissão</label>
-            <input 
-              type="text" 
-              placeholder="Ex: Ninja, Médico, Estudante..."
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm focus:ring-primary placeholder:text-white/10"
-              value={formData.profession}
-              onChange={(e) => setFormData({...formData, profession: e.target.value})}
-            />
-          </div>
-
-          {/* Origem / Universo */}
-          <div className="space-y-1">
-            <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-4">Origem / Universo</label>
-            <input 
-              type="text" 
-              placeholder="Ex: Original, Naruto, K-Pop..."
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm focus:ring-primary placeholder:text-white/10"
-              value={formData.origin}
-              onChange={(e) => setFormData({...formData, origin: e.target.value})}
-            />
-          </div>
         </div>
 
         {/* Action Buttons */}

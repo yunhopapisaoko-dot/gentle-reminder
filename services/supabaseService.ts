@@ -446,20 +446,42 @@ export const supabaseService = {
   },
 
   async getAllCharacters(): Promise<any[]> {
+    console.log("Buscando todos os personagens...");
     const { data, error } = await supabase
       .from('characters')
-      .select('*, profiles:user_id (full_name, username, avatar_url)')
+      .select('*')
       .order('created_at', { ascending: false });
+    
+    console.log("Resultado getAllCharacters:", { data, error });
     
     if (error) {
       console.error("Erro ao buscar todos os personagens:", error);
       return [];
     }
+    
+    // Buscar profiles separadamente para evitar problemas de join
+    if (data && data.length > 0) {
+      const userIds = [...new Set(data.map(c => c.user_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, username, avatar_url')
+        .in('user_id', userIds);
+      
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      
+      return data.map(char => ({
+        ...char,
+        profiles: profileMap.get(char.user_id) || null
+      }));
+    }
+    
     return data || [];
   },
 
   async createCharacter(character: any): Promise<void> {
-    const { error } = await supabase.from('characters').insert([character]);
+    console.log("Criando personagem:", character);
+    const { data, error } = await supabase.from('characters').insert([character]).select();
+    console.log("Resultado createCharacter:", { data, error });
     if (error) throw error;
   },
 
