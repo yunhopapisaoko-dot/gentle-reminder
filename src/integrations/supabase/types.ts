@@ -279,6 +279,45 @@ export type Database = {
         }
         Relationships: []
       }
+      fridge_items: {
+        Row: {
+          added_by: string
+          added_by_name: string
+          attributes: Json | null
+          category: string | null
+          created_at: string
+          id: string
+          item_id: string
+          item_image: string | null
+          item_name: string
+          quantity: number | null
+        }
+        Insert: {
+          added_by: string
+          added_by_name: string
+          attributes?: Json | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          item_id: string
+          item_image?: string | null
+          item_name: string
+          quantity?: number | null
+        }
+        Update: {
+          added_by?: string
+          added_by_name?: string
+          attributes?: Json | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_image?: string | null
+          item_name?: string
+          quantity?: number | null
+        }
+        Relationships: []
+      }
       house_invites: {
         Row: {
           created_at: string
@@ -710,6 +749,51 @@ export type Database = {
         }
         Relationships: []
       }
+      recipes: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          ingredients: Json
+          name: string
+          preparation_time: number | null
+          result_attributes: Json | null
+          result_category: string | null
+          result_item_id: string
+          result_item_image: string | null
+          result_item_name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          ingredients?: Json
+          name: string
+          preparation_time?: number | null
+          result_attributes?: Json | null
+          result_category?: string | null
+          result_item_id: string
+          result_item_image?: string | null
+          result_item_name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          ingredients?: Json
+          name?: string
+          preparation_time?: number | null
+          result_attributes?: Json | null
+          result_category?: string | null
+          result_item_id?: string
+          result_item_image?: string | null
+          result_item_name?: string
+        }
+        Relationships: []
+      }
       room_authorizations: {
         Row: {
           created_at: string
@@ -764,6 +848,69 @@ export type Database = {
           slots?: Json
           user_id?: string
           won?: boolean
+        }
+        Relationships: []
+      }
+      supermarket_items: {
+        Row: {
+          attributes: Json | null
+          category: string
+          created_at: string
+          id: string
+          item_id: string
+          item_image: string | null
+          item_name: string
+          price: number
+          stock: number
+        }
+        Insert: {
+          attributes?: Json | null
+          category: string
+          created_at?: string
+          id?: string
+          item_id: string
+          item_image?: string | null
+          item_name: string
+          price?: number
+          stock?: number
+        }
+        Update: {
+          attributes?: Json | null
+          category?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_image?: string | null
+          item_name?: string
+          price?: number
+          stock?: number
+        }
+        Relationships: []
+      }
+      supermarket_purchases: {
+        Row: {
+          id: string
+          item_id: string
+          purchased_at: string
+          user_id: string
+          week_number: number
+          year: number
+        }
+        Insert: {
+          id?: string
+          item_id: string
+          purchased_at?: string
+          user_id: string
+          week_number: number
+          year: number
+        }
+        Update: {
+          id?: string
+          item_id?: string
+          purchased_at?: string
+          user_id?: string
+          week_number?: number
+          year?: number
         }
         Relationships: []
       }

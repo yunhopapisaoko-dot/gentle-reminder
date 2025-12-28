@@ -1128,5 +1128,119 @@ export const supabaseService = {
       .eq('reservation_id', data.id);
     
     return { ...data, guests: guests || [] };
+  },
+
+  // ============ SUPERMARKET ============
+  async getSupermarketItems(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('supermarket_items')
+      .select('*')
+      .gt('stock', 0)
+      .order('category');
+    
+    if (error) {
+      console.error("Erro ao buscar itens do supermercado:", error);
+      return [];
+    }
+    return data || [];
+  },
+
+  async getUserPurchasesThisWeek(userId: string): Promise<string[]> {
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
+    const weekNumber = Math.ceil((days + startOfYear.getDay() + 1) / 7);
+    const year = now.getFullYear();
+
+    const { data, error } = await supabase
+      .from('supermarket_purchases')
+      .select('item_id')
+      .eq('user_id', userId)
+      .eq('week_number', weekNumber)
+      .eq('year', year);
+    
+    if (error) return [];
+    return data.map(p => p.item_id);
+  },
+
+  async purchaseSupermarketItem(userId: string, userName: string, item: any): Promise<void> {
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
+    const weekNumber = Math.ceil((days + startOfYear.getDay() + 1) / 7);
+    const year = now.getFullYear();
+
+    // Verificar se já comprou este item nesta semana
+    const { data: existingPurchase } = await supabase
+      .from('supermarket_purchases')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('item_id', item.item_id)
+      .eq('week_number', weekNumber)
+      .eq('year', year)
+      .maybeSingle();
+    
+    if (existingPurchase) {
+      throw new Error("Você já comprou este item esta semana!");
+    }
+
+    // Verificar estoque
+    const { data: itemData } = await supabase
+      .from('supermarket_items')
+      .select('stock')
+      .eq('id', item.id)
+      .single();
+    
+    if (!itemData || itemData.stock <= 0) {
+      throw new Error("Item esgotado!");
+    }
+
+    // Reduzir estoque
+    await supabase
+      .from('supermarket_items')
+      .update({ stock: itemData.stock - 1 })
+      .eq('id', item.id);
+
+    // Registrar compra
+    await supabase
+      .from('supermarket_purchases')
+      .insert([{
+        user_id: userId,
+        item_id: item.item_id,
+        week_number: weekNumber,
+        year: year
+      }]);
+
+    // Adicionar ao inventário
+    const { data: existingInv } = await supabase
+      .from('inventory')
+      .select('id, quantity')
+      .eq('user_id', userId)
+      .eq('item_id', item.item_id)
+      .maybeSingle();
+
+    if (existingInv) {
+      await supabase
+        .from('inventory')
+        .update({ quantity: (existingInv.quantity || 1) + 1 })
+        .eq('id', existingInv.id);
+    } else {
+      await supabase.from('inventory').insert([{
+        user_id: userId,
+        item_id: item.item_id,
+        item_name: item.item_name,
+        item_image: item.item_image,
+        category: item.category,
+        attributes: item.attributes
+      }]);
+    }
+  },
+
+  isSupermarketOpen(): boolean {
+    // Verifica se é domingo no fuso horário do Brasil (UTC-3)
+    const now = new Date();
+    const brazilOffset = -3 * 60; // -3 horas em minutos
+    const brazilTime = new Date(now.getTime() + (now.getTimezoneOffset() + brazilOffset) * 60000);
+    return brazilTime.getDay() === 0; // 0 = domingo
   }
 };

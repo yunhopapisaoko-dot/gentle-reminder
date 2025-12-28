@@ -35,6 +35,7 @@ const LOCAIS_DATA: Local[] = [
   { id: 'padaria', name: 'Padaria', icon: 'bakery_dining', color: 'from-yellow-600', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400&auto=format&fit=crop', activeCount: '15 online' },
   { id: 'pousada', name: 'Pousada', icon: 'hotel', color: 'from-purple-500', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=400&auto=format&fit=crop', activeCount: '🚨 Cuidado com JYP!' },
   { id: 'farmacia', name: 'Farmácia', icon: 'local_pharmacy', color: 'from-teal-500', image: 'https://images.unsplash.com/photo-1576602976047-174e57a47881?q=80&w=400&auto=format&fit=crop', activeCount: '💊 Saúde & Bem-Estar' },
+  { id: 'supermercado', name: 'Supermercado', icon: 'local_grocery_store', color: 'from-green-500', image: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?q=80&w=400&auto=format&fit=crop', activeCount: '🛒 Só Domingo!' },
 ];
 
 const HOUSE_ROOMS = [
