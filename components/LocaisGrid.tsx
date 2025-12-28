@@ -33,6 +33,7 @@ const LOCAIS_DATA: Local[] = [
   { id: 'creche', name: 'Creche', icon: 'child_care', color: 'from-pink-500', image: 'https://images.unsplash.com/photo-1560523160-754a9e25c68f?q=80&w=400&auto=format&fit=crop', activeCount: '8 online' },
   { id: 'restaurante', name: 'Restaurante', icon: 'restaurant', color: 'from-orange-500', image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400&auto=format&fit=crop', activeCount: '24 online' },
   { id: 'padaria', name: 'Padaria', icon: 'bakery_dining', color: 'from-yellow-600', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400&auto=format&fit=crop', activeCount: '15 online' },
+  { id: 'pousada', name: 'Pousada', icon: 'hotel', color: 'from-purple-500', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=400&auto=format&fit=crop', activeCount: '🚨 Cuidado com JYP!' },
 ];
 
 const HOUSE_ROOMS = [

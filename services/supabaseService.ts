@@ -920,5 +920,57 @@ export const supabaseService = {
     
     if (error || !data) return [];
     return data as FoodOrder[];
+  },
+
+  // ============ JYP BANDIT SYSTEM ============
+  async getLastJYPAppearance(): Promise<any | null> {
+    const { data, error } = await supabase
+      .from('jyp_appearances')
+      .select('*')
+      .order('appeared_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    if (error) {
+      console.error("Erro ao buscar última aparição do JYP:", error);
+      return null;
+    }
+    return data;
+  },
+
+  async recordJYPAppearance(
+    location: string,
+    subLocation: string | undefined,
+    victimId: string,
+    victimName: string,
+    stolenAmount: number,
+    message: string
+  ): Promise<void> {
+    const { error } = await supabase
+      .from('jyp_appearances')
+      .insert([{
+        location,
+        sub_location: subLocation,
+        victim_id: victimId,
+        victim_name: victimName,
+        stolen_amount: stolenAmount,
+        message
+      }]);
+    
+    if (error) {
+      console.error("Erro ao registrar aparição do JYP:", error);
+      throw error;
+    }
+  },
+
+  async getJYPAppearances(limit: number = 10): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('jyp_appearances')
+      .select('*')
+      .order('appeared_at', { ascending: false })
+      .limit(limit);
+    
+    if (error) return [];
+    return data || [];
   }
 };
