@@ -18,6 +18,7 @@ import { FloatingActionDock } from './components/FloatingActionDock';
 import { AllChatsView } from './components/AllChatsView';
 import { RouletteView } from './components/RouletteView';
 import { InventoryView } from './components/InventoryView';
+import { SupermarketView } from './components/SupermarketView';
 import { TabType, User, Post, MenuItem } from './types';
 import { supabase } from './supabase';
 import { supabaseService } from './services/supabaseService';
@@ -39,6 +40,7 @@ const App: React.FC = () => {
   const [isAllChatsOpen, setIsAllChatsOpen] = useState(false);
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
+  const [isSupermarketOpen, setIsSupermarketOpen] = useState(false);
   const [isCreateCharacterOpen, setIsCreateCharacterOpen] = useState(false);
   const [characters, setCharacters] = useState<any[]>([]);
   
@@ -176,6 +178,12 @@ const App: React.FC = () => {
   };
 
   const handleEnterRoom = (roomId: string) => {
+    // Se for supermercado, abre a view especial
+    if (roomId === 'supermercado') {
+      setIsSupermarketOpen(true);
+      return;
+    }
+    
     setSelectedLocalChat(roomId);
     const newVisited = visitedRooms.includes(roomId) ? visitedRooms : [roomId, ...visitedRooms];
     const newConfirmed = confirmedRooms.includes(roomId) ? confirmedRooms : [...confirmedRooms, roomId];
@@ -318,6 +326,15 @@ const App: React.FC = () => {
         />
 
         {isInventoryOpen && <InventoryView userId={currentUser.id} onClose={() => setIsInventoryOpen(false)} onConsume={handleConsumeItem} />}
+        {isSupermarketOpen && (
+          <SupermarketView 
+            userId={currentUser.id} 
+            userName={currentUser.name}
+            userMoney={currentUser.money || 0}
+            onClose={() => setIsSupermarketOpen(false)} 
+            onMoneyChange={(newBalance) => setCurrentUser(prev => prev ? { ...prev, money: newBalance } : prev)}
+          />
+        )}
         {isCreateModalOpen && <CreateContentModal onClose={() => setIsCreateModalOpen(false)} onSuccess={() => fetchInitialData(currentUser.id)} userId={currentUser.id} />}
         {isCreateCharacterOpen && (
           <CreateCharacterModal 
