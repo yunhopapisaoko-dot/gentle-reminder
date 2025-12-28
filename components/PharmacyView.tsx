@@ -499,10 +499,14 @@ export const PharmacyView: React.FC<PharmacyViewProps> = ({ onClose, currentUser
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl border ${
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden border ${
                     isRestricted ? 'bg-white/5 border-white/10' : 'bg-emerald-500/10 border-emerald-500/20'
                   }`}>
-                    {item.icon}
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-3xl">{item.icon}</span>
+                    )}
                   </div>
                   <div>
                     <h4 className="text-lg font-black text-white tracking-tight leading-none mb-1">{item.name}</h4>
