@@ -54,6 +54,10 @@ export const SUB_LOCATIONS: Record<string, SubLocation[]> = {
     { name: 'Entrada', icon: 'door_front', wallpaper: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1000' },
     { name: 'Dormitório', icon: 'bed', wallpaper: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?q=80&w=1000' },
     { name: 'Quintal', icon: 'park', wallpaper: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=1000' },
+  ],
+  farmacia: [
+    { name: 'Balcão', icon: 'storefront', wallpaper: 'https://images.unsplash.com/photo-1576602976047-174e57a47881?q=80&w=1000' },
+    { name: 'Estoque', icon: 'inventory', wallpaper: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?q=80&w=1000', restricted: true },
   ]
 };
 
