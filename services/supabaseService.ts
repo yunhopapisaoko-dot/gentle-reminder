@@ -1242,5 +1242,190 @@ export const supabaseService = {
     const brazilOffset = -3 * 60; // -3 horas em minutos
     const brazilTime = new Date(now.getTime() + (now.getTimezoneOffset() + brazilOffset) * 60000);
     return brazilTime.getDay() === 0; // 0 = domingo
+  },
+
+  // ============ FRIDGE (GELADEIRA COMPARTILHADA) ============
+  async getFridgeItems(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('fridge_items')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error("Erro ao buscar itens da geladeira:", error);
+      return [];
+    }
+    return data || [];
+  },
+
+  async addToFridge(userId: string, userName: string, item: any): Promise<void> {
+    // Verificar se já existe este item na geladeira
+    const { data: existing } = await supabase
+      .from('fridge_items')
+      .select('id, quantity')
+      .eq('item_id', item.item_id)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from('fridge_items')
+        .update({ quantity: (existing.quantity || 1) + 1 })
+        .eq('id', existing.id);
+    } else {
+      await supabase.from('fridge_items').insert([{
+        added_by: userId,
+        added_by_name: userName,
+        item_id: item.item_id,
+        item_name: item.item_name,
+        item_image: item.item_image,
+        category: item.category,
+        attributes: item.attributes
+      }]);
+    }
+  },
+
+  async takeFromFridge(userId: string, fridgeItemId: string, quantity: number): Promise<any> {
+    // Buscar item da geladeira
+    const { data: fridgeItem, error: fetchError } = await supabase
+      .from('fridge_items')
+      .select('*')
+      .eq('id', fridgeItemId)
+      .single();
+    
+    if (fetchError || !fridgeItem) throw new Error('Item não encontrado na geladeira');
+
+    // Reduzir quantidade na geladeira
+    if (quantity > 1) {
+      await supabase.from('fridge_items').update({ quantity: quantity - 1 }).eq('id', fridgeItemId);
+    } else {
+      await supabase.from('fridge_items').delete().eq('id', fridgeItemId);
+    }
+
+    // Adicionar ao inventário do usuário
+    const { data: existingInv } = await supabase
+      .from('inventory')
+      .select('id, quantity')
+      .eq('user_id', userId)
+      .eq('item_id', fridgeItem.item_id)
+      .maybeSingle();
+
+    if (existingInv) {
+      await supabase
+        .from('inventory')
+        .update({ quantity: (existingInv.quantity || 1) + 1 })
+        .eq('id', existingInv.id);
+    } else {
+      await supabase.from('inventory').insert([{
+        user_id: userId,
+        item_id: fridgeItem.item_id,
+        item_name: fridgeItem.item_name,
+        item_image: fridgeItem.item_image,
+        category: fridgeItem.category,
+        attributes: fridgeItem.attributes
+      }]);
+    }
+
+    return fridgeItem;
+  },
+
+  async moveToFridge(userId: string, userName: string, inventoryItemId: string, quantity: number): Promise<void> {
+    // Buscar item do inventário
+    const { data: invItem, error: fetchError } = await supabase
+      .from('inventory')
+      .select('*')
+      .eq('id', inventoryItemId)
+      .single();
+    
+    if (fetchError || !invItem) throw new Error('Item não encontrado no inventário');
+
+    // Adicionar à geladeira
+    await this.addToFridge(userId, userName, invItem);
+
+    // Reduzir quantidade do inventário
+    if (quantity > 1) {
+      await supabase.from('inventory').update({ quantity: quantity - 1 }).eq('id', inventoryItemId);
+    } else {
+      await supabase.from('inventory').delete().eq('id', inventoryItemId);
+    }
+  },
+
+  // ============ RECIPES (RECEITAS) ============
+  async getRecipes(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('recipes')
+      .select('*')
+      .order('name');
+    
+    if (error) {
+      console.error("Erro ao buscar receitas:", error);
+      return [];
+    }
+    return data || [];
+  },
+
+  async prepareRecipe(userId: string, userName: string, recipe: any): Promise<void> {
+    // Buscar inventário do usuário
+    const inventory = await this.getInventory(userId);
+    
+    // Verificar se tem todos os ingredientes
+    const ingredients = recipe.ingredients as Array<{ item_id: string; item_name: string; quantity: number }>;
+    
+    for (const ingredient of ingredients) {
+      const invItem = inventory.find(i => i.item_id === ingredient.item_id);
+      if (!invItem || invItem.quantity < ingredient.quantity) {
+        throw new Error(`Falta ingrediente: ${ingredient.item_name}`);
+      }
+    }
+
+    // Consumir ingredientes do inventário
+    for (const ingredient of ingredients) {
+      const invItem = inventory.find(i => i.item_id === ingredient.item_id);
+      if (invItem) {
+        const newQty = invItem.quantity - ingredient.quantity;
+        if (newQty <= 0) {
+          await supabase.from('inventory').delete().eq('id', invItem.id);
+        } else {
+          await supabase.from('inventory').update({ quantity: newQty }).eq('id', invItem.id);
+        }
+      }
+    }
+
+    // Adicionar resultado da receita ao inventário
+    const { data: existing } = await supabase
+      .from('inventory')
+      .select('id, quantity')
+      .eq('user_id', userId)
+      .eq('item_id', recipe.result_item_id)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from('inventory')
+        .update({ quantity: (existing.quantity || 1) + 1 })
+        .eq('id', existing.id);
+    } else {
+      await supabase.from('inventory').insert([{
+        user_id: userId,
+        item_id: recipe.result_item_id,
+        item_name: recipe.result_item_name,
+        item_image: recipe.result_item_image,
+        category: recipe.result_category,
+        attributes: recipe.result_attributes
+      }]);
+    }
+  },
+
+  checkRecipeIngredients(recipe: any, inventory: any[]): { hasAll: boolean; missing: string[] } {
+    const ingredients = recipe.ingredients as Array<{ item_id: string; item_name: string; quantity: number }>;
+    const missing: string[] = [];
+
+    for (const ingredient of ingredients) {
+      const invItem = inventory.find(i => i.item_id === ingredient.item_id);
+      if (!invItem || invItem.quantity < ingredient.quantity) {
+        missing.push(ingredient.item_name);
+      }
+    }
+
+    return { hasAll: missing.length === 0, missing };
   }
 };
