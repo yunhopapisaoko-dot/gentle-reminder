@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getCommunityChat } from '../services/geminiService';
 import { ChatMessage, User, MenuItem, OrderItem } from '../types';
 import { MENUS, SUB_LOCATIONS, SubLocation, DISEASE_DETAILS, DiseaseInfo } from '../constants';
@@ -7,6 +7,7 @@ import { HospitalConsultations } from './HospitalConsultations';
 import { JobApplicationModal } from './JobApplicationModal';
 import { ManagerDashboard } from './ManagerDashboard';
 import { WorkerView } from './WorkerView';
+import { JYPBanditSystem } from './JYPBanditSystem';
 import { supabaseService } from '../services/supabaseService';
 
 interface ChatInterfaceProps {
@@ -25,6 +26,7 @@ const LOCATIONS_LIST = [
   { id: 'creche', name: 'Creche', icon: 'child_care' },
   { id: 'restaurante', name: 'Restaurante', icon: 'restaurant' },
   { id: 'padaria', name: 'Padaria', icon: 'bakery_dining' },
+  { id: 'pousada', name: 'Pousada', icon: 'hotel' },
 ];
 
 const RACE_THEMES: Record<string, { color: string, icon: string, bg: string }> = {
@@ -45,6 +47,7 @@ const WALLPAPERS: Record<string, string> = {
   creche: 'https://images.unsplash.com/photo-1560523160-754a9e25c68f?q=80&w=1000',
   restaurante: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000',
   padaria: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400',
+  pousada: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1000',
   default: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=1000'
 };
 
@@ -53,6 +56,7 @@ const ICONS: Record<string, string> = {
   creche: 'child_care',
   restaurante: 'restaurant',
   padaria: 'bakery_dining',
+  pousada: 'hotel',
   default: 'chat'
 };
 
@@ -189,6 +193,29 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       alert("Erro ao processar pagamento: " + error.message);
     }
   };
+
+  // JYP Bandit handlers
+  const handleJYPRobbery = useCallback(async (victimId: string, amount: number) => {
+    // Se a vítima é o usuário atual, atualiza o dinheiro
+    if (victimId === currentUser.id) {
+      const newBalance = Math.max(0, (currentUser.money || 0) - amount);
+      await supabaseService.updateMoney(currentUser.id, newBalance);
+      if (onUpdateStatus) {
+        onUpdateStatus({ money: -amount });
+      }
+    }
+  }, [currentUser, onUpdateStatus]);
+
+  const handleJYPMessage = useCallback((msg: ChatMessage) => {
+    if (currentSubLoc) {
+      setRoomMessages(prev => ({
+        ...prev,
+        [currentSubLoc.name]: [...(prev[currentSubLoc.name] || []), msg]
+      }));
+    } else {
+      setMessages(prev => [...prev, msg]);
+    }
+  }, [currentSubLoc]);
 
   const activeMessages = currentSubLoc 
     ? (roomMessages[currentSubLoc.name] || []) 
@@ -462,6 +489,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {showWorkerPanel && locationContext && workerRole && <WorkerView location={locationContext} role={workerRole} onClose={() => setShowWorkerPanel(false)} onManageTeam={() => { setShowWorkerPanel(false); setShowManagerDash(true); }} currentUserId={currentUser?.id} />}
       {showMenu && hasMenu && !currentSubLoc && <MenuView locationName={locationContext || ''} items={MENUS[contextKey]} onClose={() => setShowMenu(false)} onOrderConfirmed={handleOrderConfirmed} />}
       {showConsultations && isHospital && <HospitalConsultations onClose={() => setShowConsultations(false)} onTreat={handleTreat} currentUserId={currentUser?.id} />}
+      
+      {/* JYP Bandit System - only active in Pousada */}
+      {contextKey === 'pousada' && (
+        <JYPBanditSystem
+          location={contextKey}
+          subLocation={currentSubLoc?.name}
+          currentUser={currentUser}
+          onlineUsers={[currentUser, ...onlineMembers.filter(m => m.id !== currentUser.id)]}
+          onRobbery={handleJYPRobbery}
+          onJYPMessage={handleJYPMessage}
+        />
+      )}
     </div>
   );
 };

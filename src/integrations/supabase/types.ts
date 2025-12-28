@@ -369,6 +369,39 @@ export type Database = {
         }
         Relationships: []
       }
+      jyp_appearances: {
+        Row: {
+          appeared_at: string
+          id: string
+          location: string
+          message: string | null
+          stolen_amount: number
+          sub_location: string | null
+          victim_id: string | null
+          victim_name: string | null
+        }
+        Insert: {
+          appeared_at?: string
+          id?: string
+          location?: string
+          message?: string | null
+          stolen_amount?: number
+          sub_location?: string | null
+          victim_id?: string | null
+          victim_name?: string | null
+        }
+        Update: {
+          appeared_at?: string
+          id?: string
+          location?: string
+          message?: string | null
+          stolen_amount?: number
+          sub_location?: string | null
+          victim_id?: string | null
+          victim_name?: string | null
+        }
+        Relationships: []
+      }
       likes: {
         Row: {
           created_at: string
