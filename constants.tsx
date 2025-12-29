@@ -1,5 +1,26 @@
 import { User, MenuItem } from './types';
 
+// Wallpapers imports
+import hospitalEntrance from '@/assets/wallpapers/hospital-entrance.jpg';
+import hospitalRoom from '@/assets/wallpapers/hospital-room.jpg';
+import hospitalSurgery from '@/assets/wallpapers/hospital-surgery.jpg';
+import crecheEntrance from '@/assets/wallpapers/creche-entrance.jpg';
+import crecheClassroom from '@/assets/wallpapers/creche-classroom.jpg';
+import crechePlayground from '@/assets/wallpapers/creche-playground.jpg';
+import restauranteMain from '@/assets/wallpapers/restaurante-main.jpg';
+import vipRoom from '@/assets/wallpapers/vip-room.jpg';
+import kitchen from '@/assets/wallpapers/kitchen.jpg';
+import bathroom from '@/assets/wallpapers/bathroom.jpg';
+import padariaMain from '@/assets/wallpapers/padaria-main.jpg';
+import pousadaEntrance from '@/assets/wallpapers/pousada-entrance.jpg';
+import pousadaDormitory from '@/assets/wallpapers/pousada-dormitory.jpg';
+import pousadaBackyard from '@/assets/wallpapers/pousada-backyard.jpg';
+import pousadaKitchen from '@/assets/wallpapers/pousada-kitchen.jpg';
+import farmaciaMain from '@/assets/wallpapers/farmacia-main.jpg';
+import farmaciaCounter from '@/assets/wallpapers/farmacia-counter.jpg';
+import farmaciaStorage from '@/assets/wallpapers/farmacia-storage.jpg';
+import supermercadoMain from '@/assets/wallpapers/supermercado-main.jpg';
+
 export interface DiseaseInfo {
   id: string;
   name: string;
@@ -29,39 +50,39 @@ export interface SubLocation {
 
 export const SUB_LOCATIONS: Record<string, SubLocation[]> = {
   restaurante: [
-    { name: 'Reserva VIP', icon: 'stars', wallpaper: 'https://images.unsplash.com/photo-1544124499-58912cbddaad?q=80&w=1000' },
-    { name: 'Banheiro Masc.', icon: 'man', wallpaper: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=1000' },
-    { name: 'Banheiro Fem.', icon: 'woman', wallpaper: 'https://images.unsplash.com/photo-1600566752355-35792bedbb5d?q=80&w=1000' },
-    { name: 'Cozinha', icon: 'cooking', wallpaper: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=1000', restricted: true },
+    { name: 'Reserva VIP', icon: 'stars', wallpaper: vipRoom },
+    { name: 'Banheiro Masc.', icon: 'man', wallpaper: bathroom },
+    { name: 'Banheiro Fem.', icon: 'woman', wallpaper: bathroom },
+    { name: 'Cozinha', icon: 'cooking', wallpaper: kitchen, restricted: true },
   ],
   padaria: [
-    { name: 'Reserva VIP', icon: 'stars', wallpaper: 'https://images.unsplash.com/photo-1544124499-58912cbddaad?q=80&w=1000' },
-    { name: 'Banheiro Masc.', icon: 'man', wallpaper: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=1000' },
-    { name: 'Banheiro Fem.', icon: 'woman', wallpaper: 'https://images.unsplash.com/photo-1600566752355-35792bedbb5d?q=80&w=1000' },
-    { name: 'Cozinha', icon: 'cooking', wallpaper: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=1000', restricted: true },
+    { name: 'Reserva VIP', icon: 'stars', wallpaper: vipRoom },
+    { name: 'Banheiro Masc.', icon: 'man', wallpaper: bathroom },
+    { name: 'Banheiro Fem.', icon: 'woman', wallpaper: bathroom },
+    { name: 'Cozinha', icon: 'cooking', wallpaper: kitchen, restricted: true },
   ],
   hospital: [
-    { name: 'Sala de Cirurgia', icon: 'emergency', wallpaper: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?q=80&w=1000', restricted: true },
-    { name: 'Sala 1', icon: 'door_front', wallpaper: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=1000', restricted: true },
-    { name: 'Sala 2', icon: 'door_front', wallpaper: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=1000', restricted: true },
-    { name: 'Sala 3', icon: 'door_front', wallpaper: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=1000', restricted: true },
+    { name: 'Sala de Cirurgia', icon: 'emergency', wallpaper: hospitalSurgery, restricted: true },
+    { name: 'Sala 1', icon: 'door_front', wallpaper: hospitalRoom, restricted: true },
+    { name: 'Sala 2', icon: 'door_front', wallpaper: hospitalRoom, restricted: true },
+    { name: 'Sala 3', icon: 'door_front', wallpaper: hospitalRoom, restricted: true },
   ],
   creche: [
-    { name: 'Sala de Aula', icon: 'school', wallpaper: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1000', restricted: true },
-    { name: 'Parquinho', icon: 'toys', wallpaper: 'https://images.unsplash.com/photo-1596464716127-f2a82984de30?q=80&w=1000', restricted: true },
+    { name: 'Sala de Aula', icon: 'school', wallpaper: crecheClassroom, restricted: true },
+    { name: 'Parquinho', icon: 'toys', wallpaper: crechePlayground, restricted: true },
   ],
   pousada: [
-    { name: 'Entrada', icon: 'door_front', wallpaper: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1000' },
-    { name: 'Dormitório', icon: 'bed', wallpaper: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?q=80&w=1000' },
-    { name: 'Quintal', icon: 'park', wallpaper: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=1000' },
-    { name: 'Cozinha', icon: 'cooking', wallpaper: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=1000' },
+    { name: 'Entrada', icon: 'door_front', wallpaper: pousadaEntrance },
+    { name: 'Dormitório', icon: 'bed', wallpaper: pousadaDormitory },
+    { name: 'Quintal', icon: 'park', wallpaper: pousadaBackyard },
+    { name: 'Cozinha', icon: 'cooking', wallpaper: pousadaKitchen },
   ],
   farmacia: [
-    { name: 'Balcão', icon: 'storefront', wallpaper: 'https://images.unsplash.com/photo-1576602976047-174e57a47881?q=80&w=1000' },
-    { name: 'Estoque', icon: 'inventory', wallpaper: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?q=80&w=1000', restricted: true },
+    { name: 'Balcão', icon: 'storefront', wallpaper: farmaciaCounter },
+    { name: 'Estoque', icon: 'inventory', wallpaper: farmaciaStorage, restricted: true },
   ],
   supermercado: [
-    { name: 'Corredor Principal', icon: 'storefront', wallpaper: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?q=80&w=1000' },
+    { name: 'Corredor Principal', icon: 'storefront', wallpaper: supermercadoMain },
   ]
 };
 

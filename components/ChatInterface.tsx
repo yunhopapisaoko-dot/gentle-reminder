@@ -47,14 +47,24 @@ const getRaceTheme = (race?: string, isAI?: boolean) => {
   return RACE_THEMES[key] || RACE_THEMES['draeven'];
 };
 
+// Import wallpapers
+import hospitalEntrance from '@/assets/wallpapers/hospital-entrance.jpg';
+import crecheEntrance from '@/assets/wallpapers/creche-entrance.jpg';
+import restauranteMain from '@/assets/wallpapers/restaurante-main.jpg';
+import padariaMain from '@/assets/wallpapers/padaria-main.jpg';
+import pousadaEntrance from '@/assets/wallpapers/pousada-entrance.jpg';
+import farmaciaMain from '@/assets/wallpapers/farmacia-main.jpg';
+import supermercadoMain from '@/assets/wallpapers/supermercado-main.jpg';
+
 const WALLPAPERS: Record<string, string> = {
-  hospital: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=1000',
-  creche: 'https://images.unsplash.com/photo-1560523160-754a9e25c68f?q=80&w=1000',
-  restaurante: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000',
-  padaria: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400',
-  pousada: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1000',
-  farmacia: 'https://images.unsplash.com/photo-1576602976047-174e57a47881?q=80&w=1000',
-  default: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=1000'
+  hospital: hospitalEntrance,
+  creche: crecheEntrance,
+  restaurante: restauranteMain,
+  padaria: padariaMain,
+  pousada: pousadaEntrance,
+  farmacia: farmaciaMain,
+  supermercado: supermercadoMain,
+  default: hospitalEntrance
 };
 
 const ICONS: Record<string, string> = {
