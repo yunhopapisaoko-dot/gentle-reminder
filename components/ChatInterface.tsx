@@ -110,6 +110,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   
   const [onlineMembers, setOnlineMembers] = useState<User[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestionTab, setSuggestionTab] = useState<'locais' | 'acoes'>('locais');
+  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedTargetUser, setSelectedTargetUser] = useState<User | null>(null);
+  const [itemActionMode, setItemActionMode] = useState<'use' | 'send' | 'share' | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -201,10 +206,99 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   useEffect(() => {
     if (input === '/' || input === '*') {
       setShowSuggestions(true);
+      setSuggestionTab('locais');
+      setSelectedItem(null);
+      setItemActionMode(null);
+      // Carregar inventário quando abre o menu de ações
+      supabaseService.getInventory(currentUser.id).then(setInventoryItems);
     } else if (!input.startsWith('/') && !input.startsWith('*')) {
       setShowSuggestions(false);
     }
-  }, [input]);
+  }, [input, currentUser.id]);
+
+  // Usar item sozinho
+  const handleUseItem = async (item: any) => {
+    try {
+      await supabaseService.consumeFromInventory(item.id, item.quantity);
+      const attrs = item.attributes || {};
+      if (onUpdateStatus) {
+        onUpdateStatus({
+          hunger: attrs.hunger || 0,
+          thirst: attrs.thirst || 0,
+          alcohol: attrs.alcohol || 0
+        });
+      }
+      handleSend(`*Usou ${item.item_name}*`);
+      setShowSuggestions(false);
+      setSelectedItem(null);
+      setInput('');
+    } catch (error: any) {
+      alert("Erro ao usar item: " + error.message);
+    }
+  };
+
+  // Enviar item para outro usuário
+  const handleSendItem = async (item: any, targetUser: User) => {
+    try {
+      await supabaseService.consumeFromInventory(item.id, 1);
+      // Adicionar item ao inventário do outro usuário
+      await supabaseService.addToInventory(targetUser.id, {
+        id: item.item_id,
+        name: item.item_name,
+        description: item.attributes?.description || '',
+        price: 0,
+        image: item.item_image,
+        category: item.category || 'Item',
+        hungerRestore: item.attributes?.hunger,
+        thirstRestore: item.attributes?.thirst,
+        alcoholLevel: item.attributes?.alcohol
+      });
+      handleSend(`*Enviou ${item.item_name} para ${targetUser.name}*`);
+      setShowSuggestions(false);
+      setSelectedItem(null);
+      setSelectedTargetUser(null);
+      setItemActionMode(null);
+      setInput('');
+    } catch (error: any) {
+      alert("Erro ao enviar item: " + error.message);
+    }
+  };
+
+  // Dividir item com outro usuário (os pontos são divididos)
+  const handleShareItem = async (item: any, targetUser: User) => {
+    try {
+      await supabaseService.consumeFromInventory(item.id, item.quantity);
+      const attrs = item.attributes || {};
+      const halfHunger = Math.floor((attrs.hunger || 0) / 2);
+      const halfThirst = Math.floor((attrs.thirst || 0) / 2);
+      const halfAlcohol = Math.floor((attrs.alcohol || 0) / 2);
+      
+      // Aplicar metade ao usuário atual
+      if (onUpdateStatus) {
+        onUpdateStatus({
+          hunger: halfHunger,
+          thirst: halfThirst,
+          alcohol: halfAlcohol
+        });
+      }
+      
+      // Aplicar metade ao outro usuário
+      await supabaseService.updateVitalStatus(targetUser.id, {
+        hunger: Math.min(100, (targetUser.hunger || 0) + halfHunger),
+        energy: Math.min(100, (targetUser.thirst || 0) + halfThirst),
+        alcoholism: Math.min(100, (targetUser.alcohol || 0) + halfAlcohol)
+      });
+      
+      handleSend(`*Dividiu ${item.item_name} com ${targetUser.name}*`);
+      setShowSuggestions(false);
+      setSelectedItem(null);
+      setSelectedTargetUser(null);
+      setItemActionMode(null);
+      setInput('');
+    } catch (error: any) {
+      alert("Erro ao dividir item: " + error.message);
+    }
+  };
 
   const handleOrderConfirmed = async (items: MenuItem[], orderItems: OrderItem[], preparationTime: number) => {
     const total = items.reduce((acc, item) => acc + item.price, 0);
@@ -454,60 +548,184 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       <div className="px-6 pb-12 pt-4 relative z-10">
         {showSuggestions && (
-          <div className="absolute bottom-[calc(100%+12px)] left-6 right-6 bg-background-dark/95 backdrop-blur-3xl rounded-[32px] border border-white/10 p-5 shadow-[0_-20px_60px_rgba(0,0,0,0.5)] animate-in slide-in-bottom duration-300">
-             <div className="flex items-center justify-between mb-4 px-2">
-                <div className="flex items-center space-x-3">
-                  <span className="material-symbols-rounded text-primary text-xl">rocket_launch</span>
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40">Menu de Roleplay</span>
-                </div>
-                {workerRole && (
-                  <button 
-                    onClick={() => setShowGrantAccess(true)}
-                    className="flex items-center space-x-2 bg-primary/20 text-primary px-4 py-1.5 rounded-full border border-primary/30"
-                  >
-                    <span className="material-symbols-rounded text-sm">key</span>
-                    <span className="text-[8px] font-black uppercase tracking-widest">Liberar Sala</span>
-                  </button>
-                )}
+          <div className="absolute bottom-[calc(100%+12px)] left-6 right-6 bg-background-dark/95 backdrop-blur-3xl rounded-[32px] border border-white/10 p-5 shadow-[0_-20px_60px_rgba(0,0,0,0.5)] animate-in slide-in-bottom duration-300 max-h-[60vh] overflow-hidden flex flex-col">
+             {/* Tabs */}
+             <div className="flex items-center space-x-2 mb-4">
+               <button 
+                 onClick={() => { setSuggestionTab('locais'); setSelectedItem(null); setItemActionMode(null); }}
+                 className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${suggestionTab === 'locais' ? 'bg-primary text-white' : 'bg-white/5 text-white/40'}`}
+               >
+                 <span className="material-symbols-rounded text-sm mr-2">location_on</span>
+                 Locais
+               </button>
+               <button 
+                 onClick={() => { setSuggestionTab('acoes'); setSelectedItem(null); setItemActionMode(null); }}
+                 className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${suggestionTab === 'acoes' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-white/40'}`}
+               >
+                 <span className="material-symbols-rounded text-sm mr-2">restaurant</span>
+                 Ações
+               </button>
              </div>
              
-             {!showGrantAccess ? (
-               <div className="grid grid-cols-2 gap-3">
-                  {LOCATIONS_LIST.map(loc => (
-                    <button 
-                      key={loc.id}
-                      onClick={() => handleSuggestionClick(loc.id)}
-                      className="flex items-center space-x-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-primary/10 hover:border-primary/20 transition-all active:scale-95 group"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40 group-hover:bg-primary group-hover:text-white transition-all">
-                         <span className="material-symbols-rounded">{loc.icon}</span>
-                      </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-white">{loc.name}</span>
-                    </button>
-                  ))}
-               </div>
-             ) : (
-               <div className="space-y-4 animate-in zoom-in">
-                  <div className="px-2 mb-2">
-                    <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Selecione o Usuário no Chat</p>
-                  </div>
-                  <div className="flex space-x-3 overflow-x-auto scrollbar-hide pb-2">
-                    {onlineMembers.filter(m => m.id !== currentUser.id).map(member => (
-                      <button 
-                        key={member.id} 
-                        onClick={() => {
-                          const room = prompt(`Qual sala deseja liberar para ${member.name}?\n(${SUB_LOCATIONS[contextKey]?.filter(l => l.restricted).map(l => l.name).join(', ')})`);
-                          if (room) handleGrantAccess(member, room);
-                        }}
-                        className="flex flex-col items-center space-y-2 group flex-shrink-0"
-                      >
-                        <img src={member.avatar} className="w-12 h-12 rounded-2xl border border-white/10 group-hover:border-primary" />
-                        <span className="text-[7px] font-black text-white/40 uppercase truncate w-12">{member.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                  <button onClick={() => setShowGrantAccess(false)} className="w-full py-3 rounded-xl bg-white/5 text-white/20 text-[8px] font-black uppercase tracking-widest">Voltar</button>
-               </div>
+             <div className="flex-1 overflow-y-auto scrollbar-hide">
+               {suggestionTab === 'locais' ? (
+                 /* Tab Locais */
+                 !showGrantAccess ? (
+                   <div className="grid grid-cols-2 gap-3">
+                     {LOCATIONS_LIST.map(loc => (
+                       <button 
+                         key={loc.id}
+                         onClick={() => handleSuggestionClick(loc.id)}
+                         className="flex items-center space-x-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-primary/10 hover:border-primary/20 transition-all active:scale-95 group"
+                       >
+                         <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40 group-hover:bg-primary group-hover:text-white transition-all">
+                           <span className="material-symbols-rounded">{loc.icon}</span>
+                         </div>
+                         <span className="text-[10px] font-black uppercase tracking-widest text-white">{loc.name}</span>
+                       </button>
+                     ))}
+                   </div>
+                 ) : (
+                   <div className="space-y-4 animate-in zoom-in">
+                     <div className="px-2 mb-2">
+                       <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Selecione o Usuário</p>
+                     </div>
+                     <div className="flex space-x-3 overflow-x-auto scrollbar-hide pb-2">
+                       {onlineMembers.filter(m => m.id !== currentUser.id).map(member => (
+                         <button 
+                           key={member.id} 
+                           onClick={() => {
+                             const room = prompt(`Qual sala deseja liberar para ${member.name}?`);
+                             if (room) handleGrantAccess(member, room);
+                           }}
+                           className="flex flex-col items-center space-y-2 group flex-shrink-0"
+                         >
+                           <img src={member.avatar} className="w-12 h-12 rounded-2xl border border-white/10 group-hover:border-primary" alt={member.name} />
+                           <span className="text-[7px] font-black text-white/40 uppercase truncate w-12">{member.name}</span>
+                         </button>
+                       ))}
+                     </div>
+                     <button onClick={() => setShowGrantAccess(false)} className="w-full py-3 rounded-xl bg-white/5 text-white/20 text-[8px] font-black uppercase tracking-widest">Voltar</button>
+                   </div>
+                 )
+               ) : (
+                 /* Tab Ações - Inventário */
+                 <div className="space-y-4">
+                   {!selectedItem ? (
+                     /* Lista de itens do inventário */
+                     inventoryItems.length === 0 ? (
+                       <div className="py-8 text-center opacity-40">
+                         <span className="material-symbols-rounded text-4xl mb-2 block">inventory_2</span>
+                         <p className="text-[10px] font-black uppercase tracking-widest">Inventário vazio</p>
+                       </div>
+                     ) : (
+                       <div className="space-y-2">
+                         {inventoryItems.map(item => (
+                           <button
+                             key={item.id}
+                             onClick={() => setSelectedItem(item)}
+                             className="w-full flex items-center space-x-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-emerald-500/10 hover:border-emerald-500/20 transition-all active:scale-98 group"
+                           >
+                             <img src={item.item_image} className="w-12 h-12 rounded-xl object-cover border border-white/10" alt={item.item_name} />
+                             <div className="flex-1 text-left">
+                               <p className="text-[11px] font-black text-white">{item.item_name}</p>
+                               <p className="text-[8px] text-white/30 uppercase tracking-widest">{item.category} • x{item.quantity}</p>
+                             </div>
+                             <div className="flex items-center space-x-2 text-[8px] text-white/40">
+                               {item.attributes?.hunger && <span className="flex items-center"><span className="material-symbols-rounded text-xs text-amber-400 mr-1">restaurant</span>{item.attributes.hunger}</span>}
+                               {item.attributes?.thirst && <span className="flex items-center"><span className="material-symbols-rounded text-xs text-cyan-400 mr-1">water_drop</span>{item.attributes.thirst}</span>}
+                             </div>
+                           </button>
+                         ))}
+                       </div>
+                     )
+                   ) : !itemActionMode ? (
+                     /* Opções para o item selecionado */
+                     <div className="space-y-4 animate-in zoom-in">
+                       <div className="flex items-center space-x-4 p-4 bg-white/5 rounded-2xl border border-white/10">
+                         <img src={selectedItem.item_image} className="w-16 h-16 rounded-xl object-cover" alt={selectedItem.item_name} />
+                         <div>
+                           <p className="text-sm font-black text-white">{selectedItem.item_name}</p>
+                           <p className="text-[9px] text-white/40">{selectedItem.category}</p>
+                         </div>
+                       </div>
+                       
+                       <div className="grid grid-cols-3 gap-3">
+                         <button
+                           onClick={() => handleUseItem(selectedItem)}
+                           className="flex flex-col items-center p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition-all active:scale-95"
+                         >
+                           <span className="material-symbols-rounded text-2xl mb-2">restaurant</span>
+                           <span className="text-[8px] font-black uppercase tracking-widest">Usar</span>
+                         </button>
+                         <button
+                           onClick={() => setItemActionMode('send')}
+                           className="flex flex-col items-center p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all active:scale-95"
+                         >
+                           <span className="material-symbols-rounded text-2xl mb-2">send</span>
+                           <span className="text-[8px] font-black uppercase tracking-widest">Enviar</span>
+                         </button>
+                         <button
+                           onClick={() => setItemActionMode('share')}
+                           className="flex flex-col items-center p-4 rounded-2xl bg-pink-500/10 border border-pink-500/20 text-pink-400 hover:bg-pink-500/20 transition-all active:scale-95"
+                         >
+                           <span className="material-symbols-rounded text-2xl mb-2">group</span>
+                           <span className="text-[8px] font-black uppercase tracking-widest">Dividir</span>
+                         </button>
+                       </div>
+                       
+                       <button onClick={() => setSelectedItem(null)} className="w-full py-3 rounded-xl bg-white/5 text-white/20 text-[8px] font-black uppercase tracking-widest">Voltar</button>
+                     </div>
+                   ) : (
+                     /* Selecionar usuário para enviar ou dividir */
+                     <div className="space-y-4 animate-in zoom-in">
+                       <div className="px-2">
+                         <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">
+                           {itemActionMode === 'send' ? 'Enviar para quem?' : 'Dividir com quem?'}
+                         </p>
+                       </div>
+                       
+                       <div className="grid grid-cols-3 gap-3">
+                         {onlineMembers.filter(m => m.id !== currentUser.id).map(member => (
+                           <button
+                             key={member.id}
+                             onClick={() => {
+                               if (itemActionMode === 'send') {
+                                 handleSendItem(selectedItem, member);
+                               } else {
+                                 handleShareItem(selectedItem, member);
+                               }
+                             }}
+                             className="flex flex-col items-center p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all active:scale-95"
+                           >
+                             <img src={member.avatar} className="w-12 h-12 rounded-2xl border border-white/10 mb-2" alt={member.name} />
+                             <span className="text-[8px] font-black text-white/60 uppercase truncate w-full text-center">{member.name}</span>
+                           </button>
+                         ))}
+                       </div>
+                       
+                       {onlineMembers.filter(m => m.id !== currentUser.id).length === 0 && (
+                         <div className="py-6 text-center opacity-40">
+                           <p className="text-[10px] font-black uppercase tracking-widest">Nenhum usuário disponível</p>
+                         </div>
+                       )}
+                       
+                       <button onClick={() => setItemActionMode(null)} className="w-full py-3 rounded-xl bg-white/5 text-white/20 text-[8px] font-black uppercase tracking-widest">Voltar</button>
+                     </div>
+                   )}
+                 </div>
+               )}
+             </div>
+             
+             {/* Worker Access Button */}
+             {workerRole && suggestionTab === 'locais' && !showGrantAccess && (
+               <button 
+                 onClick={() => setShowGrantAccess(true)}
+                 className="mt-4 flex items-center justify-center space-x-2 bg-primary/20 text-primary px-4 py-3 rounded-xl border border-primary/30 w-full"
+               >
+                 <span className="material-symbols-rounded text-sm">key</span>
+                 <span className="text-[8px] font-black uppercase tracking-widest">Liberar Sala</span>
+               </button>
              )}
           </div>
         )}
