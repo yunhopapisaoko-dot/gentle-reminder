@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../integrations/supabase/client';
-import { Heart, MessageCircle, Star, StarOff, Pencil, X, Check } from 'lucide-react';
+import { Heart, MessageCircle, Star, StarOff, Pencil, X, Check, MoreVertical, Trash2 } from 'lucide-react';
 
 interface FeedPost {
   id: string;
@@ -37,6 +37,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
   const [editingPost, setEditingPost] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
+  const [menuOpen, setMenuOpen] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPosts();
@@ -218,6 +219,24 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
     setEditingPost(null);
   };
 
+  const handleDelete = async (postId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!confirm('Tem certeza que deseja excluir este post?')) return;
+    
+    await supabase.from('comments').delete().eq('post_id', postId);
+    await supabase.from('likes').delete().eq('post_id', postId);
+    await supabase.from('posts').delete().eq('id', postId);
+    
+    setMenuOpen(null);
+    if (selectedPost?.id === postId) setSelectedPost(null);
+    fetchPosts();
+  };
+
+  const toggleMenu = (postId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setMenuOpen(menuOpen === postId ? null : postId);
+  };
+
   const loadComments = async (postId: string) => {
     setLoadingComments(true);
     const { data: commentsData } = await supabase
@@ -329,17 +348,6 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
               </button>
 
               <div className="flex items-center gap-2">
-                {/* Botão de editar (apenas para dono do post) */}
-                {post.user_id === currentUserId && editingPost !== post.id && (
-                  <button
-                    onClick={(e) => handleEdit(post, e)}
-                    className="p-2 rounded-full bg-white/5 text-white/40 hover:bg-white/10 transition-colors"
-                    title="Editar post"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                )}
-
                 {/* Botão de destacar (apenas para fotos do próprio usuário) */}
                 {post.image_url && post.user_id === currentUserId && (
                   <button
@@ -349,6 +357,37 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
                   >
                     {post.featured_at ? <Star className="w-4 h-4 fill-current" /> : <StarOff className="w-4 h-4" />}
                   </button>
+                )}
+
+                {/* Menu de três pontinhos (apenas para dono do post) */}
+                {post.user_id === currentUserId && editingPost !== post.id && (
+                  <div className="relative">
+                    <button
+                      onClick={(e) => toggleMenu(post.id, e)}
+                      className="p-2 rounded-full bg-white/5 text-white/40 hover:bg-white/10 transition-colors"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                    
+                    {menuOpen === post.id && (
+                      <div className="absolute right-0 top-full mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden min-w-[140px]">
+                        <button
+                          onClick={(e) => { handleEdit(post, e); setMenuOpen(null); }}
+                          className="w-full px-4 py-3 flex items-center gap-3 text-sm text-white hover:bg-white/10 transition-colors"
+                        >
+                          <Pencil className="w-4 h-4" />
+                          Editar
+                        </button>
+                        <button
+                          onClick={(e) => handleDelete(post.id, e)}
+                          className="w-full px-4 py-3 flex items-center gap-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Excluir
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -463,9 +502,45 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
                 <p className="text-[10px] text-white/40">{formatDate(selectedPost.created_at)}</p>
               </div>
             </button>
-            <button onClick={() => setSelectedPost(null)} className="text-white/60 p-2">
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Menu de três pontinhos no modal (apenas para dono do post) */}
+              {selectedPost.user_id === currentUserId && (
+                <div className="relative">
+                  <button
+                    onClick={(e) => toggleMenu('modal-' + selectedPost.id, e)}
+                    className="p-2 rounded-full bg-white/5 text-white/40 hover:bg-white/10 transition-colors"
+                  >
+                    <MoreVertical className="w-5 h-5" />
+                  </button>
+                  
+                  {menuOpen === 'modal-' + selectedPost.id && (
+                    <div className="absolute right-0 top-full mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden min-w-[140px]">
+                      <button
+                        onClick={(e) => { 
+                          handleEdit(selectedPost, e); 
+                          setMenuOpen(null); 
+                          setSelectedPost(null);
+                        }}
+                        className="w-full px-4 py-3 flex items-center gap-3 text-sm text-white hover:bg-white/10 transition-colors"
+                      >
+                        <Pencil className="w-4 h-4" />
+                        Editar
+                      </button>
+                      <button
+                        onClick={(e) => handleDelete(selectedPost.id, e)}
+                        className="w-full px-4 py-3 flex items-center gap-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Excluir
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              <button onClick={() => { setSelectedPost(null); setMenuOpen(null); }} className="text-white/60 p-2">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto">
