@@ -14,6 +14,15 @@ import { FridgeModal } from './FridgeModal';
 import { RecipesModal } from './RecipesModal';
 import { supabaseService } from '../services/supabaseService';
 
+// Import wallpapers
+import hospitalEntrance from '@/assets/wallpapers/hospital-entrance.jpg';
+import crecheEntrance from '@/assets/wallpapers/creche-entrance.jpg';
+import restauranteMain from '@/assets/wallpapers/restaurante-main.jpg';
+import padariaMain from '@/assets/wallpapers/padaria-main.jpg';
+import pousadaEntrance from '@/assets/wallpapers/pousada-entrance.jpg';
+import farmaciaMain from '@/assets/wallpapers/farmacia-main.jpg';
+import supermercadoMain from '@/assets/wallpapers/supermercado-main.jpg';
+
 interface ChatInterfaceProps {
   locationContext?: string;
   onClose?: () => void;
@@ -46,15 +55,6 @@ const getRaceTheme = (race?: string, isAI?: boolean) => {
   const key = (race || 'draeven').toLowerCase();
   return RACE_THEMES[key] || RACE_THEMES['draeven'];
 };
-
-// Import wallpapers
-import hospitalEntrance from '@/assets/wallpapers/hospital-entrance.jpg';
-import crecheEntrance from '@/assets/wallpapers/creche-entrance.jpg';
-import restauranteMain from '@/assets/wallpapers/restaurante-main.jpg';
-import padariaMain from '@/assets/wallpapers/padaria-main.jpg';
-import pousadaEntrance from '@/assets/wallpapers/pousada-entrance.jpg';
-import farmaciaMain from '@/assets/wallpapers/farmacia-main.jpg';
-import supermercadoMain from '@/assets/wallpapers/supermercado-main.jpg';
 
 const WALLPAPERS: Record<string, string> = {
   hospital: hospitalEntrance,
