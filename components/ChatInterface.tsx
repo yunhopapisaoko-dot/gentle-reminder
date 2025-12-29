@@ -15,13 +15,13 @@ import { RecipesModal } from './RecipesModal';
 import { supabaseService } from '../services/supabaseService';
 
 // Import wallpapers
-import hospitalEntrance from '@/assets/wallpapers/hospital-entrance.jpg';
-import crecheEntrance from '@/assets/wallpapers/creche-entrance.jpg';
-import restauranteMain from '@/assets/wallpapers/restaurante-main.jpg';
-import padariaMain from '@/assets/wallpapers/padaria-main.jpg';
-import pousadaEntrance from '@/assets/wallpapers/pousada-entrance.jpg';
-import farmaciaMain from '@/assets/wallpapers/farmacia-main.jpg';
-import supermercadoMain from '@/assets/wallpapers/supermercado-main.jpg';
+import hospitalEntrance from '../src/assets/wallpapers/hospital-entrance.jpg';
+import crecheEntrance from '../src/assets/wallpapers/creche-entrance.jpg';
+import restauranteMain from '../src/assets/wallpapers/restaurante-main.jpg';
+import padariaMain from '../src/assets/wallpapers/padaria-main.jpg';
+import pousadaEntrance from '../src/assets/wallpapers/pousada-entrance.jpg';
+import farmaciaMain from '../src/assets/wallpapers/farmacia-main.jpg';
+import supermercadoMain from '../src/assets/wallpapers/supermercado-main.jpg';
 
 interface ChatInterfaceProps {
   locationContext?: string;
