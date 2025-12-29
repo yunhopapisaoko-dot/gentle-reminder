@@ -112,6 +112,16 @@ export const JYPBanditSystem: React.FC<JYPBanditSystemProps> = ({
     };
     onJYPMessage(jypMessage);
     
+    // Salvar mensagem do JYP no chat_messages para persistir
+    await supabaseService.sendChatMessage(
+      'jyp-bandit',
+      location,
+      sceneText,
+      'JYP',
+      JYP_AVATAR,
+      subLocation
+    );
+    
     // Registra o roubo no banco
     await supabaseService.recordJYPAppearance(
       location,
