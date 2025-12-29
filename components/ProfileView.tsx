@@ -27,7 +27,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, a
   const isOwnProfile = String(user.id).toLowerCase() === String(currentUserId).toLowerCase();
 
   const userPosts = useMemo(() => {
-    return allPosts.filter(p => p.author.id === user.id);
+    return allPosts.filter(p => {
+      const authorId = p.author?.id;
+      return authorId === user.id;
+    });
   }, [allPosts, user.id]);
 
   const handleClose = () => {
