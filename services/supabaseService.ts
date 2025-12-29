@@ -320,6 +320,7 @@ export const supabaseService = {
         name: p.full_name || 'Usuário',
         username: p.username || 'user',
         avatar: p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.user_id}`,
+        banner: p.banner_url,
         race: p.race,
         isLeader: p.is_leader || false,
         bio: p.bio,

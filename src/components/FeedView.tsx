@@ -446,17 +446,23 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
       {selectedPost && (
         <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col">
           <div className="p-4 border-b border-white/10 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <button 
+              onClick={() => { 
+                setSelectedPost(null); 
+                onUserClick?.(selectedPost.profile?.user_id || selectedPost.user_id); 
+              }}
+              className="flex items-center gap-3"
+            >
               <img
                 src={selectedPost.profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedPost.user_id}`}
                 className="w-8 h-8 rounded-full object-cover"
                 alt=""
               />
-              <div>
+              <div className="text-left">
                 <p className="text-sm font-bold text-white">{selectedPost.profile?.full_name || 'Usuário'}</p>
                 <p className="text-[10px] text-white/40">{formatDate(selectedPost.created_at)}</p>
               </div>
-            </div>
+            </button>
             <button onClick={() => setSelectedPost(null)} className="text-white/60 p-2">
               <X className="w-5 h-5" />
             </button>
