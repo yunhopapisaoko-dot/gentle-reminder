@@ -220,12 +220,23 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
 
   const loadComments = async (postId: string) => {
     setLoadingComments(true);
-    const { data } = await supabase
+    const { data: commentsData } = await supabase
       .from('comments')
-      .select('*, profiles:user_id (full_name, username, avatar_url)')
+      .select('*')
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
-    setComments(data || []);
+    
+    // Fetch profiles separately to avoid relation issues
+    const commentsWithProfiles = await Promise.all((commentsData || []).map(async (comment) => {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('full_name, username, avatar_url')
+        .eq('user_id', comment.user_id)
+        .maybeSingle();
+      return { ...comment, profiles: profileData };
+    }));
+    
+    setComments(commentsWithProfiles);
     setLoadingComments(false);
   };
 
