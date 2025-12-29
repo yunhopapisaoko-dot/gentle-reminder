@@ -134,6 +134,24 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
       await supabase.from('likes').delete().eq('post_id', postId).eq('user_id', currentUserId);
     } else {
       await supabase.from('likes').insert({ post_id: postId, user_id: currentUserId });
+      
+      // Create notification for post owner (if not liking own post)
+      if (post.user_id !== currentUserId) {
+        const { data: myProfile } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('user_id', currentUserId)
+          .single();
+        
+        await supabase.from('notifications').insert({
+          user_id: post.user_id,
+          actor_id: currentUserId,
+          actor_name: myProfile?.full_name || 'Usuário',
+          actor_avatar: myProfile?.avatar_url,
+          type: 'like',
+          post_id: postId
+        });
+      }
     }
 
     const updatePost = (p: FeedPost) => 
@@ -218,11 +236,35 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
 
   const handleAddComment = async () => {
     if (!commentInput.trim() || !selectedPost) return;
-    await supabase.from('comments').insert({
+    
+    const commentContent = commentInput.trim();
+    
+    const { data: newComment } = await supabase.from('comments').insert({
       post_id: selectedPost.id,
       user_id: currentUserId,
-      content: commentInput.trim()
-    });
+      content: commentContent
+    }).select('id').single();
+    
+    // Create notification for post owner (if not commenting on own post)
+    if (selectedPost.user_id !== currentUserId) {
+      const { data: myProfile } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('user_id', currentUserId)
+        .single();
+      
+      await supabase.from('notifications').insert({
+        user_id: selectedPost.user_id,
+        actor_id: currentUserId,
+        actor_name: myProfile?.full_name || 'Usuário',
+        actor_avatar: myProfile?.avatar_url,
+        type: 'comment',
+        post_id: selectedPost.id,
+        comment_id: newComment?.id || null,
+        content: commentContent.substring(0, 100)
+      });
+    }
+    
     setCommentInput('');
     loadComments(selectedPost.id);
   };
