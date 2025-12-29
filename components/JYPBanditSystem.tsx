@@ -76,6 +76,22 @@ export const JYPBanditSystem: React.FC<JYPBanditSystemProps> = ({
   // Dispara o roubo do JYP
   const triggerJYPRobbery = async () => {
     setIsActive(true);
+
+    // Guard extra: revalidar no banco para evitar múltiplos clientes disparando ao mesmo tempo
+    try {
+      const lastDb = await supabaseService.getLastJYPAppearance();
+      if (lastDb?.appeared_at) {
+        const lastDbDate = new Date(lastDb.appeared_at);
+        const now = new Date();
+        if (now.getTime() - lastDbDate.getTime() < JYP_INTERVAL_MS) {
+          setLastAppearance(lastDbDate);
+          setIsActive(false);
+          return;
+        }
+      }
+    } catch {
+      // Se falhar a leitura, segue o fluxo normal
+    }
     
     // Seleciona uma vítima aleatória (pode ser o usuário atual ou outros online)
     const possibleVictims = onlineUsers.filter(u => (u.money || 0) > 10);

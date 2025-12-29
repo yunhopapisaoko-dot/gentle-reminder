@@ -142,10 +142,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Carregar mensagens do banco de dados
   const loadMessages = useCallback(async () => {
-    if (!locationContext) return;
+    const loc = locationContext || 'global';
     
     try {
-      const dbMessages = await supabaseService.getChatMessages(locationContext, currentSubLoc?.name);
+      const dbMessages = await supabaseService.getChatMessages(loc, currentSubLoc?.name);
       const formattedMessages: ChatMessage[] = dbMessages.map(msg => ({
         id: msg.id,
         role: msg.user_id === 'jyp-bandit' ? 'model' : 'user',
@@ -415,6 +415,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         currentUser.avatar,
         currentSubLoc?.name
       );
+      // Recarregar do banco para evitar que a UI “perca” mensagens em re-mount
+      await loadMessages();
     } catch (error) {
       console.error("Erro ao salvar mensagem:", error);
     }
