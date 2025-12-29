@@ -144,11 +144,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       chatRef.current = null;
     }
     
-    const welcomeText = locationContext 
-      ? `*Emerge das sombras com um movimento fluido, deslizando pelo espaço como em uma dança silenciosa. Olhos atentos observam cada detalhe do ${locationContext}...* - Então você chegou... *Gira elegantemente, braços se abrindo em um gesto teatral.* - Bem-vindo ao palco. Cada passo aqui é uma coreografia. Como deseja iniciar nossa... performance?`
-      : "*Surge do nada, movendo-se como se cada passo fosse parte de uma dança ensaiada. Inclina a cabeça misteriosamente.* - O mundo é um palco... *Dá um passo lateral gracioso.* - E eu sou seu guia nas sombras. Pronto para dançar?";
-    
-    setMessages([{ id: 'main-welcome', role: 'model', text: welcomeText }]);
+    // Sem mensagem de boas-vindas de IA - apenas roleplay de usuários
+    setMessages([]);
     
     if (locationContext && currentUser?.id) {
       supabaseService.checkWorkerStatus(currentUser.id, locationContext).then(setWorkerRole);
@@ -394,19 +391,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-12 relative z-10 scrollbar-hide pb-32">
         {activeMessages.map(msg => {
-          const isAI = msg.role === 'model';
-          const theme = getRaceTheme(msg.author?.race, isAI);
+          const isJYP = msg.author?.id === 'jyp-bandit';
+          const isAI = msg.role === 'model' && !isJYP;
+          const theme = getRaceTheme(msg.author?.race, isJYP);
           return (
-            <div key={msg.id} className={`flex items-start space-x-4 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
-              <button onClick={() => msg.author && onMemberClick?.(msg.author)} className={`w-12 h-12 rounded-[22px] flex-shrink-0 border-2 border-white/40 overflow-hidden shadow-2xl flex items-center justify-center ${isAI ? 'bg-primary cursor-default' : 'bg-surface-purple'}`}>
-                {isAI ? <span className="material-symbols-rounded text-white text-2xl">auto_awesome</span> : <img src={msg.author?.avatar} className="w-full h-full object-cover" alt="avatar" />}
+            <div key={msg.id} className={`flex items-start space-x-4 ${msg.role === 'user' && !isJYP ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
+              <button onClick={() => msg.author && onMemberClick?.(msg.author)} className={`w-12 h-12 rounded-[22px] flex-shrink-0 border-2 border-white/40 overflow-hidden shadow-2xl flex items-center justify-center ${isJYP ? 'bg-pink-500' : 'bg-surface-purple'}`}>
+                {isJYP ? <img src="/jyp-avatar.jpg" className="w-full h-full object-cover" alt="JYP" /> : <img src={msg.author?.avatar} className="w-full h-full object-cover" alt="avatar" />}
               </button>
-              <div className={`flex flex-col space-y-2 max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                <div className={`flex items-center space-x-2 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                   <span className="text-[14px] font-black text-white italic tracking-tighter">{isAI ? 'JYP' : (msg.author?.name || 'Viajante')}</span>
-                   <div className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg ${theme.bg} ${theme.color} border border-current/10`}><span className="material-symbols-rounded text-[11px]">{theme.icon}</span><span className="text-[9px] font-black uppercase tracking-widest">{isAI ? 'Performer' : (msg.author?.race || 'Humano')}</span></div>
+              <div className={`flex flex-col space-y-2 max-w-[80%] ${msg.role === 'user' && !isJYP ? 'items-end' : 'items-start'}`}>
+                <div className={`flex items-center space-x-2 ${msg.role === 'user' && !isJYP ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                   <span className="text-[14px] font-black text-white italic tracking-tighter">{isJYP ? 'JYP' : (msg.author?.name || 'Viajante')}</span>
+                   <div className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg ${isJYP ? 'bg-pink-500/10 text-pink-400' : `${theme.bg} ${theme.color}`} border border-current/10`}><span className="material-symbols-rounded text-[11px]">{isJYP ? 'theater_comedy' : theme.icon}</span><span className="text-[9px] font-black uppercase tracking-widest">{isJYP ? 'Bandido' : (msg.author?.race || 'Humano')}</span></div>
                 </div>
-                <div className={`px-6 py-4 rounded-[28px] text-[14px] font-bold leading-relaxed border border-white/10 ${msg.role === 'user' ? 'bg-primary/60 text-white rounded-tr-none' : 'bg-black/70 text-white rounded-tl-none'}`}>
+                <div className={`px-6 py-4 rounded-[28px] text-[14px] font-bold leading-relaxed border border-white/10 ${isJYP ? 'bg-pink-900/40 text-white rounded-tl-none' : msg.role === 'user' ? 'bg-primary/60 text-white rounded-tr-none' : 'bg-black/70 text-white rounded-tl-none'}`}>
                   {msg.text.split('\n').map((line, i) => <p key={i} className={line.startsWith('*') ? 'italic text-white/50 text-[12px] mb-2 block' : 'mb-1'}>{line}</p>)}
                 </div>
               </div>
