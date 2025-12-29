@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { supabaseService } from '../services/supabaseService';
 import { User, ChatMessage } from '../types';
 
-// Avatar do JYP
+// Avatar do JYP (foto de perfil)
 const JYP_AVATAR = '/jyp-avatar.jpg';
 
 // JYP aparece a cada 70 horas (em ms)
