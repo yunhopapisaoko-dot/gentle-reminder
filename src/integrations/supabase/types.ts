@@ -581,6 +581,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          featured_at: string | null
           id: string
           image_url: string | null
           is_featured: boolean | null
@@ -590,6 +591,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          featured_at?: string | null
           id?: string
           image_url?: string | null
           is_featured?: boolean | null
@@ -599,6 +601,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          featured_at?: string | null
           id?: string
           image_url?: string | null
           is_featured?: boolean | null

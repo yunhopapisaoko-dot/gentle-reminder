@@ -19,6 +19,7 @@ import { AllChatsView } from './components/AllChatsView';
 import { RouletteView } from './components/RouletteView';
 import { InventoryView } from './components/InventoryView';
 import { SupermarketView } from './components/SupermarketView';
+import { FeedView } from './src/components/FeedView';
 import { TabType, User, Post, MenuItem } from './types';
 import { supabase } from './supabase';
 import { supabaseService } from './services/supabaseService';
@@ -236,18 +237,13 @@ const App: React.FC = () => {
         );
       case TabType.Feed:
         return (
-          <div className="p-6 space-y-6 pb-40">
-            {posts.map(post => (
-              <div key={post.id} className="bg-surface-purple/30 rounded-[40px] p-8 border border-white/5">
-                <h4 className="text-white font-black text-xl mb-4">{post.title}</h4>
-                <p className="text-white/50 text-sm italic mb-6">"{post.excerpt}"</p>
-                <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setSelectedUser(post.author)}>
-                   <img src={post.author.avatar} className="w-8 h-8 rounded-full" alt="avatar" />
-                   <span className="text-[10px] font-black text-white/80">{post.author.name}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <FeedView 
+            currentUserId={currentUser.id} 
+            onUserClick={(userId) => {
+              const user = communityMembers.find(m => m.id === userId);
+              if (user) setSelectedUser(user);
+            }}
+          />
         );
       case TabType.Global:
         return (
