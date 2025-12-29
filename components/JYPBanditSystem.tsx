@@ -61,37 +61,24 @@ export const JYPBanditSystem: React.FC<JYPBanditSystemProps> = ({
   const checkJYPAppearance = useCallback(async () => {
     if (!isPousada || isActive) return;
     
-    const now = new Date();
-    const shouldAppear = !lastAppearance || 
-      (now.getTime() - lastAppearance.getTime() >= JYP_INTERVAL_MS);
+    // Chance de 30% de tentar aparecer
+    if (Math.random() >= 0.3) return;
+    if (onlineUsers.length === 0) return;
     
-    if (shouldAppear && onlineUsers.length > 0) {
-      // Chance de 30% de aparecer quando as condições são atendidas
-      if (Math.random() < 0.3) {
+    // Tenta adquirir lock atômico no banco (única forma de garantir que só um cliente dispara)
+    try {
+      const canRob = await supabaseService.tryTriggerJYPRobbery(JYP_INTERVAL_MS);
+      if (canRob) {
         triggerJYPRobbery();
       }
+    } catch (e) {
+      console.error("Erro ao verificar JYP:", e);
     }
-  }, [isPousada, isActive, lastAppearance, onlineUsers]);
+  }, [isPousada, isActive, onlineUsers]);
 
   // Dispara o roubo do JYP
   const triggerJYPRobbery = async () => {
     setIsActive(true);
-
-    // Guard extra: revalidar no banco para evitar múltiplos clientes disparando ao mesmo tempo
-    try {
-      const lastDb = await supabaseService.getLastJYPAppearance();
-      if (lastDb?.appeared_at) {
-        const lastDbDate = new Date(lastDb.appeared_at);
-        const now = new Date();
-        if (now.getTime() - lastDbDate.getTime() < JYP_INTERVAL_MS) {
-          setLastAppearance(lastDbDate);
-          setIsActive(false);
-          return;
-        }
-      }
-    } catch {
-      // Se falhar a leitura, segue o fluxo normal
-    }
     
     // Seleciona uma vítima aleatória (pode ser o usuário atual ou outros online)
     const possibleVictims = onlineUsers.filter(u => (u.money || 0) > 10);
