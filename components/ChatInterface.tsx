@@ -431,7 +431,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                    <div className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg ${isJYP ? 'bg-pink-500/10 text-pink-400' : `${theme.bg} ${theme.color}`} border border-current/10`}><span className="material-symbols-rounded text-[11px]">{isJYP ? 'theater_comedy' : theme.icon}</span><span className="text-[9px] font-black uppercase tracking-widest">{isJYP ? 'Bandido' : (msg.author?.race || 'Humano')}</span></div>
                 </div>
                 <div className={`px-6 py-4 rounded-[28px] text-[14px] font-bold leading-relaxed border border-white/10 ${isJYP ? 'bg-pink-900/40 text-white rounded-tl-none' : msg.role === 'user' ? 'bg-primary/60 text-white rounded-tr-none' : 'bg-black/70 text-white rounded-tl-none'}`}>
-                  {msg.text.split('\n').map((line, i) => <p key={i} className={line.startsWith('*') ? 'italic text-white/50 text-[12px] mb-2 block' : 'mb-1'}>{line}</p>)}
+                  {msg.text.split('\n').map((line, i) => {
+                    // Formatar texto entre * * como itálico
+                    const parts = line.split(/(\*[^*]+\*)/g);
+                    return (
+                      <p key={i} className="mb-1">
+                        {parts.map((part, j) => {
+                          if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+                            return <span key={j} className="italic text-white/60">{part.slice(1, -1)}</span>;
+                          }
+                          return <span key={j}>{part}</span>;
+                        })}
+                      </p>
+                    );
+                  })}
                 </div>
               </div>
             </div>
