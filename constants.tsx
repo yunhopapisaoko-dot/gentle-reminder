@@ -1,25 +1,25 @@
 import { User, MenuItem } from './types';
 
 // Wallpapers imports
-import hospitalEntrance from '@/assets/wallpapers/hospital-entrance.jpg';
-import hospitalRoom from '@/assets/wallpapers/hospital-room.jpg';
-import hospitalSurgery from '@/assets/wallpapers/hospital-surgery.jpg';
-import crecheEntrance from '@/assets/wallpapers/creche-entrance.jpg';
-import crecheClassroom from '@/assets/wallpapers/creche-classroom.jpg';
-import crechePlayground from '@/assets/wallpapers/creche-playground.jpg';
-import restauranteMain from '@/assets/wallpapers/restaurante-main.jpg';
-import vipRoom from '@/assets/wallpapers/vip-room.jpg';
-import kitchen from '@/assets/wallpapers/kitchen.jpg';
-import bathroom from '@/assets/wallpapers/bathroom.jpg';
-import padariaMain from '@/assets/wallpapers/padaria-main.jpg';
-import pousadaEntrance from '@/assets/wallpapers/pousada-entrance.jpg';
-import pousadaDormitory from '@/assets/wallpapers/pousada-dormitory.jpg';
-import pousadaBackyard from '@/assets/wallpapers/pousada-backyard.jpg';
-import pousadaKitchen from '@/assets/wallpapers/pousada-kitchen.jpg';
-import farmaciaMain from '@/assets/wallpapers/farmacia-main.jpg';
-import farmaciaCounter from '@/assets/wallpapers/farmacia-counter.jpg';
-import farmaciaStorage from '@/assets/wallpapers/farmacia-storage.jpg';
-import supermercadoMain from '@/assets/wallpapers/supermercado-main.jpg';
+import hospitalEntrance from './src/assets/wallpapers/hospital-entrance.jpg';
+import hospitalRoom from './src/assets/wallpapers/hospital-room.jpg';
+import hospitalSurgery from './src/assets/wallpapers/hospital-surgery.jpg';
+import crecheEntrance from './src/assets/wallpapers/creche-entrance.jpg';
+import crecheClassroom from './src/assets/wallpapers/creche-classroom.jpg';
+import crechePlayground from './src/assets/wallpapers/creche-playground.jpg';
+import restauranteMain from './src/assets/wallpapers/restaurante-main.jpg';
+import vipRoom from './src/assets/wallpapers/vip-room.jpg';
+import kitchen from './src/assets/wallpapers/kitchen.jpg';
+import bathroom from './src/assets/wallpapers/bathroom.jpg';
+import padariaMain from './src/assets/wallpapers/padaria-main.jpg';
+import pousadaEntrance from './src/assets/wallpapers/pousada-entrance.jpg';
+import pousadaDormitory from './src/assets/wallpapers/pousada-dormitory.jpg';
+import pousadaBackyard from './src/assets/wallpapers/pousada-backyard.jpg';
+import pousadaKitchen from './src/assets/wallpapers/pousada-kitchen.jpg';
+import farmaciaMain from './src/assets/wallpapers/farmacia-main.jpg';
+import farmaciaCounter from './src/assets/wallpapers/farmacia-counter.jpg';
+import farmaciaStorage from './src/assets/wallpapers/farmacia-storage.jpg';
+import supermercadoMain from './src/assets/wallpapers/supermercado-main.jpg';
 
 export interface DiseaseInfo {
   id: string;
