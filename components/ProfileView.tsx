@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { User, Post } from '../types';
 import { PostDetailView } from './PostDetailView';
 import { EditProfileModal } from './EditProfileModal';
+import { supabaseService } from '../services/supabaseService';
 
 interface ProfileViewProps {
   user: User;
@@ -23,15 +24,41 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, a
   const [isClosing, setIsClosing] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [activeCategory, setActiveCategory] = useState<'Posts' | 'Mídia' | 'Coleção'>('Posts');
+  const [loadedPosts, setLoadedPosts] = useState<Post[]>([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   
   const isOwnProfile = String(user.id).toLowerCase() === String(currentUserId).toLowerCase();
 
+  // Preferir posts já carregados no estado global, mas garantir carregamento no perfil
+  useEffect(() => {
+    let mounted = true;
+    const bootstrap = async () => {
+      const fromAll = allPosts.filter(p => (p.author?.id || '') === user.id);
+      if (mounted) setLoadedPosts(fromAll);
+
+      // Se não houver posts locais, busca direto do banco
+      if (fromAll.length === 0) {
+        try {
+          if (mounted) setIsLoadingPosts(true);
+          const fresh = await supabaseService.getPostsByUser(user.id);
+          if (mounted) setLoadedPosts(fresh);
+        } catch (e) {
+          console.error('Erro ao buscar posts do perfil:', e);
+        } finally {
+          if (mounted) setIsLoadingPosts(false);
+        }
+      }
+    };
+
+    bootstrap();
+    return () => {
+      mounted = false;
+    };
+  }, [user.id, allPosts]);
+
   const userPosts = useMemo(() => {
-    return allPosts.filter(p => {
-      const authorId = p.author?.id;
-      return authorId === user.id;
-    });
-  }, [allPosts, user.id]);
+    return loadedPosts;
+  }, [loadedPosts]);
 
   const handleClose = () => {
     setIsClosing(true);
@@ -148,7 +175,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, a
           <div className="space-y-5">
             {activeCategory === 'Posts' && (
               <div className="grid grid-cols-1 gap-5">
-                {userPosts.length > 0 ? userPosts.map((post) => (
+                {isLoadingPosts ? (
+                  <div className="py-24 text-center opacity-60 flex flex-col items-center">
+                    <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em]">Carregando posts…</p>
+                  </div>
+                ) : userPosts.length > 0 ? userPosts.map((post) => (
                   <button 
                     key={post.id}
                     onClick={() => setSelectedPost(post)}
@@ -156,13 +188,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, a
                   >
                     {post.imageUrl && (
                       <div className="w-full h-48 rounded-3xl overflow-hidden mb-6 -mt-2">
-                        <img src={post.imageUrl} className="w-full h-full object-cover" alt="" />
+                        <img src={post.imageUrl} className="w-full h-full object-cover" alt="Foto do post" loading="lazy" />
                       </div>
                     )}
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center space-x-4">
                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary/20 to-secondary/20 p-[1px]">
-                          <img src={post.author.avatar} className="w-full h-full rounded-2xl object-cover" alt="" />
+                          <img src={post.author.avatar} className="w-full h-full rounded-2xl object-cover" alt={`Avatar de ${post.author.name}`} loading="lazy" />
                         </div>
                         <div>
                           <span className="text-[13px] font-black text-white tracking-tight">{post.author.name}</span>
