@@ -235,15 +235,36 @@ export const supabaseService = {
   },
 
   async updateProfile(userId: string, updates: any): Promise<void> {
-    const result = await withTimeout(supabase.from('profiles').update({
+    const updateData: any = {
       full_name: updates.full_name,
       username: updates.username,
       bio: updates.bio,
       avatar_url: updates.avatar_url,
-      race: updates.race,
       updated_at: new Date().toISOString()
-    }).eq('user_id', userId)) as { error: any };
+    };
+    
+    if (updates.banner_url !== undefined) {
+      updateData.banner_url = updates.banner_url;
+    }
+    if (updates.race !== undefined) {
+      updateData.race = updates.race;
+    }
+    
+    const result = await withTimeout(supabase.from('profiles').update(updateData).eq('user_id', userId)) as { error: any };
     if (result.error) throw result.error;
+  },
+
+  async uploadBanner(userId: string, file: File): Promise<string> {
+    const fileExt = file.name.split('.').pop() || 'png';
+    const filePath = `${userId}/banner_${Date.now()}.${fileExt}`;
+
+    const result = await withTimeout(supabase.storage
+      .from('avatars')
+      .upload(filePath, file, { cacheControl: '3600', upsert: true })) as { error: any };
+
+    if (result.error) throw result.error;
+    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    return data.publicUrl;
   },
 
   async getPosts(): Promise<Post[]> {
