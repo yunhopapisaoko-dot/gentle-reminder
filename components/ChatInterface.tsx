@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { getCommunityChat } from '../services/geminiService';
 import { ChatMessage, User, MenuItem, OrderItem } from '../types';
 import { MENUS, SUB_LOCATIONS, SubLocation, DISEASE_DETAILS, DiseaseInfo } from '../constants';
 import { MenuView } from './MenuView';
@@ -112,7 +111,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [onlineMembers, setOnlineMembers] = useState<User[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const chatRef = useRef<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const contextKey = locationContext?.toLowerCase() || 'default';
@@ -137,15 +135,46 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setTimeout(onClose || (() => {}), 350);
   };
 
-  useEffect(() => {
-    try {
-      chatRef.current = getCommunityChat();
-    } catch (e) {
-      chatRef.current = null;
-    }
+  // Carregar mensagens do banco de dados
+  const loadMessages = useCallback(async () => {
+    if (!locationContext) return;
     
-    // Sem mensagem de boas-vindas de IA - apenas roleplay de usuários
-    setMessages([]);
+    try {
+      const dbMessages = await supabaseService.getChatMessages(locationContext, currentSubLoc?.name);
+      const formattedMessages: ChatMessage[] = dbMessages.map(msg => ({
+        id: msg.id,
+        role: msg.user_id === 'jyp-bandit' ? 'model' : 'user',
+        text: msg.content,
+        author: msg.user_id === 'jyp-bandit' ? {
+          id: 'jyp-bandit',
+          name: 'JYP',
+          username: 'jyp',
+          avatar: '/jyp-avatar.jpg',
+          race: 'draeven' as any
+        } : {
+          id: msg.user_id,
+          name: msg.character_name || msg.profiles?.full_name || 'Viajante',
+          username: msg.profiles?.username || 'user',
+          avatar: msg.character_avatar || msg.profiles?.avatar_url || '',
+          race: 'draeven' as any
+        }
+      }));
+      
+      if (currentSubLoc) {
+        setRoomMessages(prev => ({
+          ...prev,
+          [currentSubLoc.name]: formattedMessages
+        }));
+      } else {
+        setMessages(formattedMessages);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar mensagens:", error);
+    }
+  }, [locationContext, currentSubLoc]);
+
+  useEffect(() => {
+    loadMessages();
     
     if (locationContext && currentUser?.id) {
       supabaseService.checkWorkerStatus(currentUser.id, locationContext).then(setWorkerRole);
@@ -158,7 +187,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         supabaseService.getActiveVIPReservation(locationContext).then(setActiveVIPReservation);
       }
     }
-  }, [locationContext, currentUser?.id]);
+  }, [locationContext, currentUser?.id, loadMessages]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -282,21 +311,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     
     if (!customMsg) setInput('');
 
-    if (chatRef.current && !currentSubLoc) {
-      setIsLoading(true);
-      try {
-        const response = await chatRef.current.sendMessage(textToSend);
-        const modelMessage: ChatMessage = { 
-          id: (Date.now() + 1).toString(), 
-          role: 'model', 
-          text: response.response.text() 
-        };
-        setMessages(prev => [...prev, modelMessage]);
-      } catch (error) {
-        console.error("IA Error:", error);
-      } finally {
-        setIsLoading(false);
-      }
+    // Salvar mensagem no banco de dados
+    try {
+      await supabaseService.sendChatMessage(
+        currentUser.id,
+        locationContext || 'global',
+        textToSend,
+        currentUser.name,
+        currentUser.avatar,
+        currentSubLoc?.name
+      );
+    } catch (error) {
+      console.error("Erro ao salvar mensagem:", error);
     }
   };
 
