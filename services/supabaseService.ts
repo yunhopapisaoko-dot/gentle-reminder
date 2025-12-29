@@ -301,6 +301,41 @@ export const supabaseService = {
     }
   },
 
+  async getPostsByUser(userId: string): Promise<Post[]> {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select(`*, profiles!posts_user_id_fkey (*)`)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao buscar posts do usuário:', error);
+        return [];
+      }
+
+      return (data || []).map((post: any) => ({
+        id: post.id,
+        title: post.title || 'Sem título',
+        excerpt: post.content,
+        imageUrl: post.image_url,
+        timestamp: new Date(post.created_at).toLocaleDateString(),
+        likes: '0',
+        author: {
+          id: post.profiles?.user_id || post.user_id,
+          name: post.profiles?.full_name || 'Membro',
+          username: post.profiles?.username || 'user',
+          avatar: post.profiles?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.user_id}`,
+          race: post.profiles?.race,
+          isLeader: post.profiles?.is_leader || false
+        }
+      }));
+    } catch (e) {
+      console.error('Erro getPostsByUser:', e);
+      return [];
+    }
+  },
+
   async createPost(userId: string, title: string, content: string, imageUrl?: string) {
     const { error } = await supabase.from('posts').insert([{
       user_id: userId,
