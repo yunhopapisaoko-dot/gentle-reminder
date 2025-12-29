@@ -105,7 +105,7 @@ export enum TabType {
   Global = 'Global',
   Locais = 'Locais',
   Personagens = 'Personagens',
-  Chat = 'Chat Miku'
+  Chat = 'Chat JYP'
 }
 
 export interface VIPReservation {

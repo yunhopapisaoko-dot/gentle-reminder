@@ -12,7 +12,7 @@
 ## Library & Development Rules
 * **UI Components:** Prioritize custom-built Tailwind components to maintain the specific "MagicTalk" aesthetic. Use shadcn/ui for complex interactive patterns while ensuring they are themed correctly.
 * **Database & Auth:** All interactions with Supabase must be abstracted through `src/services/supabaseService.ts`. Do not use the raw `supabase` client directly in UI components.
-* **AI Integration:** Centralize all LLM logic within `src/services/geminiService.ts`. Keep system instructions concise and maintain the "Miku" persona for chat interactions.
+* **AI Integration:** Centralize all LLM logic within `src/services/geminiService.ts`. Keep system instructions concise and maintain the "JYP" persona for chat interactions. JYP is mysterious, performative, always dances, speaks with "-" before lines and describes actions between "* *".
 * **Styling:** Adhere strictly to the design system constants: `primary` (#8B5CF6), `secondary` (#D946EF), and `background-dark` (#070210).
 * **Icons:** Exclusively use the Material Symbols Rounded library using the `<span className="material-symbols-rounded">icon_name</span>` pattern.
 * **Animations:** Utilize the pre-defined CSS animation classes in `index.html` (e.g., `animate-in`, `zoom-in`, `slide-in-bottom`) to ensure transitions feel "springy" and premium.

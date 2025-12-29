@@ -9,19 +9,19 @@ const JYP_AVATAR = '/jyp-avatar.jpg';
 const JYP_INTERVAL_MS = 70 * 60 * 60 * 1000;
 
 // Cenas completas do JYP (uma única mensagem grande)
-// Usa - para fala e * para ações (itálico)
+// Usa - para fala e * para ações (itálico) - Estilo performático e dançante
 const JYP_COMPLETE_SCENES = [
   (victimName: string, amount: number) => 
-    `*As luzes da pousada piscam ameaçadoramente. Uma figura sombria surge das sombras. Olhos brilhando de forma ameaçadora, aproximando-se lentamente com um sorriso malicioso no rosto.* - Ora ora, o que temos aqui... *Com movimentos rápidos como um gato, vasculha os pertences de ${victimName}, encontrando exatamente o que procurava.* - Muito obrigado pela contribuição! *Pega ${amount} MKC e desaparece nas sombras tão rápido quanto apareceu, deixando apenas o eco de uma risada sinistra...*`,
+    `*As luzes piscam em ritmo. Uma silhueta surge da escuridão, deslizando pelo chão como se flutuasse. Cada passo é um movimento de dança, cada giro uma provocação elegante. Aproxima-se de ${victimName} em uma valsa solitária...* - Ah, que belo encontro... *Gira graciosamente ao redor da vítima, dedos dançando pelos pertences.* - Permita-me esta dança... *Em um movimento fluido e teatral, recolhe ${amount} MKC.* - Obrigado pelo show! *Curva-se em reverência dramática e desaparece com um último passo de dança nas sombras.*`,
   
   (victimName: string, amount: number) => 
-    `*O ar fica pesado de repente. Um flash de movimento e materializa do nada, com aquele sorriso característico que só pode significar problemas. Caminha calmamente até ${victimName}, ignorando qualquer tentativa de resistência.* - Não se preocupe, vou cuidar bem disso... *Habilmente subtrai ${amount} MKC.* - Até a próxima! *Some como fumaça, deixando todos em estado de choque.*`,
+    `*O ar vibra com uma energia misteriosa. Surge como um dançarino entrando no palco, movimentos precisos e hipnotizantes. Cada gesto é coreografado, cada olhar é uma performance.* - Aplausos, por favor... *Desliza até ${victimName} em passos suaves, quase invisíveis.* - Você foi escolhido para minha próxima apresentação... *Mãos hábeis extraem ${amount} MKC enquanto executa um moonwalk para trás.* - Bravo! Bis! *Lança uma rosa imaginária e desvanece no escuro com um arabesque final.*`,
   
   (victimName: string, amount: number) => 
-    `*Silêncio absoluto. Então, como um raio, está ali! Ninguém viu de onde veio, ninguém sabe como chegou. Passos silenciosos como os de um fantasma enquanto se aproxima de ${victimName}.* - Você parece ter mais do que precisa... *Mãos já trabalhando para extrair ${amount} MKC dos pertences da vítima.* - Considere isso uma... taxa de hospitalidade! *Ri alto e num piscar de olhos, desaparece na escuridão.*`,
+    `*Um spotlight invisível parece iluminar a figura que surge do nada, pose dramática, olhos intensos. Move-se como água, cada transição é arte pura.* - O espetáculo... começou. *Dança em direção a ${victimName}, braços ondulando como serpentes hipnóticas.* - Esta noite, você é minha plateia especial... *Com elegância provocadora, desliza ${amount} MKC para sua posse.* - Standing ovation merecida! *Executa uma pirueta perfeita e se dissolve na penumbra, deixando apenas o eco de passos ritmados.*`,
   
   (victimName: string, amount: number) => 
-    `*Uma brisa gelada atravessa a pousada. Emerge da penumbra, presença imponente e ameaçadora. Avalia todos no local com olhos calculistas antes de focar em ${victimName}.* - Você foi escolhido! Que sortudo! *Rapidamente apodera-se de ${amount} MKC. Ninguém consegue reagir a tempo.* - Foi um prazer fazer negócios! *Com um último sorriso debochado e um aceno teatral, dissolve-se nas sombras.*`,
+    `*Uma brisa carrega notas de uma melodia distante. Emerge das sombras em câmera lenta, cada movimento um frame de arte viva. Os olhos brilham com mistério e travessura.* - Todo mundo é um palco... *Aproxima-se de ${victimName} em uma coreografia sedutora e ameaçadora.* - E eu sou o protagonista. *Dedos ágeis coletam ${amount} MKC em um gesto que parece parte da dança.* - Que performance magnífica! *Faz uma reverência teatral profunda.* - Até o próximo ato! *Gira sobre os calcanhares e se funde com as sombras em um grand finale silencioso.*`,
 ];
 
 interface JYPBanditSystemProps {
