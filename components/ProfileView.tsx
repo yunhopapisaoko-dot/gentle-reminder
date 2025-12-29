@@ -151,10 +151,15 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, a
                     onClick={() => setSelectedPost(post)}
                     className="flex flex-col text-left bg-white/[0.03] rounded-[40px] border border-white/5 overflow-hidden p-8 hover:bg-white/[0.06] hover:border-white/10 transition-all group relative active:scale-[0.98]"
                   >
+                    {post.imageUrl && (
+                      <div className="w-full h-48 rounded-3xl overflow-hidden mb-6 -mt-2">
+                        <img src={post.imageUrl} className="w-full h-full object-cover" alt="" />
+                      </div>
+                    )}
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center space-x-4">
                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary/20 to-secondary/20 p-[1px]">
-                          <img src={post.author.avatar} className="w-full h-full rounded-2xl object-cover" />
+                          <img src={post.author.avatar} className="w-full h-full rounded-2xl object-cover" alt="" />
                         </div>
                         <div>
                           <span className="text-[13px] font-black text-white tracking-tight">{post.author.name}</span>
@@ -181,7 +186,33 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, a
               </div>
             )}
             
-            {activeCategory !== 'Posts' && (
+            {activeCategory === 'Mídia' && (
+              <div className="grid grid-cols-3 gap-2">
+                {userPosts.filter(p => p.imageUrl).length > 0 ? (
+                  userPosts.filter(p => p.imageUrl).map((post) => (
+                    <button
+                      key={post.id}
+                      onClick={() => setSelectedPost(post)}
+                      className="aspect-square rounded-2xl overflow-hidden bg-white/5 border border-white/5 hover:border-primary/50 transition-all group relative active:scale-95"
+                    >
+                      <img src={post.imageUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
+                        <span className="material-symbols-rounded text-white text-xl">open_in_full</span>
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="col-span-3 py-24 text-center opacity-30 flex flex-col items-center">
+                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/5 animate-pulse">
+                      <span className="material-symbols-rounded text-4xl text-white/20">photo_library</span>
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em]">Nenhuma mídia ainda</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeCategory === 'Coleção' && (
                <div className="py-32 text-center opacity-10 flex flex-col items-center">
                   <span className="material-symbols-rounded text-6xl mb-4">construction</span>
                   <p className="text-[10px] font-black uppercase tracking-[0.5em] italic">Módulo em Desenvolvimento</p>
