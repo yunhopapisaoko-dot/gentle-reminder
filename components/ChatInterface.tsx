@@ -145,8 +145,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
     
     const welcomeText = locationContext 
-      ? `[Cenário: ${locationContext}] O mundo está pronto para sua história. Como deseja começar seu roleplay? ^_^`
-      : "Bem-vindo ao MagicTalk! Este é o seu espaço de roleplay.";
+      ? `*Emerge das sombras com um movimento fluido, deslizando pelo espaço como em uma dança silenciosa. Olhos atentos observam cada detalhe do ${locationContext}...* - Então você chegou... *Gira elegantemente, braços se abrindo em um gesto teatral.* - Bem-vindo ao palco. Cada passo aqui é uma coreografia. Como deseja iniciar nossa... performance?`
+      : "*Surge do nada, movendo-se como se cada passo fosse parte de uma dança ensaiada. Inclina a cabeça misteriosamente.* - O mundo é um palco... *Dá um passo lateral gracioso.* - E eu sou seu guia nas sombras. Pronto para dançar?";
     
     setMessages([{ id: 'main-welcome', role: 'model', text: welcomeText }]);
     
@@ -403,8 +403,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               </button>
               <div className={`flex flex-col space-y-2 max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                 <div className={`flex items-center space-x-2 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                   <span className="text-[14px] font-black text-white italic tracking-tighter">{isAI ? 'Miku AI' : (msg.author?.name || 'Viajante')}</span>
-                   <div className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg ${theme.bg} ${theme.color} border border-current/10`}><span className="material-symbols-rounded text-[11px]">{theme.icon}</span><span className="text-[9px] font-black uppercase tracking-widest">{isAI ? 'Guia' : (msg.author?.race || 'Humano')}</span></div>
+                   <span className="text-[14px] font-black text-white italic tracking-tighter">{isAI ? 'JYP' : (msg.author?.name || 'Viajante')}</span>
+                   <div className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg ${theme.bg} ${theme.color} border border-current/10`}><span className="material-symbols-rounded text-[11px]">{theme.icon}</span><span className="text-[9px] font-black uppercase tracking-widest">{isAI ? 'Performer' : (msg.author?.race || 'Humano')}</span></div>
                 </div>
                 <div className={`px-6 py-4 rounded-[28px] text-[14px] font-bold leading-relaxed border border-white/10 ${msg.role === 'user' ? 'bg-primary/60 text-white rounded-tr-none' : 'bg-black/70 text-white rounded-tl-none'}`}>
                   {msg.text.split('\n').map((line, i) => <p key={i} className={line.startsWith('*') ? 'italic text-white/50 text-[12px] mb-2 block' : 'mb-1'}>{line}</p>)}
