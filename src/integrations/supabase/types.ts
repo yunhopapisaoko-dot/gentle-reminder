@@ -506,6 +506,24 @@ export type Database = {
         }
         Relationships: []
       }
+      jyp_state: {
+        Row: {
+          id: number
+          last_robbery_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          id: number
+          last_robbery_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          last_robbery_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       likes: {
         Row: {
           created_at: string
@@ -1089,7 +1107,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      try_trigger_jyp_robbery: {
+        Args: { min_interval_ms: number }
+        Returns: boolean
+      }
     }
     Enums: {
       character_race: "draeven" | "sylven" | "lunari"

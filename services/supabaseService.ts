@@ -338,15 +338,18 @@ export const supabaseService = {
 
   // ============ CHAT MESSAGES ============
   async getChatMessages(location: string, subLocation?: string): Promise<any[]> {
+    // Query sem join - buscar profiles separadamente porque não há FK
     let query = supabase
       .from('chat_messages')
-      .select('*, profiles:user_id (full_name, username, avatar_url)')
+      .select('*')
       .eq('location', location)
       .order('created_at', { ascending: true })
       .limit(100);
     
     if (subLocation) {
       query = query.eq('sub_location', subLocation);
+    } else {
+      query = query.is('sub_location', null);
     }
     
     const { data, error } = await query;
@@ -354,7 +357,26 @@ export const supabaseService = {
       console.error("Erro ao buscar mensagens:", error);
       return [];
     }
-    return data || [];
+    
+    if (!data || data.length === 0) return [];
+    
+    // Buscar profiles separadamente
+    const userIds = [...new Set(data.filter(m => m.user_id !== 'jyp-bandit').map(m => m.user_id))];
+    let profileMap = new Map();
+    
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, username, avatar_url')
+        .in('user_id', userIds);
+      
+      profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+    }
+    
+    return data.map(msg => ({
+      ...msg,
+      profiles: profileMap.get(msg.user_id) || null
+    }));
   },
 
   async sendChatMessage(userId: string, location: string, content: string, characterName?: string, characterAvatar?: string, subLocation?: string): Promise<void> {
@@ -972,6 +994,18 @@ export const supabaseService = {
     
     if (error) return [];
     return data || [];
+  },
+
+  async tryTriggerJYPRobbery(minIntervalMs: number): Promise<boolean> {
+    const { data, error } = await supabase.rpc('try_trigger_jyp_robbery', {
+      min_interval_ms: minIntervalMs
+    });
+    
+    if (error) {
+      console.error("Erro ao tentar trigger JYP:", error);
+      return false;
+    }
+    return data === true;
   },
 
   // ============ VIP RESERVATIONS ============
