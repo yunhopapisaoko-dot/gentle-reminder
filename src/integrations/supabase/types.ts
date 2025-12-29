@@ -535,6 +535,63 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          actor_avatar: string | null
+          actor_id: string
+          actor_name: string
+          comment_id: string | null
+          content: string | null
+          created_at: string
+          id: string
+          post_id: string | null
+          read: boolean
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_avatar?: string | null
+          actor_id: string
+          actor_name: string
+          comment_id?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          read?: boolean
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_avatar?: string | null
+          actor_id?: string
+          actor_name?: string
+          comment_id?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          read?: boolean
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pharmacy_orders: {
         Row: {
           approved_at: string | null

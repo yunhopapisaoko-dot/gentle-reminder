@@ -1,6 +1,7 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { TabType, User } from '../types';
+import { useNotifications } from '../src/hooks/useNotifications';
+import { NotificationsDropdown } from '../src/components/NotificationsDropdown';
 
 interface HeaderProps {
   activeTab: TabType;
@@ -8,9 +9,13 @@ interface HeaderProps {
   currentUser: User;
   onProfileClick?: () => void;
   onMenuClick?: () => void;
+  onPostClick?: (postId: string) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, currentUser, onProfileClick, onMenuClick }) => {
+export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, currentUser, onProfileClick, onMenuClick, onPostClick }) => {
+  const [showNotifications, setShowNotifications] = useState(false);
+  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications(currentUser.id);
+
   return (
     <div className="relative w-full overflow-hidden bg-background-dark border-b border-white/5">
       <div className="absolute inset-0 h-64 pointer-events-none">
@@ -44,9 +49,31 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, current
           </div>
           
           <div className="flex items-center space-x-3">
-            <button className="w-11 h-11 bg-white/5 backdrop-blur-2xl rounded-[18px] border border-white/10 flex items-center justify-center text-white/50 hover:text-white transition-all active:scale-90">
-              <span className="material-symbols-rounded">notifications</span>
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="w-11 h-11 bg-white/5 backdrop-blur-2xl rounded-[18px] border border-white/10 flex items-center justify-center text-white/50 hover:text-white transition-all active:scale-90"
+              >
+                <span className="material-symbols-rounded">notifications</span>
+              </button>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+              
+              {showNotifications && (
+                <NotificationsDropdown
+                  notifications={notifications}
+                  unreadCount={unreadCount}
+                  onMarkAsRead={markAsRead}
+                  onMarkAllAsRead={markAllAsRead}
+                  onDelete={deleteNotification}
+                  onClose={() => setShowNotifications(false)}
+                  onNotificationClick={(postId) => postId && onPostClick?.(postId)}
+                />
+              )}
+            </div>
             
             <button 
               onClick={onProfileClick}
