@@ -269,43 +269,54 @@ export const supabaseService = {
 
   async getPosts(): Promise<Post[]> {
     try {
-      const { data, error } = await supabase
+      const { data: postsData, error } = await supabase
         .from('posts')
-        .select(`*, profiles!posts_user_id_fkey (*)`)
+        .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (error) {
-        console.error("Erro ao buscar posts:", error);
+        console.error('Erro ao buscar posts:', error);
         return [];
       }
-      
-      return data.map((post: any) => ({
-        id: post.id,
-        title: post.title || 'Sem título',
-        excerpt: post.content,
-        imageUrl: post.image_url,
-        timestamp: new Date(post.created_at).toLocaleDateString(),
-        likes: '0',
-        author: {
-          id: post.profiles?.user_id || post.user_id,
-          name: post.profiles?.full_name || 'Membro',
-          username: post.profiles?.username || 'user',
-          avatar: post.profiles?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.user_id}`,
-          race: post.profiles?.race,
-          isLeader: post.profiles?.is_leader || false
-        }
-      }));
-    } catch (e) { 
-      console.error("Erro getPosts:", e);
-      return []; 
+
+      const userIds = [...new Set((postsData || []).map((p: any) => p.user_id).filter(Boolean))];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, username, avatar_url, race, is_leader')
+        .in('user_id', userIds);
+
+      const profileMap = new Map<string, any>((profilesData || []).map((p: any) => [p.user_id, p]));
+
+      return (postsData || []).map((post: any) => {
+        const profile = profileMap.get(post.user_id);
+        return {
+          id: post.id,
+          title: post.title || 'Sem título',
+          excerpt: post.content,
+          imageUrl: post.image_url,
+          timestamp: new Date(post.created_at).toLocaleDateString(),
+          likes: '0',
+          author: {
+            id: post.user_id,
+            name: profile?.full_name || 'Membro',
+            username: profile?.username || 'user',
+            avatar: profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.user_id}`,
+            race: profile?.race,
+            isLeader: profile?.is_leader || false,
+          },
+        };
+      });
+    } catch (e) {
+      console.error('Erro getPosts:', e);
+      return [];
     }
   },
 
   async getPostsByUser(userId: string): Promise<Post[]> {
     try {
-      const { data, error } = await supabase
+      const { data: postsData, error } = await supabase
         .from('posts')
-        .select(`*, profiles!posts_user_id_fkey (*)`)
+        .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
@@ -314,7 +325,15 @@ export const supabaseService = {
         return [];
       }
 
-      return (data || []).map((post: any) => ({
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, username, avatar_url, race, is_leader')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      const profileAny: any = profile;
+
+      return (postsData || []).map((post: any) => ({
         id: post.id,
         title: post.title || 'Sem título',
         excerpt: post.content,
@@ -322,13 +341,13 @@ export const supabaseService = {
         timestamp: new Date(post.created_at).toLocaleDateString(),
         likes: '0',
         author: {
-          id: post.profiles?.user_id || post.user_id,
-          name: post.profiles?.full_name || 'Membro',
-          username: post.profiles?.username || 'user',
-          avatar: post.profiles?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.user_id}`,
-          race: post.profiles?.race,
-          isLeader: post.profiles?.is_leader || false
-        }
+          id: userId,
+          name: profileAny?.full_name || 'Membro',
+          username: profileAny?.username || 'user',
+          avatar: profileAny?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+          race: profileAny?.race,
+          isLeader: profileAny?.is_leader || false,
+        },
       }));
     } catch (e) {
       console.error('Erro getPostsByUser:', e);
