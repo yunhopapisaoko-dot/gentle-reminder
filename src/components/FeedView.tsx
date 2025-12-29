@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../integrations/supabase/client';
-import { Heart, MessageCircle, Star, StarOff } from 'lucide-react';
+import { Heart, MessageCircle, Star, StarOff, Pencil, X, Check } from 'lucide-react';
 
 interface FeedPost {
   id: string;
@@ -24,21 +24,23 @@ interface FeedPost {
 interface FeedViewProps {
   currentUserId: string;
   onUserClick?: (userId: string) => void;
+  showFeaturedOnly?: boolean;
 }
 
-export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick }) => {
+export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, showFeaturedOnly = false }) => {
   const [posts, setPosts] = useState<FeedPost[]>([]);
-  const [featuredPost, setFeaturedPost] = useState<FeedPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<FeedPost | null>(null);
   const [commentInput, setCommentInput] = useState('');
   const [comments, setComments] = useState<any[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [editingPost, setEditingPost] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
 
   useEffect(() => {
     fetchPosts();
     
-    // Realtime subscription para posts
     const channel = supabase
       .channel('feed-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => fetchPosts())
@@ -50,11 +52,10 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick }
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [currentUserId]);
+  }, [currentUserId, showFeaturedOnly]);
 
   const fetchPosts = async () => {
     try {
-      // Buscar posts
       const { data: postsData, error } = await supabase
         .from('posts')
         .select('*')
@@ -62,28 +63,23 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick }
 
       if (error) throw error;
 
-      // Buscar profiles, likes count, comments count e status de like do usuário
       const postsWithDetails = await Promise.all((postsData || []).map(async (post) => {
-        // Profile
         const { data: profileData } = await supabase
           .from('profiles')
           .select('user_id, full_name, username, avatar_url')
           .eq('user_id', post.user_id)
           .single();
 
-        // Likes count
         const { count: likesCount } = await supabase
           .from('likes')
           .select('*', { count: 'exact', head: true })
           .eq('post_id', post.id);
 
-        // Comments count
         const { count: commentsCount } = await supabase
           .from('comments')
           .select('*', { count: 'exact', head: true })
           .eq('post_id', post.id);
 
-        // User liked
         const { data: likedData } = await supabase
           .from('likes')
           .select('id')
@@ -100,18 +96,28 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick }
         };
       }));
 
-      // Filtrar post em destaque (foto destacada nos últimos 3 dias)
       const threeDaysAgo = new Date();
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
-      const featured = postsWithDetails.find(p => 
-        p.image_url && 
-        p.featured_at && 
-        new Date(p.featured_at) > threeDaysAgo
-      );
+      let filteredPosts: FeedPost[];
+      
+      if (showFeaturedOnly) {
+        // Para aba Destaque: apenas fotos destacadas nos últimos 3 dias
+        filteredPosts = postsWithDetails.filter(p => 
+          p.image_url && 
+          p.featured_at && 
+          new Date(p.featured_at) > threeDaysAgo
+        );
+      } else {
+        // Para Feed: todos os posts EXCETO os que estão em destaque
+        filteredPosts = postsWithDetails.filter(p => 
+          !p.featured_at || 
+          !p.image_url ||
+          new Date(p.featured_at) <= threeDaysAgo
+        );
+      }
 
-      setFeaturedPost(featured || null);
-      setPosts(postsWithDetails);
+      setPosts(filteredPosts);
     } catch (err) {
       console.error('Erro ao buscar posts:', err);
     } finally {
@@ -119,8 +125,9 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick }
     }
   };
 
-  const handleLike = async (postId: string) => {
-    const post = posts.find(p => p.id === postId);
+  const handleLike = async (postId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const post = posts.find(p => p.id === postId) || selectedPost;
     if (!post) return;
 
     if (post.is_liked) {
@@ -129,23 +136,23 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick }
       await supabase.from('likes').insert({ post_id: postId, user_id: currentUserId });
     }
 
-    // Atualização otimista
-    setPosts(prev => prev.map(p => 
+    const updatePost = (p: FeedPost) => 
       p.id === postId 
         ? { ...p, is_liked: !p.is_liked, likes_count: p.is_liked ? p.likes_count - 1 : p.likes_count + 1 }
-        : p
-    ));
-    if (featuredPost?.id === postId) {
-      setFeaturedPost(prev => prev ? { ...prev, is_liked: !prev.is_liked, likes_count: prev.is_liked ? prev.likes_count - 1 : prev.likes_count + 1 } : null);
+        : p;
+
+    setPosts(prev => prev.map(updatePost));
+    if (selectedPost?.id === postId) {
+      setSelectedPost(prev => prev ? updatePost(prev) : null);
     }
   };
 
-  const handleFeature = async (postId: string) => {
+  const handleFeature = async (postId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     const post = posts.find(p => p.id === postId);
     if (!post || !post.image_url) return;
     if (post.user_id !== currentUserId) return;
 
-    // Verificar se o usuário já tem outro post em destaque
     const { data: existingFeatured } = await supabase
       .from('posts')
       .select('id, featured_at')
@@ -161,15 +168,36 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick }
       new Date(p.featured_at) > threeDaysAgo
     );
 
-    if (activeFeatured) {
+    if (activeFeatured && !post.featured_at) {
       alert('Você já tem uma foto em destaque! Aguarde ela expirar (3 dias) para destacar outra.');
       return;
     }
 
-    // Toggle destaque
     const newFeaturedAt = post.featured_at ? null : new Date().toISOString();
     await supabase.from('posts').update({ featured_at: newFeaturedAt }).eq('id', postId);
     fetchPosts();
+  };
+
+  const handleEdit = (post: FeedPost, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setEditingPost(post.id);
+    setEditTitle(post.title || '');
+    setEditContent(post.content);
+  };
+
+  const handleSaveEdit = async (postId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    await supabase.from('posts').update({ 
+      title: editTitle.trim() || null, 
+      content: editContent.trim() 
+    }).eq('id', postId);
+    setEditingPost(null);
+    fetchPosts();
+  };
+
+  const handleCancelEdit = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setEditingPost(null);
   };
 
   const loadComments = async (postId: string) => {
@@ -222,80 +250,23 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick }
 
   return (
     <div className="pb-40">
-      {/* Post em Destaque */}
-      {featuredPost && (
-        <div className="mx-4 my-6 relative rounded-[32px] overflow-hidden border border-white/10 shadow-2xl">
-          <div className="aspect-[16/10] relative">
-            <img
-              src={featuredPost.image_url!}
-              alt={featuredPost.title || 'Destaque'}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-            
-            <div className="absolute top-4 left-4">
-              <span className="bg-primary/90 backdrop-blur px-3 py-1.5 rounded-full text-[10px] font-black text-white uppercase tracking-wider flex items-center gap-1">
-                <Star className="w-3 h-3 fill-current" /> Em Destaque
-              </span>
-            </div>
-
-            <div className="absolute bottom-0 inset-x-0 p-6">
-              {featuredPost.title && (
-                <h2 className="text-xl font-black text-white mb-2 leading-tight">{featuredPost.title}</h2>
-              )}
-              <p className="text-sm text-white/70 line-clamp-2 mb-4">{featuredPost.content}</p>
-              
-              <div className="flex items-center justify-between">
-                <button 
-                  onClick={() => onUserClick?.(featuredPost.profile?.user_id || featuredPost.user_id)}
-                  className="flex items-center gap-2"
-                >
-                  <img
-                    src={featuredPost.profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${featuredPost.user_id}`}
-                    className="w-8 h-8 rounded-full border border-white/20"
-                    alt=""
-                  />
-                  <span className="text-xs font-bold text-white">{featuredPost.profile?.full_name || 'Usuário'}</span>
-                </button>
-                
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => handleLike(featuredPost.id)}
-                    className={`flex items-center gap-1 ${featuredPost.is_liked ? 'text-red-500' : 'text-white/60'}`}
-                  >
-                    <Heart className={`w-5 h-5 ${featuredPost.is_liked ? 'fill-current' : ''}`} />
-                    <span className="text-xs font-bold">{featuredPost.likes_count}</span>
-                  </button>
-                  <button
-                    onClick={() => handleOpenPost(featuredPost)}
-                    className="flex items-center gap-1 text-white/60"
-                  >
-                    <MessageCircle className="w-5 h-5" />
-                    <span className="text-xs font-bold">{featuredPost.comments_count}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Lista de Posts */}
-      <div className="space-y-4 px-4">
-        {posts.filter(p => p.id !== featuredPost?.id).map(post => (
+      <div className={`space-y-4 ${showFeaturedOnly ? 'px-4 pt-4' : 'px-4'}`}>
+        {posts.map(post => (
           <div 
             key={post.id} 
-            className="bg-white/[0.03] rounded-[24px] border border-white/5 overflow-hidden"
+            onClick={() => handleOpenPost(post)}
+            className="bg-white/[0.03] rounded-[24px] border border-white/5 overflow-hidden cursor-pointer hover:bg-white/[0.05] transition-colors"
           >
             {/* Header do post */}
             <div className="p-4 flex items-center justify-between">
               <button 
-                onClick={() => onUserClick?.(post.profile?.user_id || post.user_id)}
+                onClick={(e) => { e.stopPropagation(); onUserClick?.(post.profile?.user_id || post.user_id); }}
                 className="flex items-center gap-3"
               >
                 <img
                   src={post.profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.user_id}`}
-                  className="w-10 h-10 rounded-full border border-white/10"
+                  className="w-10 h-10 rounded-full border border-white/10 object-cover"
                   alt=""
                 />
                 <div className="text-left">
@@ -304,46 +275,102 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick }
                 </div>
               </button>
 
-              {/* Botão de destacar (apenas para fotos do próprio usuário) */}
-              {post.image_url && post.user_id === currentUserId && (
-                <button
-                  onClick={() => handleFeature(post.id)}
-                  className={`p-2 rounded-full ${post.featured_at ? 'bg-primary/20 text-primary' : 'bg-white/5 text-white/40'} hover:bg-white/10 transition-colors`}
-                  title={post.featured_at ? 'Remover destaque' : 'Destacar foto'}
-                >
-                  {post.featured_at ? <Star className="w-5 h-5 fill-current" /> : <StarOff className="w-5 h-5" />}
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {/* Botão de editar (apenas para dono do post) */}
+                {post.user_id === currentUserId && editingPost !== post.id && (
+                  <button
+                    onClick={(e) => handleEdit(post, e)}
+                    className="p-2 rounded-full bg-white/5 text-white/40 hover:bg-white/10 transition-colors"
+                    title="Editar post"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                )}
+
+                {/* Botão de destacar (apenas para fotos do próprio usuário) */}
+                {post.image_url && post.user_id === currentUserId && (
+                  <button
+                    onClick={(e) => handleFeature(post.id, e)}
+                    className={`p-2 rounded-full ${post.featured_at ? 'bg-primary/20 text-primary' : 'bg-white/5 text-white/40'} hover:bg-white/10 transition-colors`}
+                    title={post.featured_at ? 'Remover destaque' : 'Destacar foto'}
+                  >
+                    {post.featured_at ? <Star className="w-4 h-4 fill-current" /> : <StarOff className="w-4 h-4" />}
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Conteúdo */}
             <div className="px-4 pb-3">
-              {post.title && <h3 className="text-base font-bold text-white mb-1">{post.title}</h3>}
-              <p className="text-sm text-white/70 whitespace-pre-wrap">{post.content}</p>
+              {editingPost === post.id ? (
+                <div className="space-y-2" onClick={e => e.stopPropagation()}>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={e => setEditTitle(e.target.value)}
+                    placeholder="Título (opcional)"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+                  />
+                  <textarea
+                    value={editContent}
+                    onChange={e => setEditContent(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white resize-none"
+                    rows={3}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={(e) => handleSaveEdit(post.id, e)}
+                      className="flex items-center gap-1 bg-primary px-3 py-1.5 rounded-lg text-white text-xs font-bold"
+                    >
+                      <Check className="w-3 h-3" /> Salvar
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-lg text-white/60 text-xs font-bold"
+                    >
+                      <X className="w-3 h-3" /> Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {post.title && <h3 className="text-base font-bold text-white mb-1">{post.title}</h3>}
+                  <p className="text-sm text-white/70 whitespace-pre-wrap">{post.content}</p>
+                </>
+              )}
             </div>
 
-            {/* Imagem */}
+            {/* Imagem - sem esticar */}
             {post.image_url && (
-              <div className="relative">
+              <div className="flex justify-center bg-black/20">
                 <img
                   src={post.image_url}
                   alt=""
-                  className="w-full max-h-[400px] object-cover"
+                  className="max-w-full max-h-[500px] object-contain"
                 />
+              </div>
+            )}
+
+            {/* Badge de destaque */}
+            {post.featured_at && showFeaturedOnly && (
+              <div className="px-4 py-2 bg-primary/10 border-t border-primary/20">
+                <span className="text-[10px] font-bold text-primary flex items-center gap-1">
+                  <Star className="w-3 h-3 fill-current" /> Em destaque
+                </span>
               </div>
             )}
 
             {/* Ações */}
             <div className="p-4 flex items-center gap-6 border-t border-white/5">
               <button
-                onClick={() => handleLike(post.id)}
+                onClick={(e) => handleLike(post.id, e)}
                 className={`flex items-center gap-2 ${post.is_liked ? 'text-red-500' : 'text-white/50 hover:text-white/80'} transition-colors`}
               >
                 <Heart className={`w-5 h-5 ${post.is_liked ? 'fill-current' : ''}`} />
                 <span className="text-sm font-bold">{post.likes_count}</span>
               </button>
               <button
-                onClick={() => handleOpenPost(post)}
+                onClick={(e) => { e.stopPropagation(); handleOpenPost(post); }}
                 className="flex items-center gap-2 text-white/50 hover:text-white/80 transition-colors"
               >
                 <MessageCircle className="w-5 h-5" />
@@ -355,46 +382,94 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick }
 
         {posts.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-white/30 text-sm">Nenhum post ainda. Seja o primeiro!</p>
+            <p className="text-white/30 text-sm">
+              {showFeaturedOnly ? 'Nenhuma foto em destaque no momento.' : 'Nenhum post ainda. Seja o primeiro!'}
+            </p>
           </div>
         )}
       </div>
 
-      {/* Modal de Comentários */}
+      {/* Modal de Detalhes do Post */}
       {selectedPost && (
         <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col">
           <div className="p-4 border-b border-white/10 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white">Comentários</h3>
+            <div className="flex items-center gap-3">
+              <img
+                src={selectedPost.profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedPost.user_id}`}
+                className="w-8 h-8 rounded-full object-cover"
+                alt=""
+              />
+              <div>
+                <p className="text-sm font-bold text-white">{selectedPost.profile?.full_name || 'Usuário'}</p>
+                <p className="text-[10px] text-white/40">{formatDate(selectedPost.created_at)}</p>
+              </div>
+            </div>
             <button onClick={() => setSelectedPost(null)} className="text-white/60 p-2">
-              <span className="material-symbols-rounded">close</span>
+              <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {loadingComments ? (
-              <div className="flex justify-center py-10">
-                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="flex-1 overflow-y-auto">
+            {/* Conteúdo do post */}
+            <div className="p-4">
+              {selectedPost.title && <h2 className="text-lg font-bold text-white mb-2">{selectedPost.title}</h2>}
+              <p className="text-sm text-white/70 whitespace-pre-wrap">{selectedPost.content}</p>
+            </div>
+
+            {/* Imagem sem esticar */}
+            {selectedPost.image_url && (
+              <div className="flex justify-center bg-black/30">
+                <img
+                  src={selectedPost.image_url}
+                  alt=""
+                  className="max-w-full max-h-[60vh] object-contain"
+                />
               </div>
-            ) : comments.length > 0 ? (
-              comments.map(comment => (
-                <div key={comment.id} className="flex gap-3">
-                  <img
-                    src={comment.profiles?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.user_id}`}
-                    className="w-8 h-8 rounded-full"
-                    alt=""
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold text-white">@{comment.profiles?.username || 'user'}</span>
-                      <span className="text-[10px] text-white/30">{formatDate(comment.created_at)}</span>
-                    </div>
-                    <p className="text-sm text-white/70">{comment.content}</p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-center text-white/30 text-sm py-10">Nenhum comentário ainda.</p>
             )}
+
+            {/* Ações */}
+            <div className="p-4 flex items-center gap-6 border-b border-white/10">
+              <button
+                onClick={() => handleLike(selectedPost.id)}
+                className={`flex items-center gap-2 ${selectedPost.is_liked ? 'text-red-500' : 'text-white/50'}`}
+              >
+                <Heart className={`w-6 h-6 ${selectedPost.is_liked ? 'fill-current' : ''}`} />
+                <span className="text-sm font-bold">{selectedPost.likes_count}</span>
+              </button>
+              <div className="flex items-center gap-2 text-white/50">
+                <MessageCircle className="w-6 h-6" />
+                <span className="text-sm font-bold">{comments.length}</span>
+              </div>
+            </div>
+
+            {/* Comentários */}
+            <div className="p-4 space-y-4">
+              <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider">Comentários</h3>
+              {loadingComments ? (
+                <div className="flex justify-center py-10">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : comments.length > 0 ? (
+                comments.map(comment => (
+                  <div key={comment.id} className="flex gap-3">
+                    <img
+                      src={comment.profiles?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.user_id}`}
+                      className="w-8 h-8 rounded-full object-cover"
+                      alt=""
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-white">@{comment.profiles?.username || 'user'}</span>
+                        <span className="text-[10px] text-white/30">{formatDate(comment.created_at)}</span>
+                      </div>
+                      <p className="text-sm text-white/70">{comment.content}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-white/30 text-sm py-10">Nenhum comentário ainda.</p>
+              )}
+            </div>
           </div>
 
           <div className="p-4 border-t border-white/10 pb-8">

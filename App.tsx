@@ -216,23 +216,14 @@ const App: React.FC = () => {
         return (
           <div className="pb-40">
             <Stories members={communityMembers} onSelectArtist={setSelectedUser} />
-            {posts.length > 0 ? (
-              <>
-                <FeaturedCard post={posts[0]} />
-                <div className="px-6 mt-8 grid grid-cols-2 gap-4">
-                  {posts.slice(1).map(post => (
-                    <div key={post.id} onClick={() => setSelectedUser(post.author)}>
-                      <GridCard post={post} />
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="px-10 py-20 text-center opacity-40">
-                <span className="material-symbols-rounded text-6xl mb-4 text-primary">auto_stories</span>
-                <p className="text-[10px] font-bold text-white uppercase tracking-widest">Nada postado ainda.</p>
-              </div>
-            )}
+            <FeedView 
+              currentUserId={currentUser.id} 
+              showFeaturedOnly={true}
+              onUserClick={(userId) => {
+                const user = communityMembers.find(m => m.id === userId);
+                if (user) setSelectedUser(user);
+              }}
+            />
           </div>
         );
       case TabType.Feed:
