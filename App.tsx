@@ -21,6 +21,7 @@ import { InventoryView } from './components/InventoryView';
 import { SupermarketView } from './components/SupermarketView';
 import { PrivateChatView } from './components/PrivateChatView';
 import { FeedView } from './src/components/FeedView';
+import { GlobalUsersGrid } from './src/components/GlobalUsersGrid';
 import { TabType, User, Post, MenuItem } from './types';
 import { supabase } from './supabase';
 import { supabaseService } from './services/supabaseService';
@@ -269,14 +270,10 @@ const App: React.FC = () => {
         );
       case TabType.Global:
         return (
-          <div className="p-8 grid grid-cols-2 gap-6 pb-40">
-            {communityMembers.map((user) => (
-              <button key={user.id} onClick={() => setSelectedUser(user)} className="bg-surface-purple/20 p-6 rounded-[40px] flex flex-col items-center border border-white/5 hover:bg-white/5 transition-colors">
-                <img src={user.avatar} className="w-20 h-20 rounded-[28px] mb-4 object-cover" alt={user.name} />
-                <span className="text-xs font-black text-white truncate w-full text-center">{user.name}</span>
-              </button>
-            ))}
-          </div>
+          <GlobalUsersGrid 
+            members={communityMembers} 
+            onSelectUser={setSelectedUser} 
+          />
         );
       case TabType.Locais:
         return (

@@ -1,0 +1,70 @@
+import React from 'react';
+import { User } from '../../types';
+
+interface GlobalUsersGridProps {
+  members: User[];
+  onSelectUser: (user: User) => void;
+}
+
+const RACE_THEMES: Record<string, { color: string, icon: string, bg: string }> = {
+  'draeven': { color: 'text-rose-500', icon: 'local_fire_department', bg: 'bg-rose-500/10' },
+  'sylven': { color: 'text-emerald-500', icon: 'eco', bg: 'bg-emerald-500/10' },
+  'lunari': { color: 'text-cyan-400', icon: 'dark_mode', bg: 'bg-cyan-400/10' },
+};
+
+export const GlobalUsersGrid: React.FC<GlobalUsersGridProps> = ({ members, onSelectUser }) => {
+  return (
+    <div className="p-6 grid grid-cols-2 gap-4 pb-40 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {members.map((user) => {
+        const raceKey = (user.race || 'draeven').toLowerCase();
+        const theme = RACE_THEMES[raceKey] || RACE_THEMES['draeven'];
+
+        return (
+          <button
+            key={user.id}
+            onClick={() => onSelectUser(user)}
+            className="group relative flex flex-col items-center bg-white/[0.03] border border-white/5 rounded-[40px] p-6 transition-all duration-500 hover:bg-white/[0.06] hover:border-primary/30 hover:translate-y-[-4px] active:scale-95 overflow-hidden shadow-2xl"
+          >
+            {/* Background Glow Effect */}
+            <div className={`absolute -top-10 -right-10 w-24 h-24 blur-[40px] opacity-20 transition-opacity group-hover:opacity-40 ${theme.bg.replace('/10', '')}`}></div>
+
+            {/* Avatar Section */}
+            <div className="relative mb-5">
+              <div className={`absolute -inset-2 rounded-[32px] blur-md opacity-20 group-hover:opacity-50 transition-opacity ${theme.bg.replace('/10', '')}`}></div>
+              <div className="relative w-20 h-20 rounded-[28px] overflow-hidden border-2 border-white/10 shadow-xl p-1 bg-background-dark">
+                <img 
+                  src={user.avatar} 
+                  className="w-full h-full rounded-[22px] object-cover transition-transform duration-700 group-hover:scale-110" 
+                  alt={user.name} 
+                />
+              </div>
+              
+              {/* Race Icon Badge */}
+              <div className={`absolute -bottom-2 -right-2 w-8 h-8 rounded-xl ${theme.bg} backdrop-blur-md border border-white/10 flex items-center justify-center shadow-lg`}>
+                <span className={`material-symbols-rounded text-base ${theme.color}`}>{theme.icon}</span>
+              </div>
+            </div>
+
+            {/* Text Section */}
+            <div className="text-center w-full space-y-1">
+              {user.isLeader && (
+                <div className="mb-1">
+                  <span className="text-[7px] font-black uppercase tracking-[0.3em] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">Líder</span>
+                </div>
+              )}
+              <h4 className="text-sm font-black text-white truncate leading-none uppercase tracking-tight group-hover:text-primary transition-colors">
+                {user.name}
+              </h4>
+              <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest">
+                @{user.username}
+              </p>
+            </div>
+
+            {/* Bottom Indicator */}
+            <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 ${theme.bg.replace('/10', '')}`}></div>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
