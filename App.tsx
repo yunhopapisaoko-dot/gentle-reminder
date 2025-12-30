@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { PinnedBar } from './components/PinnedBar';
 import { Stories } from './components/Stories';
@@ -51,6 +51,11 @@ const App: React.FC = () => {
   const [visitedRooms, setVisitedRooms] = useState<string[]>([]);
   const [confirmedRooms, setConfirmedRooms] = useState<string[]>([]);
   
+  // Swipe State
+  const touchStart = useRef<number | null>(null);
+  const touchEnd = useRef<number | null>(null);
+  const minSwipeDistance = 70; // Sensibilidade do deslize
+
   // Private chat state
   const [activePrivateChat, setActivePrivateChat] = useState<PrivateConversation | null>(null);
   const { startConversation, markConversationAsRead, totalUnread } = usePrivateConversations(currentUser?.id || null);
@@ -61,12 +66,10 @@ const App: React.FC = () => {
     if (savedConfirmed) setConfirmedRooms(JSON.parse(savedConfirmed));
     if (savedVisited) setVisitedRooms(JSON.parse(savedVisited));
 
-    // Escuta mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (session) {
           setIsAuthenticated(true);
-          // Defer para evitar deadlock
           setTimeout(() => {
             fetchInitialData(session.user.id);
           }, 0);
@@ -78,7 +81,6 @@ const App: React.FC = () => {
       }
     );
 
-    // Verifica sessão existente
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setIsAuthenticated(true);
@@ -92,7 +94,6 @@ const App: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Decaimento automático de status: 1 ponto por minuto em fome e sede
   useEffect(() => {
     if (!currentUser || !currentUser.isActiveRP) return;
     
@@ -102,7 +103,6 @@ const App: React.FC = () => {
         const newHunger = Math.max(0, (prev.hunger ?? 100) - 1);
         const newThirst = Math.max(0, (prev.thirst ?? 100) - 1);
         
-        // Atualiza no banco também periodicamente
         supabaseService.updateVitalStatus(prev.id, {
           hunger: newHunger,
           energy: newThirst
@@ -114,7 +114,7 @@ const App: React.FC = () => {
           thirst: newThirst
         };
       });
-    }, 60000); // 1 minuto
+    }, 60000);
     
     return () => clearInterval(interval);
   }, [currentUser?.id, currentUser?.isActiveRP]);
@@ -144,6 +144,39 @@ const App: React.FC = () => {
       if (error?.message?.includes('profiles')) setShowDbSetup(true);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // SWIPE NAVIGATION HANDLERS
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEnd.current = null;
+    touchStart.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEnd.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart.current || !touchEnd.current) return;
+    
+    const distance = touchStart.current - touchEnd.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe || isRightSwipe) {
+      const tabs = Object.values(TabType);
+      const currentIndex = tabs.indexOf(activeTab);
+
+      if (isLeftSwipe && currentIndex < tabs.length - 1) {
+        // Swipe para a esquerda -> próxima aba
+        setActiveTab(tabs[currentIndex + 1]);
+        if (navigator.vibrate) navigator.vibrate(10);
+      } else if (isRightSwipe && currentIndex > 0) {
+        // Swipe para a direita -> aba anterior
+        setActiveTab(tabs[currentIndex - 1]);
+        if (navigator.vibrate) navigator.vibrate(10);
+      }
     }
   };
 
@@ -187,13 +220,11 @@ const App: React.FC = () => {
   };
 
   const handleEnterRoom = (roomId: string) => {
-    // Verificação de status RP
     if (!currentUser?.isActiveRP && roomId !== 'supermercado' && roomId !== 'imobiliaria') {
         alert("Ative seu status de Roleplay no menu lateral para entrar em locais.");
         return;
     }
 
-    // Se for supermercado, abre a view especial
     if (roomId === 'supermercado') {
       setIsSupermarketOpen(true);
       return;
@@ -220,7 +251,6 @@ const App: React.FC = () => {
   const handleStartPrivateChat = async (userId: string) => {
     const conversationId = await startConversation(userId);
     if (conversationId) {
-      // Find the other user's profile
       const otherUser = communityMembers.find(m => m.id === userId);
       if (otherUser) {
         setActivePrivateChat({
@@ -325,7 +355,6 @@ const App: React.FC = () => {
     return <AuthView onLogin={() => setIsAuthenticated(true)} />;
   }
 
-  // Type guard - currentUser is guaranteed to be non-null after this point
   if (!currentUser) return null;
 
   return (
@@ -333,7 +362,14 @@ const App: React.FC = () => {
       <div className="w-full max-w-md bg-background-dark h-full relative flex flex-col border-x border-white/5 overflow-hidden">
         <Header activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} onProfileClick={() => setSelectedUser(currentUser)} onMenuClick={() => setIsSidebarOpen(true)} />
         <PinnedBar />
-        <div className="flex-1 overflow-y-auto scrollbar-hide relative">
+        
+        {/* Swipable Content Area */}
+        <div 
+          className="flex-1 overflow-y-auto scrollbar-hide relative"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           {renderMainContent()}
         </div>
 

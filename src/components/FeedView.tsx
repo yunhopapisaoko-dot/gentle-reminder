@@ -322,9 +322,10 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
           <div 
             key={post.id} 
             onClick={() => handleOpenPost(post)}
-            className="bg-white/[0.03] rounded-[24px] border border-white/5 overflow-hidden cursor-pointer hover:bg-white/[0.05] transition-all active:scale-[0.98]"
+            className="bg-white/[0.03] rounded-[32px] border border-white/5 overflow-hidden cursor-pointer hover:bg-white/[0.05] transition-all active:scale-[0.98] flex flex-col"
           >
-            <div className="p-4 flex items-center justify-between">
+            {/* Header / Perfil */}
+            <div className="p-4 px-6 flex items-center justify-between">
               <button 
                 onClick={(e) => { e.stopPropagation(); onUserClick?.(post.profile?.user_id || post.user_id); }}
                 className="flex items-center gap-3"
@@ -382,7 +383,26 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
               </div>
             </div>
 
-            <div className="px-5 pb-3">
+            {/* Imagem em destaque antes do texto */}
+            {post.image_url && (
+              <div className="relative flex justify-center bg-black/40 overflow-hidden">
+                <img
+                  src={post.image_url}
+                  alt=""
+                  className="max-w-full max-h-[450px] object-contain transition-transform duration-700 hover:scale-105"
+                />
+                {post.featured_at && showFeaturedOnly && (
+                  <div className="absolute top-4 right-4 bg-primary/80 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 shadow-lg">
+                    <span className="text-[8px] font-black text-white uppercase tracking-[0.2em] flex items-center gap-1">
+                      <Star className="w-2.5 h-2.5 fill-current" /> Destaque
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Título e Conteúdo em baixo */}
+            <div className="p-6">
               {editingPost === post.id ? (
                 <div className="space-y-3" onClick={e => e.stopPropagation()}>
                   <input
@@ -398,7 +418,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white resize-none focus:ring-1 focus:ring-primary outline-none"
                     rows={3}
                   />
-                  <div className="flex gap-2 pb-2">
+                  <div className="flex gap-2">
                     <button
                       onClick={(e) => handleSaveEdit(post.id, e)}
                       className="flex-1 bg-primary py-2.5 rounded-xl text-white text-[10px] font-black uppercase tracking-widest"
@@ -415,34 +435,15 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
                 </div>
               ) : (
                 <>
-                  {post.title && <h3 className="text-base font-black text-white tracking-tight mb-1 uppercase">{post.title}</h3>}
-                  <p className="text-sm text-white/60 leading-relaxed font-medium">
-                    {post.content}
+                  {post.title && <h3 className="text-lg font-black text-white tracking-tighter mb-2 uppercase italic">{post.title}</h3>}
+                  <p className="text-sm text-white/60 leading-relaxed font-bold italic opacity-80">
+                    "{post.content}"
                   </p>
                 </>
               )}
             </div>
 
-            {post.image_url && (
-              <div className="flex justify-center bg-black/40 overflow-hidden">
-                <img
-                  src={post.image_url}
-                  alt=""
-                  className="max-w-full max-h-[400px] object-contain transition-transform duration-700 hover:scale-105"
-                />
-              </div>
-            )}
-
-            {post.featured_at && showFeaturedOnly && (
-              <div className="px-5 py-2 bg-primary/10 border-t border-primary/20 flex items-center justify-between">
-                <span className="text-[9px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-1.5">
-                  <Star className="w-3 h-3 fill-current" /> Destaque da Comunidade
-                </span>
-                <span className="text-[8px] font-bold text-white/20 uppercase">Expira em 3 dias</span>
-              </div>
-            )}
-
-            <div className="p-4 px-6 flex items-center gap-8 border-t border-white/5">
+            <div className="p-4 px-8 flex items-center gap-10 border-t border-white/5">
               <button
                 onClick={(e) => handleLike(post.id, e)}
                 className={`flex items-center gap-2 group transition-all ${post.is_liked ? 'text-red-500' : 'text-white/30 hover:text-white/60'}`}
@@ -535,25 +536,11 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
           </div>
 
           <div className="flex-1 overflow-y-auto scrollbar-hide pb-32">
-            {/* Post Content Area */}
-            <div className="p-6 pb-4">
-              {selectedPost.title && (
-                <h2 className="text-2xl font-black text-white tracking-tighter uppercase mb-4 leading-tight">
-                  {selectedPost.title}
-                </h2>
-              )}
-              <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-6 mb-6">
-                <p className="text-[15px] font-bold text-white/80 leading-relaxed whitespace-pre-wrap">
-                  {selectedPost.content}
-                </p>
-              </div>
-            </div>
-
             {/* Post Image Area */}
             {selectedPost.image_url && (
-              <div className="relative group px-4 mb-8">
+              <div className="relative group mb-8">
                 <div className="absolute -inset-1 bg-gradient-to-tr from-primary/20 via-secondary/20 to-primary/20 rounded-[40px] blur-2xl opacity-40"></div>
-                <div className="relative rounded-[36px] overflow-hidden bg-black/40 border border-white/10 shadow-2xl">
+                <div className="relative overflow-hidden bg-black/40 border-b border-white/10 shadow-2xl">
                   <img
                     src={selectedPost.image_url}
                     alt=""
@@ -563,22 +550,36 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
               </div>
             )}
 
+            {/* Post Content Area */}
+            <div className="p-6 pt-0">
+              {selectedPost.title && (
+                <h2 className="text-3xl font-black text-white tracking-tighter uppercase mb-4 leading-tight italic">
+                  {selectedPost.title}
+                </h2>
+              )}
+              <div className="bg-white/[0.02] border border-white/5 rounded-[40px] p-8 mb-8">
+                <p className="text-[16px] font-bold text-white/80 leading-relaxed whitespace-pre-wrap italic">
+                  "{selectedPost.content}"
+                </p>
+              </div>
+            </div>
+
             {/* Interaction Bar */}
-            <div className="px-8 flex items-center justify-between mb-8">
-              <div className="flex items-center gap-8">
+            <div className="px-8 flex items-center justify-between mb-10">
+              <div className="flex items-center gap-10">
                 <button
                   onClick={() => handleLike(selectedPost.id)}
-                  className={`flex flex-col items-center gap-1.5 transition-all ${selectedPost.is_liked ? 'text-red-500 scale-110' : 'text-white/30 hover:text-white/50'}`}
+                  className={`flex flex-col items-center gap-2 transition-all ${selectedPost.is_liked ? 'text-red-500 scale-110' : 'text-white/30 hover:text-white/50'}`}
                 >
-                  <Heart className={`w-7 h-7 ${selectedPost.is_liked ? 'fill-current' : ''}`} />
+                  <Heart className={`w-8 h-8 ${selectedPost.is_liked ? 'fill-current' : ''}`} />
                   <span className="text-[10px] font-black uppercase tracking-widest">{selectedPost.likes_count}</span>
                 </button>
-                <div className="flex flex-col items-center gap-1.5 text-white/30">
-                  <MessageCircle className="w-7 h-7" />
+                <div className="flex flex-col items-center gap-2 text-white/30">
+                  <MessageCircle className="w-8 h-8" />
                   <span className="text-[10px] font-black uppercase tracking-widest">{comments.length}</span>
                 </div>
-                <button className="flex flex-col items-center gap-1.5 text-white/30 hover:text-primary transition-colors">
-                  <Share2 className="w-7 h-7" />
+                <button className="flex flex-col items-center gap-2 text-white/30 hover:text-primary transition-colors">
+                  <Share2 className="w-8 h-8" />
                   <span className="text-[10px] font-black uppercase tracking-widest">Enviar</span>
                 </button>
               </div>
@@ -625,8 +626,8 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
                         </span>
                       </div>
                       <div className="px-2">
-                        <p className="text-sm font-bold text-white/70 leading-relaxed">
-                          {comment.content}
+                        <p className="text-sm font-bold text-white/70 leading-relaxed italic">
+                          "{comment.content}"
                         </p>
                       </div>
                     </div>
