@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Post, Comment, User } from '../types';
+import { Heart, MessageCircle, X, Send, Share2, MoreVertical } from 'lucide-react';
+import { supabase } from '../supabase';
 
 interface PostDetailViewProps {
   post: Post;
@@ -9,119 +11,259 @@ interface PostDetailViewProps {
 
 export const PostDetailView: React.FC<PostDetailViewProps> = ({ post, currentUser, onClose }) => {
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
+  const [likesCount, setLikesCount] = useState(parseInt(post.likes || '0'));
   const [comments, setComments] = useState<Comment[]>(post.comments || []);
   const [commentInput, setCommentInput] = useState('');
   const [isClosing, setIsClosing] = useState(false);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+
+  useEffect(() => {
+    loadComments();
+    checkIfLiked();
+  }, [post.id]);
+
+  const loadComments = async () => {
+    setIsLoadingComments(true);
+    const { data: commentsData } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('post_id', post.id)
+      .order('created_at', { ascending: true });
+    
+    if (commentsData) {
+      const userIds = [...new Set(commentsData.map(c => c.user_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, username, avatar_url')
+        .in('user_id', userIds);
+      
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]));
+      
+      const formattedComments = commentsData.map(c => {
+        const profile = profileMap.get(c.user_id);
+        return {
+          id: c.id,
+          author: {
+            id: c.user_id,
+            name: profile?.full_name || 'Viajante',
+            username: profile?.username || 'user',
+            avatar: profile?.avatar_url || ''
+          },
+          text: c.content,
+          timestamp: new Date(c.created_at).toLocaleDateString()
+        } as Comment;
+      });
+      setComments(formattedComments);
+    }
+    setIsLoadingComments(false);
+  };
+
+  const checkIfLiked = async () => {
+    const { data } = await supabase
+      .from('likes')
+      .select('id')
+      .eq('post_id', post.id)
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+    setIsLiked(!!data);
+  };
 
   const handleClose = () => {
     setIsClosing(true);
-    setTimeout(onClose, 250);
+    setTimeout(onClose, 400);
   };
 
-  const handleLike = () => setIsLiked(!isLiked);
+  const handleLike = async () => {
+    if (isLiked) {
+      await supabase.from('likes').delete().eq('post_id', post.id).eq('user_id', currentUser.id);
+      setLikesCount(prev => Math.max(0, prev - 1));
+    } else {
+      await supabase.from('likes').insert({ post_id: post.id, user_id: currentUser.id });
+      setLikesCount(prev => prev + 1);
+    }
+    setIsLiked(!isLiked);
+  };
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (!commentInput.trim()) return;
-    const newComment: Comment = {
-      id: Date.now().toString(),
-      author: currentUser,
-      text: commentInput,
-      timestamp: 'Agora'
-    };
-    setComments([newComment, ...comments]);
-    setCommentInput('');
+    
+    const { data: newComment } = await supabase.from('comments').insert({
+      post_id: post.id,
+      user_id: currentUser.id,
+      content: commentInput.trim()
+    }).select().single();
+
+    if (newComment) {
+      setComments([...comments, {
+        id: newComment.id,
+        author: currentUser,
+        text: commentInput.trim(),
+        timestamp: 'Agora'
+      }]);
+      setCommentInput('');
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (dateStr === 'Agora') return 'Agora';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Agora';
+    if (mins < 60) return `${mins}m`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h`;
+    return date.toLocaleDateString();
   };
 
   return (
-    <div className={`fixed inset-0 z-[120] bg-black/95 backdrop-blur-2xl flex flex-col h-[100dvh] ${isClosing ? 'animate-out zoom-out' : 'animate-in zoom-in'}`}>
+    <div className={`fixed inset-0 z-[500] bg-background-dark flex flex-col h-[100dvh] overflow-hidden ${isClosing ? 'animate-out slide-out-right' : 'animate-in slide-in-right'}`}>
+      
       {/* Header */}
-      <div className="px-6 pt-12 pb-4 flex items-center justify-between border-b border-white/10 relative z-10">
-        <div className="flex items-center space-x-3">
-          <img src={post.author.avatar} className="w-8 h-8 rounded-full border border-primary/50" alt={post.author.name} />
-          <div>
-            <p className="text-xs font-black text-white leading-none">{post.author.name}</p>
-            <p className="text-[9px] text-white/40 uppercase tracking-widest mt-0.5">{post.timestamp}</p>
+      <div className="pt-14 px-6 pb-5 bg-black/40 backdrop-blur-3xl border-b border-white/5 relative z-20 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={handleClose}
+            className="w-11 h-11 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-3">
+            <img
+              src={post.author.avatar}
+              className="w-10 h-10 rounded-xl object-cover border border-white/10 shadow-lg"
+              alt=""
+            />
+            <div>
+              <p className="text-sm font-black text-white leading-none">{post.author.name}</p>
+              <p className="text-[9px] font-black text-primary uppercase tracking-widest mt-1">@{post.author.username}</p>
+            </div>
           </div>
         </div>
-        <button onClick={handleClose} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white active:scale-90">
-          <span className="material-symbols-rounded">close</span>
+        <button className="w-11 h-11 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all">
+          <MoreVertical className="w-5 h-5 opacity-40" />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-hide">
-        <div className="w-full">
-          {post.imageUrl ? (
-            <img src={post.imageUrl} className="w-full object-contain max-h-[60vh] bg-black/20" alt={post.title} />
-          ) : (
-            <div className="px-8 py-12 bg-gradient-to-br from-primary/10 to-secondary/10 border-y border-white/5">
-               <h2 className="text-2xl font-black text-white mb-4 leading-tight">{post.title}</h2>
-               <p className="text-white/80 text-base leading-relaxed font-medium italic">"{post.excerpt}"</p>
-            </div>
+      <div className="flex-1 overflow-y-auto scrollbar-hide pb-32">
+        <div className="p-6 pb-4">
+          {post.title && (
+            <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase mb-4 leading-tight">
+              {post.title}
+            </h2>
           )}
+          <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-6 mb-6 shadow-inner">
+            <p className="text-[15px] font-medium text-white/80 leading-relaxed whitespace-pre-wrap italic">
+              "{post.excerpt}"
+            </p>
+          </div>
+        </div>
 
-          <div className="p-6 flex items-center space-x-6">
-            <button onClick={handleLike} className="flex items-center space-x-2 group">
-              <span className={`material-symbols-rounded text-2xl transition-all ${isLiked ? 'text-secondary fill-current scale-110' : 'text-white/40'}`}>
-                favorite
-              </span>
-              <span className={`text-xs font-black ${isLiked ? 'text-secondary' : 'text-white/40'}`}>{isLiked ? '22.3k' : post.likes}</span>
-            </button>
-            <div className="flex items-center space-x-2 text-white/40">
-              <span className="material-symbols-rounded text-2xl">chat_bubble</span>
-              <span className="text-xs font-black">{comments.length}</span>
+        {post.imageUrl && (
+          <div className="relative px-4 mb-8 group">
+            <div className="absolute -inset-1 bg-gradient-to-tr from-primary/10 to-secondary/10 rounded-[40px] blur-2xl opacity-40"></div>
+            <div className="relative rounded-[36px] overflow-hidden bg-black/40 border border-white/10 shadow-2xl">
+              <img
+                src={post.imageUrl}
+                alt=""
+                className="w-full max-h-[70vh] object-contain mx-auto transition-transform duration-1000 group-hover:scale-105"
+              />
             </div>
-            <button className="flex items-center space-x-2 text-white/40">
-              <span className="material-symbols-rounded text-2xl">share</span>
+          </div>
+        )}
+
+        <div className="px-8 flex items-center justify-between mb-8">
+          <div className="flex items-center gap-8">
+            <button
+              onClick={handleLike}
+              className={`flex flex-col items-center gap-1.5 transition-all ${isLiked ? 'text-red-500 scale-110' : 'text-white/30 hover:text-white/50'}`}
+            >
+              <Heart className={`w-7 h-7 ${isLiked ? 'fill-current' : ''}`} />
+              <span className="text-[10px] font-black uppercase tracking-widest">{likesCount}</span>
+            </button>
+            <div className="flex flex-col items-center gap-1.5 text-white/30">
+              <MessageCircle className="w-7 h-7" />
+              <span className="text-[10px] font-black uppercase tracking-widest">{comments.length}</span>
+            </div>
+            <button className="flex flex-col items-center gap-1.5 text-white/30 hover:text-primary transition-colors">
+              <Share2 className="w-7 h-7" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Share</span>
             </button>
           </div>
+          <div className="text-right">
+            <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Publicado em</p>
+            <p className="text-[11px] font-black text-white/50 italic">{post.timestamp}</p>
+          </div>
+        </div>
 
-          {post.imageUrl && (
-            <div className="px-6 pb-6 border-b border-white/5">
-              <h2 className="text-lg font-black text-white mb-2">{post.title}</h2>
-              <p className="text-sm text-white/60 leading-relaxed font-medium">{post.excerpt}</p>
+        <div className="px-6 space-y-6">
+          <div className="flex items-center gap-3 px-2 mb-2">
+            <div className="w-1 h-4 bg-primary rounded-full shadow-[0_0_10px_rgba(139,92,246,0.5)]"></div>
+            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">Comentários</h3>
+          </div>
+
+          {isLoadingComments ? (
+            <div className="py-20 flex flex-col items-center justify-center opacity-40">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-[9px] font-black uppercase tracking-widest">Carregando...</p>
             </div>
-          )}
-
-          <div className="p-6 space-y-6 pb-32">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Comentários</h3>
-            {comments.length > 0 ? (
-              comments.map(comment => (
-                <div key={comment.id} className="flex space-x-3 group animate-in slide-in-from-bottom duration-300">
-                  <img src={comment.author.avatar} className="w-8 h-8 rounded-full flex-shrink-0" />
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-[11px] font-black text-white">@{comment.author.username}</span>
-                      <span className="text-[9px] text-white/20">{comment.timestamp}</span>
+          ) : comments.length > 0 ? (
+            <div className="space-y-5">
+              {comments.map(comment => (
+                <div key={comment.id} className="group flex gap-4 animate-in slide-in-from-bottom duration-300">
+                  <img
+                    src={comment.author.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.author.id}`}
+                    className="w-10 h-10 rounded-[14px] object-cover border border-white/10 flex-shrink-0 shadow-lg"
+                    alt=""
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-xs font-black text-white truncate">
+                        {comment.author.name}
+                        <span className="ml-2 text-[9px] text-primary font-black uppercase tracking-tighter opacity-60">@{comment.author.username}</span>
+                      </p>
+                      <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">{formatDate(comment.timestamp)}</span>
                     </div>
-                    <p className="text-xs text-white/70 leading-relaxed font-medium">{comment.text}</p>
+                    <div className="bg-white/[0.04] border border-white/5 rounded-2xl rounded-tl-none p-4 hover:bg-white/[0.06] transition-colors">
+                      <p className="text-xs font-bold text-white/70 leading-relaxed">
+                        {comment.text}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="py-10 text-center">
-                <p className="text-xs text-white/20 font-black italic">Ninguém comentou ainda. Seja o primeiro! ✨</p>
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-20 text-center bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] flex flex-col items-center justify-center mx-2">
+              <MessageCircle className="w-12 h-12 text-white/10 mb-4" />
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 italic">Sem comentários ainda.</p>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="p-4 bg-black/80 backdrop-blur-3xl border-t border-white/10 pb-8">
-        <div className="flex items-center space-x-3 bg-white/5 rounded-2xl p-2 pl-4 border border-white/10 shadow-inner">
-          <input 
-            type="text" 
+      {/* Input Bar */}
+      <div className="px-6 py-8 bg-black/60 backdrop-blur-3xl border-t border-white/10 pb-12 relative z-30">
+        <div className="relative group max-w-lg mx-auto">
+          <input
+            type="text"
             value={commentInput}
-            onChange={(e) => setCommentInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
-            placeholder="Diga algo incrível..." 
-            className="flex-1 bg-transparent border-none text-xs focus:ring-0 text-white font-bold py-2.5 placeholder:text-white/20"
+            onChange={e => setCommentInput(e.target.value)}
+            onKeyPress={e => e.key === 'Enter' && handleAddComment()}
+            placeholder="Adicione um comentário..."
+            className="w-full bg-white/[0.05] border border-white/10 rounded-[28px] pl-6 pr-16 py-4 text-sm text-white font-bold placeholder:text-white/10 focus:ring-1 focus:ring-primary outline-none transition-all shadow-inner"
           />
-          <button 
+          <button
             onClick={handleAddComment}
             disabled={!commentInput.trim()}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${commentInput.trim() ? 'bg-primary text-white shadow-lg shadow-primary/40' : 'bg-white/5 text-white/20'}`}
+            className={`absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
+              commentInput.trim() 
+                ? 'bg-primary text-white shadow-lg shadow-primary/30 active:scale-90' 
+                : 'bg-white/5 text-white/10'
+            }`}
           >
-            <span className="material-symbols-rounded text-xl">send</span>
+            <Send className="w-4 h-4" />
           </button>
         </div>
       </div>
