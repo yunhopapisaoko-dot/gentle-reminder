@@ -225,6 +225,12 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
   return (
     <div className={`fixed inset-0 z-[600] bg-background-dark flex flex-col h-[100dvh] overflow-hidden ${isClosing ? 'animate-out slide-out-right' : 'animate-in slide-in-right'}`}>
       
+      {/* BACKGROUND LAYER (Full screen wallpaper) */}
+      <div className="absolute inset-0 z-0" style={getBackgroundStyle()}>
+        {wallpaper && <div className="absolute inset-0 bg-black/40" />}
+      </div>
+
+      {/* HEADER (Sticky Glassmorphism) */}
       <div className="pt-12 px-6 pb-6 bg-black/60 backdrop-blur-3xl border-b border-white/5 relative z-20">
         <div className="flex items-center space-x-4">
           <button 
@@ -260,7 +266,7 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
             {showOptionsMenu && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowOptionsMenu(false)} />
-                <div className="absolute right-0 top-14 w-56 bg-background-elevated rounded-2xl border border-white/10 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute right-0 top-14 w-56 bg-[#1a1a1a] rounded-2xl border border-white/10 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                   <button
                     onClick={() => {
                       setShowOptionsMenu(false);
@@ -278,69 +284,64 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
         </div>
       </div>
 
-      <div 
-        className="flex-1 overflow-y-auto scrollbar-hide p-6 space-y-8 relative"
-        style={getBackgroundStyle()}
-      >
-        {wallpaper && <div className="absolute inset-0 bg-black/40 pointer-events-none" />}
-        
-        <div className="relative z-10">
-          {loading ? (
-            <div className="flex items-center justify-center py-32">
-              <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+      {/* MESSAGES AREA */}
+      <div className="flex-1 overflow-y-auto scrollbar-hide p-6 space-y-8 relative z-10">
+        {loading ? (
+          <div className="flex items-center justify-center py-32">
+            <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-32 text-center opacity-40">
+            <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
+              <span className="material-symbols-rounded text-4xl text-white/30">chat</span>
             </div>
-          ) : messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-32 text-center opacity-40">
-              <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
-                <span className="material-symbols-rounded text-4xl text-white/30">chat</span>
+            <p className="text-sm font-black uppercase tracking-widest mb-2">Nenhuma mensagem</p>
+            <p className="text-xs text-white/50">Diga olá para {otherUser.full_name}!</p>
+          </div>
+        ) : (
+          groupedMessages.map((group, groupIdx) => (
+            <div key={groupIdx} className="space-y-6">
+              <div className="flex items-center justify-center py-2">
+                <span className="px-4 py-1.5 rounded-full bg-zinc-900/60 backdrop-blur-xl border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/50 shadow-lg">
+                  {group.date}
+                </span>
               </div>
-              <p className="text-sm font-black uppercase tracking-widest mb-2">Nenhuma mensagem</p>
-              <p className="text-xs text-white/50">Diga olá para {otherUser.full_name}!</p>
-            </div>
-          ) : (
-            groupedMessages.map((group, groupIdx) => (
-              <div key={groupIdx} className="space-y-6">
-                <div className="flex items-center justify-center py-2">
-                  <span className="px-4 py-1.5 rounded-full bg-zinc-900 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/50 shadow-lg">
-                    {group.date}
-                  </span>
-                </div>
-                
-                {group.messages.map((msg) => {
-                  const isOwn = msg.sender_id === currentUserId;
-                  return (
-                    <div 
-                      key={msg.id}
-                      className={`flex items-end space-x-2 ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}
-                    >
-                      <img 
-                        src={isOwn ? currentUserAvatar : (otherUser.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default')}
-                        className="w-7 h-7 rounded-lg object-cover border border-white/10 shadow-md"
-                        alt=""
-                      />
-                      <div className={`max-w-[75%] ${isOwn ? 'items-end' : 'items-start'}`}>
-                        <div className={`px-5 py-3 rounded-2xl shadow-xl border border-white/5 ${
-                          isOwn 
-                            ? 'bg-primary text-white rounded-br-none' 
-                            : 'bg-zinc-800 text-white/90 rounded-bl-none'
-                        }`}>
-                          <p className="text-sm font-bold leading-relaxed">{msg.content}</p>
-                        </div>
-                        <span className={`text-[9px] font-black text-white/30 mt-1.5 block uppercase tracking-tighter ${isOwn ? 'text-right' : 'text-left'}`}>
-                          {formatTime(msg.created_at)}
-                        </span>
+              
+              {group.messages.map((msg) => {
+                const isOwn = msg.sender_id === currentUserId;
+                return (
+                  <div 
+                    key={msg.id}
+                    className={`flex items-end space-x-2 ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}
+                  >
+                    <img 
+                      src={isOwn ? currentUserAvatar : (otherUser.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default')}
+                      className="w-7 h-7 rounded-lg object-cover border border-white/10 shadow-md"
+                      alt=""
+                    />
+                    <div className={`max-w-[75%] ${isOwn ? 'items-end' : 'items-start'}`}>
+                      <div className={`px-5 py-3 rounded-2xl shadow-xl border border-white/5 ${
+                        isOwn 
+                          ? 'bg-primary text-white rounded-br-none' 
+                          : 'bg-zinc-800 text-white/90 rounded-bl-none'
+                      }`}>
+                        <p className="text-sm font-bold leading-relaxed">{msg.content}</p>
                       </div>
+                      <span className={`text-[9px] font-black text-white/30 mt-1.5 block uppercase tracking-tighter ${isOwn ? 'text-right' : 'text-left'}`}>
+                        {formatTime(msg.created_at)}
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
-            ))
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))
+        )}
+        <div ref={messagesEndRef} />
       </div>
 
-      <div className="px-6 py-6 bg-black/80 backdrop-blur-3xl border-t border-white/5">
+      {/* INPUT AREA (Sticky Glassmorphism) */}
+      <div className="px-6 py-8 bg-black/60 backdrop-blur-3xl border-t border-white/5 pb-12 relative z-20">
         <div className="flex items-center space-x-4">
           <input
             type="text"
@@ -348,7 +349,7 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Sua mensagem..."
-            className="flex-1 bg-zinc-900 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white font-bold placeholder:text-white/10 focus:ring-1 focus:ring-primary transition-all shadow-inner"
+            className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white font-bold placeholder:text-white/10 focus:ring-1 focus:ring-primary transition-all shadow-inner"
           />
           <button
             onClick={handleSend}
@@ -364,10 +365,11 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
         </div>
       </div>
 
+      {/* WALLPAPER SELECTION MODAL */}
       {showWallpaperModal && (
         <div className="fixed inset-0 z-[700] flex items-end justify-center bg-black/80 backdrop-blur-xl animate-in fade-in">
           <div className="fixed inset-0" onClick={() => setShowWallpaperModal(false)} />
-          <div className="relative w-full max-w-lg bg-background-elevated rounded-t-[40px] border-t border-white/10 p-8 animate-in slide-in-from-bottom duration-300">
+          <div className="relative w-full max-w-lg bg-[#121212] rounded-t-[40px] border-t border-white/10 p-8 animate-in slide-in-from-bottom duration-300">
             <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-8" />
             <h3 className="text-xl font-black text-white uppercase tracking-tight text-center mb-8">Personalizar Chat</h3>
             <div className="grid grid-cols-3 gap-4 mb-8">
