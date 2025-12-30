@@ -22,6 +22,7 @@ interface LocaisGridProps {
     name: string;
     money?: number;
     age?: number;
+    isActiveRP?: boolean;
   } | null;
   characters: any[];
   onMoneyChange?: (newBalance: number) => void;
@@ -31,8 +32,8 @@ const LOCAIS_DATA: Local[] = [
   { id: 'imobiliaria', name: 'Imobiliária', icon: 'real_estate_agent', color: 'from-emerald-500', image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=400&auto=format&fit=crop', activeCount: 'Compre sua casa' },
   { id: 'hospital', name: 'Hospital', icon: 'medical_services', color: 'from-blue-500', image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=400&auto=format&fit=crop', activeCount: '12 online' },
   { id: 'creche', name: 'Creche', icon: 'child_care', color: 'from-pink-500', image: 'https://images.unsplash.com/photo-1560523160-754a9e25c68f?q=80&w=400&auto=format&fit=crop', activeCount: '8 online' },
-  { id: 'restaurante', name: 'Restaurante', icon: 'restaurant', color: 'from-orange-500', image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400&auto=format&fit=crop', activeCount: '24 online' },
-  { id: 'padaria', name: 'Padaria', icon: 'bakery_dining', color: 'from-yellow-600', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400&auto=format&fit=crop', activeCount: '15 online' },
+  { id: 'restaurante', name: 'Neon Grill', icon: 'restaurant', color: 'from-orange-500', image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400&auto=format&fit=crop', activeCount: '24 online' },
+  { id: 'padaria', name: 'Baguette Miku', icon: 'bakery_dining', color: 'from-yellow-600', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400&auto=format&fit=crop', activeCount: '15 online' },
   { id: 'pousada', name: 'Pousada', icon: 'hotel', color: 'from-purple-500', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=400&auto=format&fit=crop', activeCount: '🚨 Cuidado com JYP!' },
   { id: 'farmacia', name: 'Farmácia', icon: 'local_pharmacy', color: 'from-teal-500', image: 'https://images.unsplash.com/photo-1576602976047-174e57a47881?q=80&w=400&auto=format&fit=crop', activeCount: '💊 Saúde & Bem-Estar' },
   { id: 'supermercado', name: 'Supermercado', icon: 'local_grocery_store', color: 'from-green-500', image: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?q=80&w=400&auto=format&fit=crop', activeCount: '🛒 Só Domingo!' },
@@ -77,6 +78,11 @@ export const LocaisGrid: React.FC<LocaisGridProps> = ({
   const userAge = userCharacter?.age || 0;
 
   const handleSelect = (local: Local) => {
+    if (!currentUser?.isActiveRP && local.id !== 'imobiliaria' && local.id !== 'supermercado') {
+      alert("Seu status de Roleplay está DESLIGADO. Ative no menu lateral para entrar.");
+      return;
+    }
+
     if (local.id === 'imobiliaria') {
       setShowImobiliaria(true);
       return;
@@ -117,6 +123,10 @@ export const LocaisGrid: React.FC<LocaisGridProps> = ({
   };
 
   const handleHouseRoomSelect = (roomId: string) => {
+    if (!currentUser?.isActiveRP) {
+      alert("Seu status de Roleplay está DESLIGADO. Ative no menu lateral para entrar.");
+      return;
+    }
     if (!userHouse) return;
     const chatId = `house_${userHouse.id}_${roomId}`;
     onSelect(chatId);
@@ -127,11 +137,14 @@ export const LocaisGrid: React.FC<LocaisGridProps> = ({
       {/* Casa do Usuário - Aparece primeiro se tiver */}
       {userHouse && (
         <>
-          <div className="px-2 mb-1">
+          <div className="px-2 mb-1 flex items-center justify-between">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">Sua Casa</h3>
+            {!currentUser?.isActiveRP && (
+              <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">Modo Offline</span>
+            )}
           </div>
           
-          <div className="relative">
+          <div className={`relative transition-opacity duration-500 ${!currentUser?.isActiveRP ? 'opacity-40 grayscale-[0.5]' : 'opacity-100'}`}>
             <button
               onClick={() => setExpandedHouse(!expandedHouse)}
               className="relative group h-40 w-full rounded-[32px] overflow-hidden border-2 border-primary/30 shadow-2xl shadow-primary/20 hover:border-primary/50 transition-all duration-500"
@@ -182,23 +195,39 @@ export const LocaisGrid: React.FC<LocaisGridProps> = ({
         </>
       )}
 
-      <div className="px-2 mb-1">
+      <div className="px-2 mb-1 flex items-center justify-between">
         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Locais de Roleplay</h3>
+        {!currentUser?.isActiveRP && (
+          <div className="flex items-center space-x-2">
+            <span className="material-symbols-rounded text-rose-500 text-xs">lock</span>
+            <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest">Acesso Restrito</span>
+          </div>
+        )}
       </div>
 
       {LOCAIS_DATA.map((local) => {
         // Esconde imobiliária se já tem casa
         if (local.id === 'imobiliaria' && userHouse) return null;
+        
+        const isBlocked = !currentUser?.isActiveRP && local.id !== 'imobiliaria' && local.id !== 'supermercado';
 
         return (
           <button
             key={local.id}
             onClick={() => handleSelect(local)}
-            className="relative group h-40 w-full rounded-[32px] overflow-hidden border border-white/5 shadow-2xl hover:border-primary/50 transition-all duration-500 transform active:scale-[0.96]"
+            className={`relative group h-40 w-full rounded-[32px] overflow-hidden border border-white/5 shadow-2xl transition-all duration-500 transform active:scale-[0.96] ${isBlocked ? 'opacity-40 grayscale hover:border-rose-500/30' : 'hover:border-primary/50'}`}
           >
             <img src={local.image} alt={local.name} className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-1000" />
             <div className="absolute inset-0 bg-gradient-to-tr from-background-dark via-background-dark/30 to-transparent"></div>
             
+            {isBlocked && (
+              <div className="absolute inset-0 flex items-center justify-center z-20">
+                <div className="bg-black/60 backdrop-blur-md p-4 rounded-full border border-white/10 shadow-2xl">
+                  <span className="material-symbols-rounded text-white text-3xl">lock</span>
+                </div>
+              </div>
+            )}
+
             <div className="relative h-full flex flex-col justify-end p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
@@ -208,14 +237,14 @@ export const LocaisGrid: React.FC<LocaisGridProps> = ({
                   <div className="text-left">
                     <h4 className="text-2xl font-black text-white tracking-tighter leading-none drop-shadow-md">{local.name}</h4>
                     <div className="flex items-center space-x-2 mt-2">
-                      {local.id !== 'imobiliaria' && (
+                      {!isBlocked && local.id !== 'imobiliaria' && (
                         <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]"></div>
                       )}
                       <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">{local.activeCount}</span>
                     </div>
                   </div>
                 </div>
-                <div className="w-11 h-11 rounded-full bg-primary/20 backdrop-blur-md border border-primary/40 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-lg">
+                <div className={`w-11 h-11 rounded-full bg-primary/20 backdrop-blur-md border border-primary/40 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-lg ${isBlocked ? 'opacity-0' : ''}`}>
                   <span className="material-symbols-rounded text-2xl">arrow_forward</span>
                 </div>
               </div>

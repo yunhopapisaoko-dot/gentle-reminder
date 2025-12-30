@@ -94,7 +94,7 @@ const App: React.FC = () => {
 
   // Decaimento automático de status: 1 ponto por minuto em fome e sede
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || !currentUser.isActiveRP) return;
     
     const interval = setInterval(() => {
       setCurrentUser(prev => {
@@ -117,7 +117,7 @@ const App: React.FC = () => {
     }, 60000); // 1 minuto
     
     return () => clearInterval(interval);
-  }, [currentUser?.id]);
+  }, [currentUser?.id, currentUser?.isActiveRP]);
 
   const fetchInitialData = async (userId: string) => {
     try {
@@ -130,7 +130,8 @@ const App: React.FC = () => {
           maxHp: profile.maxHp || 100,
           hunger: profile.hunger ?? 100,
           thirst: profile.thirst ?? 100,
-          alcohol: profile.alcohol ?? 0
+          alcohol: profile.alcohol ?? 0,
+          isActiveRP: profile.isActiveRP
         });
       }
       const dbPosts = await supabaseService.getPosts();
@@ -186,6 +187,12 @@ const App: React.FC = () => {
   };
 
   const handleEnterRoom = (roomId: string) => {
+    // Verificação de status RP
+    if (!currentUser?.isActiveRP && roomId !== 'supermercado' && roomId !== 'imobiliaria') {
+        alert("Ative seu status de Roleplay no menu lateral para entrar em locais.");
+        return;
+    }
+
     // Se for supermercado, abre a view especial
     if (roomId === 'supermercado') {
       setIsSupermarketOpen(true);
@@ -337,6 +344,7 @@ const App: React.FC = () => {
           onOpenProfile={() => setSelectedUser(currentUser)}
           onOpenInventory={() => setIsInventoryOpen(true)}
           onOpenChats={() => setIsAllChatsOpen(true)}
+          onStatusChange={(isActive) => setCurrentUser(prev => prev ? { ...prev, isActiveRP: isActive } : null)}
           onLogout={async () => { await supabase.auth.signOut(); setIsAuthenticated(false); }}
         />
 

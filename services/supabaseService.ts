@@ -13,10 +13,8 @@ const withTimeout = <T>(promise: Promise<T>, timeoutMs: number = 30000): Promise
 export const supabaseService = {
   async getProfile(userId: string): Promise<User | null> {
     try {
-      // Busca o perfil pelo user_id (não pelo id da tabela profiles)
       const { data, error } = await supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle();
       
-      // Se o perfil não existir, vamos criá-lo com os dados do signup
       if (!data) {
         console.log("Perfil não encontrado, criando novo perfil...");
         const { data: userData } = await supabase.auth.getUser();
@@ -33,7 +31,8 @@ export const supabaseService = {
             hunger: 100,
             energy: 100,
             alcoholism: 0,
-            bio: ''
+            bio: '',
+            is_active_rp: true
           };
           
           const { data: insertedProfile, error: insertError } = await supabase
@@ -44,7 +43,7 @@ export const supabaseService = {
             
           if (insertError) {
             console.error("Erro ao criar perfil:", insertError);
-            return { id: userId, name: newProfile.full_name, username: newProfile.username, avatar: newProfile.avatar_url, race: newProfile.race as any };
+            return { id: userId, name: newProfile.full_name, username: newProfile.username, avatar: newProfile.avatar_url, race: newProfile.race as any, is_active_rp: true };
           }
           
           return { 
@@ -54,7 +53,8 @@ export const supabaseService = {
             avatar: insertedProfile.avatar_url, 
             race: insertedProfile.race as any,
             money: insertedProfile.money,
-            bio: insertedProfile.bio
+            bio: insertedProfile.bio,
+            isActiveRP: insertedProfile.is_active_rp
           };
         }
         return null;
@@ -80,12 +80,18 @@ export const supabaseService = {
         hunger: data.hunger ?? 100,
         thirst: data.energy ?? 100,
         alcohol: data.alcoholism ?? 0,
-        last_spin_at: data.last_spin_at
+        last_spin_at: data.last_spin_at,
+        isActiveRP: data.is_active_rp ?? true
       };
     } catch (e) { 
       console.error("Erro no getProfile:", e);
       return null; 
     }
+  },
+
+  async updateRoleplayStatus(userId: string, isActive: boolean): Promise<void> {
+    const { error } = await supabase.from('profiles').update({ is_active_rp: isActive }).eq('user_id', userId);
+    if (error) throw error;
   },
 
   async updateMoney(userId: string, newBalance: number): Promise<void> {
@@ -379,7 +385,8 @@ export const supabaseService = {
         isLeader: p.is_leader || false,
         bio: p.bio,
         money: p.money || 0,
-        last_spin_at: p.last_spin_at
+        last_spin_at: p.last_spin_at,
+        isActiveRP: p.is_active_rp ?? true
       }));
     } catch { return []; }
   },
@@ -895,7 +902,7 @@ export const supabaseService = {
       .from('food_orders')
       .update({ 
         status: 'preparing', 
-        approved_by: approverId,
+        approved_by: approverId, 
         approved_at: new Date().toISOString()
       })
       .eq('id', orderId);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User } from '../types';
 import { DISEASE_DETAILS } from '../constants';
+import { supabaseService } from '../services/supabaseService';
 
 interface StatusItemProps {
   label: string;
@@ -35,10 +36,21 @@ interface SidebarMenuProps {
   onOpenInventory: () => void;
   onOpenChats: () => void;
   onLogout: () => void;
+  onStatusChange: (isActive: boolean) => void;
 }
 
-export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose, onOpenProfile, onOpenInventory, onOpenChats, onLogout }) => {
+export const SidebarMenu: React.FC<SidebarMenuProps> = ({ 
+  user, 
+  isOpen, 
+  onClose, 
+  onOpenProfile, 
+  onOpenInventory, 
+  onOpenChats, 
+  onLogout,
+  onStatusChange
+}) => {
   const [isClosing, setIsClosing] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const activeDisease = user.currentDisease ? DISEASE_DETAILS[user.currentDisease] : null;
 
@@ -48,6 +60,20 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose,
       onClose();
       setIsClosing(false);
     }, 400);
+  };
+
+  const toggleRoleplayStatus = async () => {
+    if (isUpdatingStatus) return;
+    setIsUpdatingStatus(true);
+    try {
+      const nextStatus = !user.isActiveRP;
+      await supabaseService.updateRoleplayStatus(user.id, nextStatus);
+      onStatusChange(nextStatus);
+    } catch (e: any) {
+      alert("Erro ao alterar status: " + e.message);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
   };
 
   const handleLogout = () => {
@@ -83,7 +109,7 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose,
             <div className="relative mb-4">
               <div className="absolute -inset-2 bg-gradient-to-tr from-primary to-secondary rounded-[32px] blur-md opacity-30 group-hover:opacity-60 transition-opacity"></div>
               <img src={user.avatar} className="relative w-20 h-20 rounded-[28px] object-cover border border-white/20 shadow-2xl" alt="avatar" />
-              <div className={`absolute -bottom-1 -right-1 w-6 h-6 border-4 border-background-dark rounded-full ${activeDisease ? 'bg-rose-500 animate-pulse' : 'bg-green-500'}`}></div>
+              <div className={`absolute -bottom-1 -right-1 w-6 h-6 border-4 border-background-dark rounded-full ${user.isActiveRP ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-rose-500 shadow-[0_0_10px_#f43f5e]'}`}></div>
             </div>
             <div className="text-left">
               <h4 className="text-xl font-black text-white tracking-tighter leading-none group-hover:text-primary transition-colors">{user.name}</h4>
@@ -93,6 +119,30 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose,
         </div>
 
         <div className="px-6 py-4 space-y-4 flex-1 overflow-y-auto scrollbar-hide">
+          {/* Status Roleplay Toggle */}
+          <div className={`p-6 rounded-[32px] border transition-all duration-500 ${user.isActiveRP ? 'bg-green-500/5 border-green-500/20' : 'bg-rose-500/5 border-rose-500/20'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className={`text-[10px] font-black uppercase tracking-widest ${user.isActiveRP ? 'text-green-500' : 'text-rose-500'}`}>
+                  Roleplay {user.isActiveRP ? 'Ativo' : 'Inativo'}
+                </h3>
+                <p className="text-[8px] text-white/20 font-bold uppercase mt-1">Status Global</p>
+              </div>
+              <button 
+                onClick={toggleRoleplayStatus}
+                disabled={isUpdatingStatus}
+                className={`w-14 h-8 rounded-full relative transition-all duration-500 p-1 ${user.isActiveRP ? 'bg-green-500' : 'bg-zinc-800'}`}
+              >
+                <div className={`w-6 h-6 rounded-full bg-white shadow-lg transition-transform duration-500 ${user.isActiveRP ? 'translate-x-6' : 'translate-x-0'}`}></div>
+              </button>
+            </div>
+            <p className="text-[9px] text-white/40 leading-relaxed font-bold italic">
+              {user.isActiveRP 
+                ? 'Você está pronto para o roleplay e pode entrar nos canais.' 
+                : 'Roleplay desativado. Você não pode acessar locais agora.'}
+            </p>
+          </div>
+
           {/* Sinais Vitais */}
           <div className="bg-white/[0.03] backdrop-blur-3xl p-6 rounded-[40px] border border-white/5 space-y-6 shadow-inner">
             <div className="flex items-center justify-between mb-2">
@@ -102,25 +152,7 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose,
             <StatusItem label="Saúde" value={user.hp || 100} icon="favorite" color="bg-rose-500" />
             <StatusItem label="Fome" value={user.hunger || 0} icon="restaurant" color="bg-orange-500" />
             <StatusItem label="Sede" value={user.thirst || 0} icon="water_drop" color="bg-cyan-500" />
-            {(user.alcohol || 0) > 0 && (
-              <StatusItem label="Álcool" value={user.alcohol || 0} icon="wine_bar" color="bg-purple-500" />
-            )}
           </div>
-
-          {activeDisease && (
-            <div className="bg-rose-500/10 backdrop-blur-3xl p-6 rounded-[40px] border border-rose-500/20 space-y-4 animate-in zoom-in">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <span className="material-symbols-rounded text-rose-500">warning</span>
-                  <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-rose-500">Infectado</h3>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <p className="text-xs font-black text-white uppercase tracking-tight">{activeDisease.name}</p>
-                <p className="text-[10px] text-white/50 italic">"{activeDisease.description}"</p>
-              </div>
-            </div>
-          )}
 
           <div className="space-y-2 pt-4">
             <div className="px-4 mb-4">
@@ -142,15 +174,6 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({ user, isOpen, onClose,
                   <span className="material-symbols-rounded text-xl">inventory_2</span>
                 </div>
                 <span className="text-xs font-black uppercase tracking-widest text-white/40 group-hover:text-white transition-colors">Inventário</span>
-              </div>
-            </button>
-
-            <button className="w-full flex items-center justify-between p-4 rounded-[24px] hover:bg-white/5 group transition-all">
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 rounded-2xl bg-white/[0.03] flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all text-white/40 border border-white/5">
-                  <span className="material-symbols-rounded text-xl">military_tech</span>
-                </div>
-                <span className="text-xs font-black uppercase tracking-widest text-white/40 group-hover:text-white transition-colors">Conquistas</span>
               </div>
             </button>
           </div>
