@@ -37,10 +37,10 @@ export const PostDetailView: React.FC<PostDetailViewProps> = ({ post, currentUse
         .select('user_id, full_name, username, avatar_url')
         .in('user_id', userIds);
       
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p]));
+      const profileMap = new Map(profiles?.map((p: { user_id: string; full_name: string; username: string; avatar_url: string }) => [p.user_id, p]));
       
       const formattedComments = commentsData.map(c => {
-        const profile = profileMap.get(c.user_id);
+        const profile = profileMap.get(c.user_id) as { full_name: string; username: string; avatar_url: string } | undefined;
         return {
           id: c.id,
           author: {

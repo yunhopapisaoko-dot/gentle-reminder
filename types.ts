@@ -66,6 +66,7 @@ export interface User {
   alcohol?: number;
   currentDisease?: string;
   last_spin_at?: string;
+  isActiveRP?: boolean;
 }
 
 export interface JobApplication {

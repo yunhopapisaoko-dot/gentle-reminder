@@ -43,7 +43,7 @@ export const supabaseService = {
             
           if (insertError) {
             console.error("Erro ao criar perfil:", insertError);
-            return { id: userId, name: newProfile.full_name, username: newProfile.username, avatar: newProfile.avatar_url, race: newProfile.race as any, is_active_rp: true };
+            return { id: userId, name: newProfile.full_name, username: newProfile.username, avatar: newProfile.avatar_url, race: newProfile.race as any, isActiveRP: true };
           }
           
           return { 
