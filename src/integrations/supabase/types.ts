@@ -834,6 +834,7 @@ export type Database = {
           health: number
           hunger: number
           id: string
+          is_active_rp: boolean
           is_leader: boolean | null
           last_spin_at: string | null
           money: number
@@ -855,6 +856,7 @@ export type Database = {
           health?: number
           hunger?: number
           id?: string
+          is_active_rp?: boolean
           is_leader?: boolean | null
           last_spin_at?: string | null
           money?: number
@@ -876,6 +878,7 @@ export type Database = {
           health?: number
           hunger?: number
           id?: string
+          is_active_rp?: boolean
           is_leader?: boolean | null
           last_spin_at?: string | null
           money?: number

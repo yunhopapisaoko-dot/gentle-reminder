@@ -87,10 +87,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onNavigate 
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [offMessages, setOffMessages] = useState<ChatMessage[]>([]);
   const [roomMessages, setRoomMessages] = useState<Record<string, ChatMessage[]>>({});
   const [currentSubLoc, setCurrentSubLoc] = useState<SubLocation | null>(null);
   const [workerRole, setWorkerRole] = useState<string | null>(null);
   const [authorizedRooms, setAuthorizedRooms] = useState<string[]>([]);
+  const [isOffChatMode, setIsOffChatMode] = useState(false);
   
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -144,6 +146,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const loc = locationContext || 'global';
     
     try {
+      // Load RP messages
       const dbMessages = await supabaseService.getChatMessages(loc, currentSubLoc?.name);
       const formattedMessages: ChatMessage[] = dbMessages.map(msg => ({
         id: msg.id,
@@ -172,6 +175,22 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       } else {
         setMessages(formattedMessages);
       }
+
+      // Load OFF messages (stored with sub_location = 'OFF')
+      const offDbMessages = await supabaseService.getChatMessages(loc, 'OFF');
+      const formattedOffMessages: ChatMessage[] = offDbMessages.map(msg => ({
+        id: msg.id,
+        role: 'user',
+        text: msg.content,
+        author: {
+          id: msg.user_id,
+          name: msg.profiles?.full_name || 'Viajante',
+          username: msg.profiles?.username || 'user',
+          avatar: msg.profiles?.avatar_url || '',
+          race: 'draeven' as any
+        }
+      }));
+      setOffMessages(formattedOffMessages);
     } catch (error) {
       console.error("Erro ao carregar mensagens:", error);
     }
@@ -199,7 +218,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         behavior: 'smooth'
       });
     }
-  }, [messages, roomMessages, currentSubLoc, isLoading]);
+  }, [messages, roomMessages, offMessages, currentSubLoc, isLoading, isOffChatMode]);
 
   useEffect(() => {
     if (input === '/' || input === '*') {
@@ -356,15 +375,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [currentSubLoc]);
 
-  const activeMessages = currentSubLoc 
-    ? (roomMessages[currentSubLoc.name] || []) 
-    : messages;
+  const activeMessages = isOffChatMode 
+    ? offMessages 
+    : currentSubLoc 
+      ? (roomMessages[currentSubLoc.name] || []) 
+      : messages;
 
   const handleSend = async (customMsg?: string) => {
     const textToSend = (customMsg || input).trim();
     if (!textToSend || isLoading) return;
 
-    if (textToSend.startsWith('/') || textToSend.startsWith('*')) {
+    // Don't process navigation commands in OFF chat
+    if (!isOffChatMode && (textToSend.startsWith('/') || textToSend.startsWith('*'))) {
       const target = textToSend.slice(1).toLowerCase();
       const loc = LOCATIONS_LIST.find(l => l.id === target || l.name.toLowerCase() === target);
       if (loc && onNavigate) {
@@ -382,7 +404,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       author: currentUser
     };
     
-    if (currentSubLoc) {
+    if (isOffChatMode) {
+      setOffMessages(prev => [...prev, userMessage]);
+    } else if (currentSubLoc) {
       setRoomMessages(prev => ({
         ...prev,
         [currentSubLoc.name]: [...(prev[currentSubLoc.name] || []), userMessage]
@@ -398,9 +422,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         currentUser.id,
         locationContext || 'global',
         textToSend,
-        currentUser.name,
-        currentUser.avatar,
-        currentSubLoc?.name
+        isOffChatMode ? undefined : currentUser.name,
+        isOffChatMode ? undefined : currentUser.avatar,
+        isOffChatMode ? 'OFF' : currentSubLoc?.name
       );
       await loadMessages();
     } catch (error) {
@@ -496,10 +520,64 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </div>
 
+      {/* Toggle RP/OFF Chat */}
+      <div className="relative z-10 px-6 py-3 flex items-center justify-center gap-2 bg-black/20 backdrop-blur-sm border-b border-white/5">
+        <button
+          onClick={() => setIsOffChatMode(false)}
+          className={`flex-1 py-3 px-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+            !isOffChatMode 
+              ? 'bg-primary text-white shadow-lg shadow-primary/30' 
+              : 'bg-white/5 text-white/40 hover:bg-white/10'
+          }`}
+        >
+          <span className="material-symbols-rounded text-sm">swords</span>
+          Roleplay
+        </button>
+        <button
+          onClick={() => setIsOffChatMode(true)}
+          className={`flex-1 py-3 px-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+            isOffChatMode 
+              ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 animate-pulse' 
+              : 'bg-white/5 text-white/40 hover:bg-white/10'
+          }`}
+        >
+          <span className="material-symbols-rounded text-sm">chat</span>
+          OFF
+        </button>
+      </div>
+
+      {/* OFF Chat Banner when active */}
+      {isOffChatMode && (
+        <div className="relative z-10 px-6 py-2 bg-amber-500/20 border-b border-amber-500/30 flex items-center justify-center gap-2">
+          <span className="material-symbols-rounded text-amber-500 text-sm">info</span>
+          <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Chat fora do roleplay - Converse livremente!</span>
+        </div>
+      )}
+
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-8 relative z-10 scrollbar-hide pb-32">
         {activeMessages.map(msg => {
           const isJYP = msg.author?.id === 'jyp-bandit';
           const theme = getRaceTheme(msg.author?.race, isJYP);
+          const isOwnMessage = msg.author?.id === currentUser.id;
+          
+          // OFF Chat mode - simplified display
+          if (isOffChatMode) {
+            return (
+              <div key={msg.id} className={`flex items-start space-x-3 ${isOwnMessage ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
+                <button onClick={() => msg.author && onMemberClick?.(msg.author)} className="w-10 h-10 rounded-[16px] flex-shrink-0 border-2 border-amber-500/30 overflow-hidden shadow-xl">
+                  <img src={msg.author?.avatar} className="w-full h-full object-cover" alt="avatar" />
+                </button>
+                <div className={`flex flex-col space-y-1.5 max-w-[80%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+                  <span className="text-[11px] font-bold text-amber-500/70">{msg.author?.name || 'Viajante'}</span>
+                  <div className={`px-5 py-3.5 rounded-[24px] text-[13.5px] font-bold leading-relaxed shadow-2xl border ${isOwnMessage ? 'bg-amber-600 text-white border-amber-500/30 rounded-tr-none' : 'bg-zinc-800 text-white border-amber-500/20 rounded-tl-none'}`}>
+                    <p>{msg.text}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+          
+          // RP Chat mode - full display with race tags
           return (
             <div key={msg.id} className={`flex items-start space-x-3 ${msg.role === 'user' && !isJYP ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
               <button onClick={() => msg.author && onMemberClick?.(msg.author)} className={`w-10 h-10 rounded-[16px] flex-shrink-0 border-2 border-white/20 overflow-hidden shadow-xl flex items-center justify-center ${isJYP ? 'bg-pink-500' : 'bg-surface-purple'}`}>
@@ -532,7 +610,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
 
       <div className="px-6 pb-12 pt-4 relative z-10">
-        {showSuggestions && (
+        {showSuggestions && !isOffChatMode && (
           <div className="absolute bottom-[calc(100%+12px)] left-6 right-6 bg-background-dark rounded-[32px] border border-white/10 p-5 shadow-[0_-20px_60px_rgba(0,0,0,0.5)] animate-in slide-in-bottom duration-300 max-h-[60vh] overflow-hidden flex flex-col">
              <div className="flex items-center space-x-2 mb-4">
                <button 
@@ -702,10 +780,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </div>
         )}
 
-        <div className="flex items-center space-x-3 bg-zinc-900 rounded-[40px] p-2.5 pl-5 border border-white/10 shadow-2xl">
-          <button onClick={() => setShowActionModal(true)} className="w-13 h-13 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all hover:bg-white/15"><span className="material-symbols-rounded text-3xl">add</span></button>
-          <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSend()} placeholder={currentSubLoc ? `Roleplay em ${currentSubLoc.name}...` : "O que você faz agora?"} className="flex-1 bg-transparent border-none text-[15px] focus:ring-0 placeholder:text-white/20 text-white font-bold py-4 px-2" />
-          <button onClick={() => handleSend()} disabled={isLoading || !input.trim()} className={`w-13 h-13 rounded-full flex items-center justify-center transition-all ${isLoading || !input.trim() ? 'bg-white/5 text-white/10' : 'bg-primary text-white active:scale-90'}`}><span className="material-symbols-rounded text-3xl">send</span></button>
+        <div className={`flex items-center space-x-3 rounded-[40px] p-2.5 pl-5 border shadow-2xl ${isOffChatMode ? 'bg-amber-900/50 border-amber-500/30' : 'bg-zinc-900 border-white/10'}`}>
+          {!isOffChatMode && (
+            <button onClick={() => setShowActionModal(true)} className="w-13 h-13 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all hover:bg-white/15"><span className="material-symbols-rounded text-3xl">add</span></button>
+          )}
+          <input 
+            type="text" 
+            value={input} 
+            onChange={(e) => setInput(e.target.value)} 
+            onKeyPress={(e) => e.key === 'Enter' && handleSend()} 
+            placeholder={isOffChatMode ? "Mensagem fora do roleplay..." : currentSubLoc ? `Roleplay em ${currentSubLoc.name}...` : "O que você faz agora?"} 
+            className="flex-1 bg-transparent border-none text-[15px] focus:ring-0 placeholder:text-white/20 text-white font-bold py-4 px-2" 
+          />
+          <button onClick={() => handleSend()} disabled={isLoading || !input.trim()} className={`w-13 h-13 rounded-full flex items-center justify-center transition-all ${isLoading || !input.trim() ? 'bg-white/5 text-white/10' : isOffChatMode ? 'bg-amber-500 text-white active:scale-90' : 'bg-primary text-white active:scale-90'}`}><span className="material-symbols-rounded text-3xl">send</span></button>
         </div>
       </div>
 
