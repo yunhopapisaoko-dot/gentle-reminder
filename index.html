@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -77,6 +76,15 @@
       to { transform: translateY(100%); } 
     }
 
+    @keyframes slideInTop { 
+      from { transform: translateY(-100%); } 
+      to { transform: translateY(0); } 
+    }
+    @keyframes slideOutTop { 
+      from { transform: translateY(0); } 
+      to { transform: translateY(-100%); } 
+    }
+
     @keyframes zoomIn { 
       from { transform: scale(0.9) opacity(0); } 
       to { transform: scale(1) opacity(1); } 
@@ -101,6 +109,9 @@
     
     .slide-in-bottom { animation-name: slideInBottom; }
     .slide-out-bottom { animation-name: slideOutBottom; }
+
+    .slide-in-top { animation-name: slideInTop; }
+    .slide-out-top { animation-name: slideOutTop; }
     
     .zoom-in { animation-name: zoomIn; }
     .zoom-out { animation-name: zoomOut; }
