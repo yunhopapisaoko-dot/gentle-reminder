@@ -19,10 +19,12 @@ import { AllChatsView } from './components/AllChatsView';
 import { RouletteView } from './components/RouletteView';
 import { InventoryView } from './components/InventoryView';
 import { SupermarketView } from './components/SupermarketView';
+import { PrivateChatView } from './components/PrivateChatView';
 import { FeedView } from './src/components/FeedView';
 import { TabType, User, Post, MenuItem } from './types';
 import { supabase } from './supabase';
 import { supabaseService } from './services/supabaseService';
+import { usePrivateConversations, PrivateConversation } from './src/hooks/usePrivateConversations';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -47,6 +49,10 @@ const App: React.FC = () => {
   
   const [visitedRooms, setVisitedRooms] = useState<string[]>([]);
   const [confirmedRooms, setConfirmedRooms] = useState<string[]>([]);
+  
+  // Private chat state
+  const [activePrivateChat, setActivePrivateChat] = useState<PrivateConversation | null>(null);
+  const { startConversation, markConversationAsRead, totalUnread } = usePrivateConversations(currentUser?.id || null);
 
   useEffect(() => {
     const savedConfirmed = localStorage.getItem('magic_confirmed_rooms');
@@ -203,6 +209,31 @@ const App: React.FC = () => {
     localStorage.setItem('magic_confirmed_rooms', JSON.stringify(newConfirmed));
   };
 
+  const handleStartPrivateChat = async (userId: string) => {
+    const conversationId = await startConversation(userId);
+    if (conversationId) {
+      // Find the other user's profile
+      const otherUser = communityMembers.find(m => m.id === userId);
+      if (otherUser) {
+        setActivePrivateChat({
+          id: conversationId,
+          participant_1: currentUser!.id,
+          participant_2: userId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          other_user: {
+            id: otherUser.id,
+            full_name: otherUser.name,
+            username: otherUser.username,
+            avatar_url: otherUser.avatar
+          },
+          unread_count: 0
+        });
+        setSelectedUser(null);
+      }
+    }
+  };
+
   const renderMainContent = () => {
     if (loading) return (
       <div className="flex flex-col items-center justify-center py-32 animate-pulse">
@@ -333,11 +364,34 @@ const App: React.FC = () => {
             }} 
           />
         )}
-        {selectedUser && <ProfileView user={selectedUser} currentUserId={currentUser.id} allPosts={posts} onClose={() => setSelectedUser(null)} onUpdate={(u) => { setCurrentUser(u); fetchInitialData(u.id); }} />}
+        {selectedUser && <ProfileView user={selectedUser} currentUserId={currentUser.id} allPosts={posts} onClose={() => setSelectedUser(null)} onUpdate={(u) => { setCurrentUser(u); fetchInitialData(u.id); }} onStartChat={handleStartPrivateChat} />}
         {selectedLocalChat && <ChatInterface onUpdateStatus={handleUpdateStatus} onConsumeItems={handleBuyItems} currentUser={currentUser} locationContext={selectedLocalChat} onNavigate={handleEnterRoom} onClose={() => setSelectedLocalChat(null)} />}
-        {isAllChatsOpen && <AllChatsView visitedRooms={visitedRooms} onClose={() => setIsAllChatsOpen(false)} onSelectChat={handleEnterRoom} onLeaveChat={handleLeaveRoom} />}
+        {isAllChatsOpen && (
+          <AllChatsView 
+            visitedRooms={visitedRooms} 
+            onClose={() => setIsAllChatsOpen(false)} 
+            onSelectChat={handleEnterRoom} 
+            onLeaveChat={handleLeaveRoom}
+            currentUserId={currentUser.id}
+            onOpenPrivateChat={(conv) => {
+              setActivePrivateChat(conv);
+              setIsAllChatsOpen(false);
+            }}
+          />
+        )}
+        {activePrivateChat && activePrivateChat.other_user && (
+          <PrivateChatView
+            conversationId={activePrivateChat.id}
+            currentUserId={currentUser.id}
+            currentUserName={currentUser.name}
+            currentUserAvatar={currentUser.avatar}
+            otherUser={activePrivateChat.other_user}
+            onClose={() => setActivePrivateChat(null)}
+            onMarkAsRead={() => markConversationAsRead(activePrivateChat.id)}
+          />
+        )}
         {isRouletteOpen && <RouletteView userId={currentUser.id} lastSpinAt={currentUser.last_spin_at} onClose={() => setIsRouletteOpen(false)} onResult={handleRouletteResult} />}
-        {!selectedLocalChat && !selectedUser && !isCreateModalOpen && <FloatingActionDock activeTab={activeTab} onCreateClick={() => setIsCreateModalOpen(true)} onAllChatsClick={() => setIsAllChatsOpen(true)} onRouletteClick={() => setIsRouletteOpen(true)} />}
+        {!selectedLocalChat && !selectedUser && !isCreateModalOpen && !activePrivateChat && <FloatingActionDock activeTab={activeTab} onCreateClick={() => setIsCreateModalOpen(true)} onAllChatsClick={() => setIsAllChatsOpen(true)} onRouletteClick={() => setIsRouletteOpen(true)} unreadMessages={totalUnread} />}
         {showDbSetup && <DbSetupModal onClose={() => setShowDbSetup(false)} />}
       </div>
     </div>
