@@ -210,28 +210,30 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
     }
   });
 
-  const getBackgroundStyle = (): React.CSSProperties => {
-    if (!wallpaper) return { backgroundColor: '#070210' };
-    if (wallpaper.startsWith('linear-gradient')) {
-      return { background: wallpaper };
-    }
-    return { 
-      backgroundImage: `url(${wallpaper})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center'
-    };
-  };
-
   return (
     <div className={`fixed inset-0 z-[600] bg-background-dark flex flex-col h-[100dvh] overflow-hidden ${isClosing ? 'animate-out slide-out-right' : 'animate-in slide-in-right'}`}>
       
-      {/* BACKGROUND LAYER (Full screen wallpaper) */}
-      <div className="absolute inset-0 z-0" style={getBackgroundStyle()}>
-        {wallpaper && <div className="absolute inset-0 bg-black/40" />}
+      {/* BACKGROUND LAYER (Absolute full-screen coverage) */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        {wallpaper ? (
+          wallpaper.startsWith('linear-gradient') ? (
+            <div className="w-full h-full" style={{ background: wallpaper }} />
+          ) : (
+            <img 
+              src={wallpaper} 
+              className="w-full h-full object-cover" 
+              alt="" 
+            />
+          )
+        ) : (
+          <div className="w-full h-full bg-[#070210]" />
+        )}
+        {/* Dark overlay for readability */}
+        <div className="absolute inset-0 bg-black/40" />
       </div>
 
-      {/* HEADER (Sticky Glassmorphism) */}
-      <div className="pt-12 px-6 pb-6 bg-black/60 backdrop-blur-3xl border-b border-white/5 relative z-20">
+      {/* HEADER (Glassmorphism effect) */}
+      <div className="pt-12 px-6 pb-6 bg-black/40 backdrop-blur-3xl border-b border-white/5 relative z-20">
         <div className="flex items-center space-x-4">
           <button 
             onClick={handleClose}
@@ -302,7 +304,7 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
           groupedMessages.map((group, groupIdx) => (
             <div key={groupIdx} className="space-y-6">
               <div className="flex items-center justify-center py-2">
-                <span className="px-4 py-1.5 rounded-full bg-zinc-900/60 backdrop-blur-xl border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/50 shadow-lg">
+                <span className="px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-xl border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/50 shadow-lg">
                   {group.date}
                 </span>
               </div>
@@ -340,8 +342,8 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* INPUT AREA (Sticky Glassmorphism) */}
-      <div className="px-6 py-8 bg-black/60 backdrop-blur-3xl border-t border-white/5 pb-12 relative z-20">
+      {/* INPUT AREA (Glassmorphism effect) */}
+      <div className="px-6 py-8 bg-black/40 backdrop-blur-3xl border-t border-white/5 pb-12 relative z-20">
         <div className="flex items-center space-x-4">
           <input
             type="text"
