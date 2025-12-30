@@ -415,7 +415,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
                 </div>
               ) : (
                 <>
-                  {post.title && <h3 className="text-base font-black text-white italic tracking-tight mb-1 uppercase">{post.title}</h3>}
+                  {post.title && <h3 className="text-base font-black text-white tracking-tight mb-1 uppercase">{post.title}</h3>}
                   <p className="text-sm text-white/60 leading-relaxed font-medium">
                     {post.content}
                   </p>
@@ -475,12 +475,12 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
         )}
       </div>
 
-      {/* NOVO: Modal de Detalhes Moderno */}
+      {/* MODAL DE DETALHES MODERNO */}
       {selectedPost && (
         <div className="fixed inset-0 z-[550] bg-background-dark flex flex-col h-[100dvh] overflow-hidden animate-in slide-in-right">
           
-          {/* Custom Header */}
-          <div className="pt-14 px-6 pb-5 bg-black/40 backdrop-blur-3xl border-b border-white/5 relative z-20 flex items-center justify-between">
+          {/* Custom Header Premium */}
+          <div className="pt-14 px-6 pb-5 bg-black/40 backdrop-blur-3xl border-b border-white/10 relative z-20 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button 
                 onClick={() => setSelectedPost(null)}
@@ -502,7 +502,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
                 />
                 <div>
                   <p className="text-sm font-black text-white leading-none">{selectedPost.profile?.full_name || 'Membro'}</p>
-                  <p className="text-[9px] font-black text-primary uppercase tracking-widest mt-1">Ver Perfil</p>
+                  <p className="text-[9px] font-black text-primary uppercase tracking-widest mt-1">Visitar Perfil</p>
                 </div>
               </button>
             </div>
@@ -538,13 +538,13 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
             {/* Post Content Area */}
             <div className="p-6 pb-4">
               {selectedPost.title && (
-                <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase mb-4 leading-tight">
+                <h2 className="text-2xl font-black text-white tracking-tighter uppercase mb-4 leading-tight">
                   {selectedPost.title}
                 </h2>
               )}
               <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-6 mb-6">
-                <p className="text-[15px] font-medium text-white/80 leading-relaxed whitespace-pre-wrap italic">
-                  "{selectedPost.content}"
+                <p className="text-[15px] font-bold text-white/80 leading-relaxed whitespace-pre-wrap">
+                  {selectedPost.content}
                 </p>
               </div>
             </div>
@@ -579,49 +579,55 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
                 </div>
                 <button className="flex flex-col items-center gap-1.5 text-white/30 hover:text-primary transition-colors">
                   <Share2 className="w-7 h-7" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Compartilhar</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">Enviar</span>
                 </button>
               </div>
               <div className="text-right">
-                <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Publicado em</p>
-                <p className="text-[11px] font-black text-white/50 italic">{formatDate(selectedPost.created_at)}</p>
+                <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Enviado há</p>
+                <p className="text-[11px] font-black text-white/50">{formatDate(selectedPost.created_at)}</p>
               </div>
             </div>
 
-            {/* Comments Section */}
+            {/* Comments Section Moderna */}
             <div className="px-6 space-y-6">
               <div className="flex items-center gap-3 px-2 mb-2">
-                <div className="w-1 h-4 bg-primary rounded-full"></div>
-                <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">Discussão</h3>
+                <div className="w-1 h-4 bg-primary rounded-full shadow-[0_0_10px_rgba(139,92,246,0.5)]"></div>
+                <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">Comentários</h3>
               </div>
 
               {loadingComments ? (
                 <div className="py-20 flex flex-col items-center justify-center opacity-40">
                   <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-                  <p className="text-[9px] font-black uppercase tracking-widest">Sincronizando vozes...</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest">Sincronizando...</p>
                 </div>
               ) : comments.length > 0 ? (
-                <div className="space-y-5">
+                <div className="space-y-4">
                   {comments.map(comment => (
-                    <div key={comment.id} className="group flex gap-4 animate-in slide-in-from-bottom duration-300">
-                      <img
-                        src={comment.profiles?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.user_id}`}
-                        className="w-10 h-10 rounded-[14px] object-cover border border-white/10 flex-shrink-0 shadow-lg"
-                        alt=""
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <p className="text-xs font-black text-white truncate">
-                            {comment.profiles?.full_name || 'Viajante'}
-                            <span className="ml-2 text-[9px] text-primary font-black uppercase tracking-tighter opacity-60">@{comment.profiles?.username || 'user'}</span>
-                          </p>
-                          <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">{formatDate(comment.created_at)}</span>
+                    <div key={comment.id} className="bg-white/[0.03] border border-white/5 rounded-[28px] p-5 animate-in slide-in-from-bottom duration-300">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={comment.profiles?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.user_id}`}
+                            className="w-10 h-10 rounded-[14px] object-cover border border-white/10"
+                            alt=""
+                          />
+                          <div>
+                            <p className="text-xs font-black text-white">
+                              {comment.profiles?.full_name || 'Viajante'}
+                            </p>
+                            <p className="text-[9px] text-primary font-black uppercase tracking-widest mt-0.5">
+                              @{comment.profiles?.username || 'user'}
+                            </p>
+                          </div>
                         </div>
-                        <div className="bg-white/[0.04] border border-white/5 rounded-2xl rounded-tl-none p-4 hover:bg-white/[0.06] transition-colors">
-                          <p className="text-xs font-bold text-white/70 leading-relaxed">
-                            {comment.content}
-                          </p>
-                        </div>
+                        <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">
+                          {formatDate(comment.created_at)}
+                        </span>
+                      </div>
+                      <div className="px-2">
+                        <p className="text-sm font-bold text-white/70 leading-relaxed">
+                          {comment.content}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -629,13 +635,13 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
               ) : (
                 <div className="py-20 text-center bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] flex flex-col items-center justify-center mx-2 group">
                   <MessageCircle className="w-12 h-12 text-white/10 mb-4 group-hover:scale-110 transition-transform duration-500" />
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 italic">O silêncio ecoa... Inicie a conversa!</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Seja o primeiro a comentar!</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Fixed Input Bar */}
+          {/* Fixed Input Bar Moderno */}
           <div className="px-6 py-8 bg-black/60 backdrop-blur-3xl border-t border-white/10 pb-12 relative z-30">
             <div className="relative group max-w-lg mx-auto">
               <input
@@ -643,19 +649,19 @@ export const FeedView: React.FC<FeedViewProps> = ({ currentUserId, onUserClick, 
                 value={commentInput}
                 onChange={e => setCommentInput(e.target.value)}
                 onKeyPress={e => e.key === 'Enter' && handleAddComment()}
-                placeholder="Qual o seu comentário?"
-                className="w-full bg-white/[0.05] border border-white/10 rounded-[28px] pl-6 pr-16 py-4 text-sm text-white font-bold placeholder:text-white/10 focus:ring-1 focus:ring-primary outline-none transition-all shadow-inner"
+                placeholder="Escreva algo legal..."
+                className="w-full bg-white/[0.05] border border-white/10 rounded-[28px] pl-6 pr-16 py-5 text-sm text-white font-bold placeholder:text-white/10 focus:ring-1 focus:ring-primary outline-none transition-all"
               />
               <button
                 onClick={handleAddComment}
                 disabled={!commentInput.trim()}
-                className={`absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
+                className={`absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
                   commentInput.trim() 
                     ? 'bg-primary text-white shadow-lg shadow-primary/30 active:scale-90 hover:scale-105' 
                     : 'bg-white/5 text-white/10'
                 }`}
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-5 h-5" />
               </button>
             </div>
           </div>
