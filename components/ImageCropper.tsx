@@ -14,7 +14,7 @@ function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: numbe
     makeAspectCrop(
       {
         unit: '%',
-        width: 90,
+        width: 100,
       },
       aspect,
       mediaWidth,
@@ -49,11 +49,16 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
+    // HD Quality Scaling
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
 
     canvas.width = completedCrop.width * scaleX;
     canvas.height = completedCrop.height * scaleY;
+
+    // Configurações para suavização máxima de imagem
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     ctx.drawImage(
       image,
@@ -68,10 +73,11 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
     );
 
     return new Promise((resolve) => {
+      // Exportação em alta qualidade (0.95)
       canvas.toBlob(
         (blob) => resolve(blob),
         'image/jpeg',
-        0.9
+        0.95
       );
     });
   }, [completedCrop]);
@@ -91,13 +97,13 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4">
-      <div className="w-full max-w-2xl bg-background-dark rounded-[40px] border border-white/10 p-6 shadow-2xl">
-        <h3 className="text-xl font-black text-white italic uppercase tracking-tight text-center mb-6">
-          Recortar Imagem
+    <div className="fixed inset-0 z-[800] flex items-center justify-center bg-black/98 backdrop-blur-3xl p-6">
+      <div className="w-full max-w-2xl bg-[#0a0a0a] rounded-[50px] border border-white/10 p-8 shadow-[0_0_100px_rgba(139,92,246,0.15)] flex flex-col max-h-[90vh]">
+        <h3 className="text-xl font-black text-white italic uppercase tracking-tighter text-center mb-8">
+          Ajuste de Imagem HD
         </h3>
         
-        <div className="relative max-h-[60vh] overflow-auto rounded-3xl bg-black/50 flex items-center justify-center">
+        <div className="relative flex-1 overflow-auto rounded-[32px] bg-black/50 border border-white/5 flex items-center justify-center scrollbar-hide">
           <ReactCrop
             crop={crop}
             onChange={(_, percentCrop) => setCrop(percentCrop)}
@@ -116,28 +122,25 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
           </ReactCrop>
         </div>
 
-        <div className="flex space-x-4 mt-6">
+        <div className="flex space-x-4 mt-10">
           <button
             onClick={onCancel}
             disabled={isProcessing}
-            className="flex-1 py-4 rounded-[24px] bg-white/5 text-white/40 text-[10px] font-black uppercase tracking-[0.3em] active:scale-95 transition-all border border-white/5 disabled:opacity-30"
+            className="flex-1 py-5 rounded-[28px] bg-white/5 text-white/40 text-[10px] font-black uppercase tracking-[0.4em] active:scale-95 transition-all border border-white/5 disabled:opacity-30"
           >
             Cancelar
           </button>
           <button
             onClick={handleConfirm}
             disabled={isProcessing || !completedCrop}
-            className="flex-1 py-4 rounded-[24px] bg-primary text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-primary/30 active:scale-95 transition-all disabled:opacity-30 flex items-center justify-center space-x-2"
+            className="flex-1 py-5 rounded-[28px] bg-primary text-white text-[10px] font-black uppercase tracking-[0.4em] shadow-[0_15px_30px_rgba(139,92,246,0.3)] active:scale-95 transition-all disabled:opacity-30 flex items-center justify-center space-x-3"
           >
             {isProcessing ? (
-              <>
-                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                <span>Processando...</span>
-              </>
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
             ) : (
               <>
-                <span className="material-symbols-rounded text-lg">check</span>
-                <span>Confirmar</span>
+                <span className="material-symbols-rounded text-lg">check_circle</span>
+                <span>Confirmar HD</span>
               </>
             )}
           </button>
