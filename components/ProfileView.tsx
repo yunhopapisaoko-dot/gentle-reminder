@@ -10,6 +10,7 @@ interface ProfileViewProps {
   allPosts?: Post[];
   onClose: () => void;
   onUpdate?: (updatedUser: User) => void;
+  onStartChat?: (userId: string) => void;
 }
 
 // Configuração visual das raças: Cores e Ícones oficiais sincronizados
@@ -19,7 +20,7 @@ const RACE_THEMES: Record<string, { color: string, icon: string, bg: string }> =
   'Lunari': { color: 'text-cyan-400', icon: 'dark_mode', bg: 'bg-cyan-400/10' },
 };
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, allPosts = [], onClose, onUpdate }) => {
+export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, allPosts = [], onClose, onUpdate, onStartChat }) => {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isClosing, setIsClosing] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -79,7 +80,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, a
           <span className="material-symbols-rounded text-2xl">arrow_back</span>
         </button>
 
-        {isOwnProfile && (
+        {isOwnProfile ? (
           <button 
             onClick={(e) => {
               e.stopPropagation();
@@ -90,6 +91,18 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, a
             <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 hover:opacity-100 transition-opacity"></div>
             <span className="material-symbols-rounded text-lg">edit</span>
             <span>Editar Perfil</span>
+          </button>
+        ) : (
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onStartChat?.(user.id);
+            }}
+            className="px-6 h-12 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-[10px] font-black uppercase tracking-widest border border-white/20 shadow-[0_10px_40px_rgba(6,182,212,0.5)] active:scale-90 transition-all pointer-events-auto flex items-center space-x-2 relative overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 hover:opacity-100 transition-opacity"></div>
+            <span className="material-symbols-rounded text-lg">chat</span>
+            <span>Mensagem</span>
           </button>
         )}
       </div>
