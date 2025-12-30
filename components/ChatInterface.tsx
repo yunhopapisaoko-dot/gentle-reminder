@@ -140,7 +140,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setTimeout(onClose || (() => {}), 350);
   };
 
-  // Carregar mensagens do banco de dados
   const loadMessages = useCallback(async () => {
     const loc = locationContext || 'global';
     
@@ -186,7 +185,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       supabaseService.checkRoomAccess(currentUser.id, locationContext).then(setAuthorizedRooms);
       supabaseService.getAllProfiles().then(setOnlineMembers);
       
-      // Verificar acesso VIP
       if (locationContext === 'restaurante' || locationContext === 'padaria') {
         supabaseService.checkVIPAccess(currentUser.id, locationContext).then(setHasVIPAccess);
         supabaseService.getActiveVIPReservation(locationContext).then(setActiveVIPReservation);
@@ -209,14 +207,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setSuggestionTab('locais');
       setSelectedItem(null);
       setItemActionMode(null);
-      // Carregar inventário quando abre o menu de ações
       supabaseService.getInventory(currentUser.id).then(setInventoryItems);
     } else if (!input.startsWith('/') && !input.startsWith('*')) {
       setShowSuggestions(false);
     }
   }, [input, currentUser.id]);
 
-  // Usar item sozinho
   const handleUseItem = async (item: any) => {
     try {
       await supabaseService.consumeFromInventory(item.id, item.quantity);
@@ -237,11 +233,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  // Enviar item para outro usuário
   const handleSendItem = async (item: any, targetUser: User) => {
     try {
       await supabaseService.consumeFromInventory(item.id, 1);
-      // Adicionar item ao inventário do outro usuário
       await supabaseService.addToInventory(targetUser.id, {
         id: item.item_id,
         name: item.item_name,
@@ -264,7 +258,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  // Dividir item com outro usuário (os pontos são divididos)
   const handleShareItem = async (item: any, targetUser: User) => {
     try {
       await supabaseService.consumeFromInventory(item.id, item.quantity);
@@ -273,7 +266,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       const halfThirst = Math.floor((attrs.thirst || 0) / 2);
       const halfAlcohol = Math.floor((attrs.alcohol || 0) / 2);
       
-      // Aplicar metade ao usuário atual
       if (onUpdateStatus) {
         onUpdateStatus({
           hunger: halfHunger,
@@ -282,7 +274,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         });
       }
       
-      // Aplicar metade ao outro usuário
       await supabaseService.updateVitalStatus(targetUser.id, {
         hunger: Math.min(100, (targetUser.hunger || 0) + halfHunger),
         energy: Math.min(100, (targetUser.thirst || 0) + halfThirst),
@@ -308,7 +299,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
 
     try {
-      // Criar pedido no banco de dados (não desconta dinheiro ainda)
       await supabaseService.createFoodOrder(
         currentUser.id,
         currentUser.name,
@@ -345,9 +335,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  // JYP Bandit handlers
   const handleJYPRobbery = useCallback(async (victimId: string, amount: number) => {
-    // Se a vítima é o usuário atual, atualiza o dinheiro
     if (victimId === currentUser.id) {
       const newBalance = Math.max(0, (currentUser.money || 0) - amount);
       await supabaseService.updateMoney(currentUser.id, newBalance);
@@ -405,7 +393,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     
     if (!customMsg) setInput('');
 
-    // Salvar mensagem no banco de dados
     try {
       await supabaseService.sendChatMessage(
         currentUser.id,
@@ -415,7 +402,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         currentUser.avatar,
         currentSubLoc?.name
       );
-      // Recarregar do banco para evitar que a UI “perca” mensagens em re-mount
       await loadMessages();
     } catch (error) {
       console.error("Erro ao salvar mensagem:", error);
@@ -472,7 +458,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
         
         <div className="flex items-center space-x-2">
-          {/* Kitchen buttons - Fridge and Recipes */}
           {isPousadaKitchen && (
             <>
               <button onClick={() => setShowFridge(true)} className="w-11 h-11 rounded-2xl bg-cyan-500 text-white flex items-center justify-center shadow-lg border border-white/20 active:scale-90 transition-all">
@@ -511,30 +496,28 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-12 relative z-10 scrollbar-hide pb-32">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-8 relative z-10 scrollbar-hide pb-32">
         {activeMessages.map(msg => {
           const isJYP = msg.author?.id === 'jyp-bandit';
-          const isAI = msg.role === 'model' && !isJYP;
           const theme = getRaceTheme(msg.author?.race, isJYP);
           return (
-            <div key={msg.id} className={`flex items-start space-x-4 ${msg.role === 'user' && !isJYP ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
-              <button onClick={() => msg.author && onMemberClick?.(msg.author)} className={`w-12 h-12 rounded-[22px] flex-shrink-0 border-2 border-white/40 overflow-hidden shadow-2xl flex items-center justify-center ${isJYP ? 'bg-pink-500' : 'bg-surface-purple'}`}>
+            <div key={msg.id} className={`flex items-start space-x-3 ${msg.role === 'user' && !isJYP ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
+              <button onClick={() => msg.author && onMemberClick?.(msg.author)} className={`w-10 h-10 rounded-[16px] flex-shrink-0 border-2 border-white/20 overflow-hidden shadow-xl flex items-center justify-center ${isJYP ? 'bg-pink-500' : 'bg-surface-purple'}`}>
                 {isJYP ? <img src="/jyp-avatar.jpg" className="w-full h-full object-cover" alt="JYP" /> : <img src={msg.author?.avatar} className="w-full h-full object-cover" alt="avatar" />}
               </button>
-              <div className={`flex flex-col space-y-2 max-w-[80%] ${msg.role === 'user' && !isJYP ? 'items-end' : 'items-start'}`}>
+              <div className={`flex flex-col space-y-1.5 max-w-[80%] ${msg.role === 'user' && !isJYP ? 'items-end' : 'items-start'}`}>
                 <div className={`flex items-center space-x-2 ${msg.role === 'user' && !isJYP ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                   <span className="text-[14px] font-black text-white italic tracking-tighter">{isJYP ? 'JYP' : (msg.author?.name || 'Viajante')}</span>
-                   <div className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg ${isJYP ? 'bg-pink-500/10 text-pink-400' : `${theme.bg} ${theme.color}`} border border-current/10`}><span className="material-symbols-rounded text-[11px]">{isJYP ? 'theater_comedy' : theme.icon}</span><span className="text-[9px] font-black uppercase tracking-widest">{isJYP ? 'Bandido' : (msg.author?.race || 'Humano')}</span></div>
+                   <span className="text-[13px] font-black text-white tracking-tight">{isJYP ? 'JYP' : (msg.author?.name || 'Viajante')}</span>
+                   <div className={`flex items-center space-x-1 px-1.5 py-0.5 rounded-md ${isJYP ? 'bg-pink-500 text-white' : `${theme.bg.replace('/10', '')} ${theme.color.replace('text-', 'text-white')}`} border border-white/10`}><span className="material-symbols-rounded text-[10px]">{isJYP ? 'theater_comedy' : theme.icon}</span><span className="text-[8px] font-black uppercase tracking-widest">{isJYP ? 'Bandido' : (msg.author?.race || 'Humano')}</span></div>
                 </div>
-                <div className={`px-6 py-4 rounded-[28px] text-[14px] font-bold leading-relaxed border border-white/10 ${isJYP ? 'bg-pink-900/40 text-white rounded-tl-none' : msg.role === 'user' ? 'bg-primary/60 text-white rounded-tr-none' : 'bg-black/70 text-white rounded-tl-none'}`}>
+                <div className={`px-5 py-3.5 rounded-[24px] text-[13.5px] font-bold leading-relaxed shadow-2xl border border-white/5 ${isJYP ? 'bg-pink-700 text-white rounded-tl-none' : msg.role === 'user' ? 'bg-primary text-white rounded-tr-none' : 'bg-zinc-800 text-white rounded-tl-none'}`}>
                   {msg.text.split('\n').map((line, i) => {
-                    // Formatar texto entre * * como itálico
                     const parts = line.split(/(\*[^*]+\*)/g);
                     return (
                       <p key={i} className="mb-1">
                         {parts.map((part, j) => {
                           if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
-                            return <span key={j} className="italic text-white/60">{part.slice(1, -1)}</span>;
+                            return <span key={j} className="text-white/50 font-medium">{part.slice(1, -1)}</span>;
                           }
                           return <span key={j}>{part}</span>;
                         })}
@@ -550,8 +533,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       <div className="px-6 pb-12 pt-4 relative z-10">
         {showSuggestions && (
-          <div className="absolute bottom-[calc(100%+12px)] left-6 right-6 bg-background-dark/95 backdrop-blur-3xl rounded-[32px] border border-white/10 p-5 shadow-[0_-20px_60px_rgba(0,0,0,0.5)] animate-in slide-in-bottom duration-300 max-h-[60vh] overflow-hidden flex flex-col">
-             {/* Tabs */}
+          <div className="absolute bottom-[calc(100%+12px)] left-6 right-6 bg-background-dark rounded-[32px] border border-white/10 p-5 shadow-[0_-20px_60px_rgba(0,0,0,0.5)] animate-in slide-in-bottom duration-300 max-h-[60vh] overflow-hidden flex flex-col">
              <div className="flex items-center space-x-2 mb-4">
                <button 
                  onClick={() => { setSuggestionTab('locais'); setSelectedItem(null); setItemActionMode(null); }}
@@ -571,16 +553,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
              
              <div className="flex-1 overflow-y-auto scrollbar-hide">
                {suggestionTab === 'locais' ? (
-                 /* Tab Locais */
                  !showGrantAccess ? (
                    <div className="grid grid-cols-2 gap-3">
                      {LOCATIONS_LIST.map(loc => (
                        <button 
                          key={loc.id}
                          onClick={() => handleSuggestionClick(loc.id)}
-                         className="flex items-center space-x-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-primary/10 hover:border-primary/20 transition-all active:scale-95 group"
+                         className="flex items-center space-x-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-primary hover:border-primary transition-all active:scale-95 group"
                        >
-                         <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40 group-hover:bg-primary group-hover:text-white transition-all">
+                         <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white group-hover:bg-white group-hover:text-primary transition-all">
                            <span className="material-symbols-rounded">{loc.icon}</span>
                          </div>
                          <span className="text-[10px] font-black uppercase tracking-widest text-white">{loc.name}</span>
@@ -611,10 +592,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                    </div>
                  )
                ) : (
-                 /* Tab Ações - Inventário */
                  <div className="space-y-4">
                    {!selectedItem ? (
-                     /* Lista de itens do inventário */
                      inventoryItems.length === 0 ? (
                        <div className="py-8 text-center opacity-40">
                          <span className="material-symbols-rounded text-4xl mb-2 block">inventory_2</span>
@@ -626,7 +605,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                            <button
                              key={item.id}
                              onClick={() => setSelectedItem(item)}
-                             className="w-full flex items-center space-x-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-emerald-500/10 hover:border-emerald-500/20 transition-all active:scale-98 group"
+                             className="w-full flex items-center space-x-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-emerald-500 hover:border-emerald-500 transition-all active:scale-98 group"
                            >
                              <img src={item.item_image} className="w-12 h-12 rounded-xl object-cover border border-white/10" alt={item.item_name} />
                              <div className="flex-1 text-left">
@@ -642,7 +621,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                        </div>
                      )
                    ) : !itemActionMode ? (
-                     /* Opções para o item selecionado */
                      <div className="space-y-4 animate-in zoom-in">
                        <div className="flex items-center space-x-4 p-4 bg-white/5 rounded-2xl border border-white/10">
                          <img src={selectedItem.item_image} className="w-16 h-16 rounded-xl object-cover" alt={selectedItem.item_name} />
@@ -655,21 +633,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                        <div className="grid grid-cols-3 gap-3">
                          <button
                            onClick={() => handleUseItem(selectedItem)}
-                           className="flex flex-col items-center p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition-all active:scale-95"
+                           className="flex flex-col items-center p-4 rounded-2xl bg-emerald-500 text-white hover:bg-emerald-600 transition-all active:scale-95"
                          >
                            <span className="material-symbols-rounded text-2xl mb-2">restaurant</span>
                            <span className="text-[8px] font-black uppercase tracking-widest">Usar</span>
                          </button>
                          <button
                            onClick={() => setItemActionMode('send')}
-                           className="flex flex-col items-center p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all active:scale-95"
+                           className="flex flex-col items-center p-4 rounded-2xl bg-blue-500 text-white hover:bg-blue-600 transition-all active:scale-95"
                          >
                            <span className="material-symbols-rounded text-2xl mb-2">send</span>
                            <span className="text-[8px] font-black uppercase tracking-widest">Enviar</span>
                          </button>
                          <button
                            onClick={() => setItemActionMode('share')}
-                           className="flex flex-col items-center p-4 rounded-2xl bg-pink-500/10 border border-pink-500/20 text-pink-400 hover:bg-pink-500/20 transition-all active:scale-95"
+                           className="flex flex-col items-center p-4 rounded-2xl bg-pink-500 text-white hover:bg-pink-600 transition-all active:scale-95"
                          >
                            <span className="material-symbols-rounded text-2xl mb-2">group</span>
                            <span className="text-[8px] font-black uppercase tracking-widest">Dividir</span>
@@ -679,7 +657,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                        <button onClick={() => setSelectedItem(null)} className="w-full py-3 rounded-xl bg-white/5 text-white/20 text-[8px] font-black uppercase tracking-widest">Voltar</button>
                      </div>
                    ) : (
-                     /* Selecionar usuário para enviar ou dividir */
                      <div className="space-y-4 animate-in zoom-in">
                        <div className="px-2">
                          <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">
@@ -706,12 +683,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                          ))}
                        </div>
                        
-                       {onlineMembers.filter(m => m.id !== currentUser.id).length === 0 && (
-                         <div className="py-6 text-center opacity-40">
-                           <p className="text-[10px] font-black uppercase tracking-widest">Nenhum usuário disponível</p>
-                         </div>
-                       )}
-                       
                        <button onClick={() => setItemActionMode(null)} className="w-full py-3 rounded-xl bg-white/5 text-white/20 text-[8px] font-black uppercase tracking-widest">Voltar</button>
                      </div>
                    )}
@@ -719,11 +690,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                )}
              </div>
              
-             {/* Worker Access Button */}
              {workerRole && suggestionTab === 'locais' && !showGrantAccess && (
                <button 
                  onClick={() => setShowGrantAccess(true)}
-                 className="mt-4 flex items-center justify-center space-x-2 bg-primary/20 text-primary px-4 py-3 rounded-xl border border-primary/30 w-full"
+                 className="mt-4 flex items-center justify-center space-x-2 bg-primary text-white px-4 py-3 rounded-xl w-full"
                >
                  <span className="material-symbols-rounded text-sm">key</span>
                  <span className="text-[8px] font-black uppercase tracking-widest">Liberar Sala</span>
@@ -732,7 +702,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </div>
         )}
 
-        <div className="flex items-center space-x-3 bg-black/60 backdrop-blur-3xl rounded-[40px] p-2.5 pl-5 border border-white/10 shadow-2xl">
+        <div className="flex items-center space-x-3 bg-zinc-900 rounded-[40px] p-2.5 pl-5 border border-white/10 shadow-2xl">
           <button onClick={() => setShowActionModal(true)} className="w-13 h-13 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all hover:bg-white/15"><span className="material-symbols-rounded text-3xl">add</span></button>
           <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSend()} placeholder={currentSubLoc ? `Roleplay em ${currentSubLoc.name}...` : "O que você faz agora?"} className="flex-1 bg-transparent border-none text-[15px] focus:ring-0 placeholder:text-white/20 text-white font-bold py-4 px-2" />
           <button onClick={() => handleSend()} disabled={isLoading || !input.trim()} className={`w-13 h-13 rounded-full flex items-center justify-center transition-all ${isLoading || !input.trim() ? 'bg-white/5 text-white/10' : 'bg-primary text-white active:scale-90'}`}><span className="material-symbols-rounded text-3xl">send</span></button>
@@ -740,30 +710,29 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
 
       {showActionModal && (
-        <div className="fixed inset-0 z-[160] bg-black/90 backdrop-blur-3xl flex items-end animate-in fade-in duration-400">
+        <div className="fixed inset-0 z-[160] bg-black/95 flex items-end animate-in fade-in duration-400">
           <div className="w-full bg-background-dark rounded-t-[60px] border-t border-white/10 p-10 pb-16 animate-in slide-in-from-bottom duration-500 shadow-[0_-30px_120px_rgba(0,0,0,1)]">
             <div className="w-16 h-1.5 bg-white/5 rounded-full mx-auto mb-6"></div>
             
-            {/* NOVO: Exibição de Dinheiro */}
-            <div className="mb-8 bg-white/5 border border-white/10 rounded-[32px] p-6 flex items-center justify-between">
+            <div className="mb-8 bg-zinc-900 border border-white/10 rounded-[32px] p-6 flex items-center justify-between">
                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center text-amber-500 border border-amber-500/30">
+                  <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-white border border-white/10">
                     <span className="material-symbols-rounded text-2xl">payments</span>
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Minha Carteira</p>
-                    <p className="text-xl font-black text-white italic tracking-tighter">{(currentUser?.money || 0).toFixed(2)} MKC</p>
+                    <p className="text-xl font-black text-white tracking-tighter">{(currentUser?.money || 0).toFixed(2)} MKC</p>
                   </div>
                </div>
-               <div className="bg-primary/20 px-4 py-2 rounded-xl border border-primary/20">
-                  <span className="text-[10px] font-black text-primary uppercase tracking-widest">Premium</span>
+               <div className="bg-primary px-4 py-2 rounded-xl">
+                  <span className="text-[10px] font-black text-white uppercase tracking-widest">Premium</span>
                </div>
             </div>
 
             <div className="space-y-8">
               <div className="flex items-center justify-between px-4">
                  <div className="flex items-center space-x-3">
-                   <div className="w-2 h-6 bg-primary rounded-full shadow-[0_0_10px_rgba(139,92,246,0.5)]"></div>
+                   <div className="w-2 h-6 bg-primary rounded-full"></div>
                    <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">Ações de Local</h3>
                 </div>
               </div>
@@ -785,30 +754,29 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                           setShowActionModal(false);
                         }
                       }} 
-                      className={`relative flex flex-col items-center justify-center p-8 rounded-[40px] border hover:bg-white/10 active:scale-95 transition-all shadow-2xl group overflow-hidden ${
+                      className={`relative flex flex-col items-center justify-center p-8 rounded-[40px] border active:scale-95 transition-all shadow-2xl group overflow-hidden ${
                         isVIPRoom 
-                          ? 'bg-gradient-to-br from-amber-500/10 to-amber-600/5 border-amber-500/20' 
-                          : 'bg-white/[0.03] border-white/5'
+                          ? 'bg-amber-600 border-amber-500' 
+                          : 'bg-zinc-900 border-white/5'
                       }`}
                     >
                       <div className={`w-16 h-16 rounded-3xl flex items-center justify-center mb-5 border transition-all duration-500 ${
                         isVIPRoom
-                          ? 'bg-amber-500/20 text-amber-400 border-amber-500/30 group-hover:bg-amber-500 group-hover:text-white'
-                          : 'bg-white/5 text-white border-white/10 group-hover:bg-primary group-hover:border-primary'
+                          ? 'bg-white/20 text-white border-white/30'
+                          : 'bg-white/5 text-white border-white/10 group-hover:bg-primary'
                       }`}>
                         <span className="material-symbols-rounded text-3xl">{loc.icon}</span>
                       </div>
-                      <span className={`text-[11px] font-black uppercase tracking-[0.25em] text-center ${isVIPRoom ? 'text-amber-400' : 'text-white'}`}>
+                      <span className={`text-[11px] font-black uppercase tracking-[0.25em] text-center text-white`}>
                         {loc.name}
                       </span>
                       
-                      {/* VIP Status Indicator */}
                       {isVIPRoom && (
                         <div className="absolute top-4 right-4">
                           {canAccessVIP ? (
-                            <span className="material-symbols-rounded text-emerald-400 text-xs">verified</span>
+                            <span className="material-symbols-rounded text-white text-xs">verified</span>
                           ) : (
-                            <span className="material-symbols-rounded text-amber-400 text-xs">lock</span>
+                            <span className="material-symbols-rounded text-white text-xs">lock</span>
                           )}
                         </div>
                       )}
@@ -816,17 +784,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       {loc.restricted && !isVIPRoom && (
                         <div className="absolute top-4 right-4"><span className="material-symbols-rounded text-primary text-xs">lock</span></div>
                       )}
-                      
-                      {/* VIP Reserve Button Indicator */}
-                      {showVIPLock && (
-                        <span className="text-[8px] text-amber-400/60 mt-2 font-bold uppercase tracking-widest">Reservar</span>
-                      )}
                     </button>
                   );
                 })}
-                {internalLocs.length === 0 && (
-                   <div className="col-span-2 py-10 text-center opacity-20 italic text-xs">Nenhum local acessível ou autorizado.</div>
-                )}
               </div>
             </div>
             <button onClick={() => setShowActionModal(false)} className="w-full bg-white text-black py-7 rounded-[36px] text-[11px] font-black uppercase tracking-[0.5em] shadow-3xl active:scale-[0.97] transition-all">Voltar</button>
@@ -839,60 +799,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {showWorkerPanel && locationContext && workerRole && <WorkerView location={locationContext} role={workerRole} onClose={() => setShowWorkerPanel(false)} onManageTeam={() => { setShowWorkerPanel(false); setShowManagerDash(true); }} currentUserId={currentUser?.id} />}
       {showMenu && hasMenu && !currentSubLoc && <MenuView locationName={locationContext || ''} items={MENUS[contextKey]} onClose={() => setShowMenu(false)} onOrderConfirmed={handleOrderConfirmed} />}
       {showConsultations && isHospital && <HospitalConsultations onClose={() => setShowConsultations(false)} onTreat={handleTreat} currentUserId={currentUser?.id} />}
-      
-      {/* VIP Reservation Modal */}
-      {showVIPModal && locationContext && (
-        <VIPReservationModal
-          location={locationContext}
-          currentUser={currentUser}
-          onClose={() => setShowVIPModal(false)}
-          onSuccess={() => {
-            setShowVIPModal(false);
-            // Refresh VIP access status
-            supabaseService.checkVIPAccess(currentUser.id, locationContext).then(setHasVIPAccess);
-          }}
-          onMoneyChange={(amount) => onUpdateStatus?.({ money: amount })}
-        />
-      )}
-      
-      {/* JYP Bandit System - only active in Pousada */}
-      {contextKey === 'pousada' && (
-        <JYPBanditSystem
-          location={contextKey}
-          subLocation={currentSubLoc?.name}
-          currentUser={currentUser}
-          onlineUsers={[currentUser, ...onlineMembers.filter(m => m.id !== currentUser.id)]}
-          onRobbery={handleJYPRobbery}
-          onJYPMessage={handleJYPMessage}
-        />
-      )}
-
-      {/* Pharmacy View */}
-      {showPharmacy && (
-        <PharmacyView 
-          onClose={() => setShowPharmacy(false)} 
-          currentUser={currentUser}
-          onUpdateMoney={(amount) => onUpdateStatus?.({ money: amount })}
-        />
-      )}
-
-      {/* Fridge Modal */}
-      {showFridge && (
-        <FridgeModal
-          userId={currentUser.id}
-          userName={currentUser.name}
-          onClose={() => setShowFridge(false)}
-        />
-      )}
-
-      {/* Recipes Modal */}
-      {showRecipes && (
-        <RecipesModal
-          userId={currentUser.id}
-          userName={currentUser.name}
-          onClose={() => setShowRecipes(false)}
-        />
-      )}
+      {showVIPModal && locationContext && <VIPReservationModal location={locationContext} currentUser={currentUser} onClose={() => setShowVIPModal(false)} onSuccess={() => { setShowVIPModal(false); supabaseService.checkVIPAccess(currentUser.id, locationContext).then(setHasVIPAccess); }} onMoneyChange={(amount) => onUpdateStatus?.({ money: amount })} />}
+      {contextKey === 'pousada' && <JYPBanditSystem location={contextKey} subLocation={currentSubLoc?.name} currentUser={currentUser} onlineUsers={[currentUser, ...onlineMembers.filter(m => m.id !== currentUser.id)]} onRobbery={handleJYPRobbery} onJYPMessage={handleJYPMessage} />}
+      {showPharmacy && <PharmacyView onClose={() => setShowPharmacy(false)} currentUser={currentUser} onUpdateMoney={(amount) => onUpdateStatus?.({ money: amount })} />}
+      {showFridge && <FridgeModal userId={currentUser.id} userName={currentUser.name} onClose={() => setShowFridge(false)} />}
+      {showRecipes && <RecipesModal userId={currentUser.id} userName={currentUser.name} onClose={() => setShowRecipes(false)} />}
     </div>
   );
 };
