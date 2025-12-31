@@ -212,11 +212,41 @@ const App: React.FC = () => {
     alert(`Você usou ${item.item_name}! ✨`);
   };
 
-  const handleRouletteResult = (id: string, name: string, hpImpact: number) => {
+  const handleRouletteResult = async (id: string, name: string, hpImpact: number) => {
     if (!currentUser) return;
-    handleUpdateStatus({ hp: hpImpact });
-    if (hpImpact < 0) setCurrentUser(prev => prev ? { ...prev, currentDisease: id } : prev);
-    fetchInitialData(currentUser.id);
+    
+    try {
+      // Se é doença (tem impacto negativo no HP)
+      if (hpImpact < 0) {
+        await supabaseService.applyDiseaseFromRoulette(currentUser.id, id, hpImpact);
+        setCurrentUser(prev => prev ? { 
+          ...prev, 
+          currentDisease: id,
+          hp: Math.max(0, (prev.hp || 100) + hpImpact)
+        } : prev);
+      } else if (id.startsWith('p')) {
+        // É um prêmio em dinheiro
+        const prizeMap: Record<string, number> = {
+          'p1': 1,
+          'p2': 10,
+          'p3': 100,
+          'p4': 10000
+        };
+        const prizeAmount = prizeMap[id] || 0;
+        if (prizeAmount > 0) {
+          await supabaseService.applyPrizeFromRoulette(currentUser.id, prizeAmount);
+          setCurrentUser(prev => prev ? {
+            ...prev,
+            money: (prev.money || 0) + prizeAmount
+          } : prev);
+        }
+      }
+      
+      // Recarregar dados do usuário para garantir sincronização
+      await fetchInitialData(currentUser.id);
+    } catch (error) {
+      console.error("Erro ao aplicar resultado da roleta:", error);
+    }
   };
 
   const handleEnterRoom = (roomId: string) => {
