@@ -1,9 +1,11 @@
 import React from 'react';
 import { User } from '../../types';
+import { usePresence } from '../hooks/usePresence';
 
 interface GlobalUsersGridProps {
   members: User[];
   onSelectUser: (user: User) => void;
+  currentUserId?: string;
 }
 
 const RACE_THEMES: Record<string, { color: string, icon: string, bg: string }> = {
@@ -12,12 +14,15 @@ const RACE_THEMES: Record<string, { color: string, icon: string, bg: string }> =
   'lunari': { color: 'text-cyan-400', icon: 'dark_mode', bg: 'bg-cyan-400/10' },
 };
 
-export const GlobalUsersGrid: React.FC<GlobalUsersGridProps> = ({ members, onSelectUser }) => {
+export const GlobalUsersGrid: React.FC<GlobalUsersGridProps> = ({ members, onSelectUser, currentUserId }) => {
+  const { isUserOnline } = usePresence(currentUserId || null);
+
   return (
     <div className="p-6 grid grid-cols-2 gap-4 pb-40 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {members.map((user) => {
         const raceKey = (user.race || 'draeven').toLowerCase();
         const theme = RACE_THEMES[raceKey] || RACE_THEMES['draeven'];
+        const isOnline = isUserOnline(user.id);
 
         return (
           <button
@@ -39,8 +44,19 @@ export const GlobalUsersGrid: React.FC<GlobalUsersGridProps> = ({ members, onSel
                 />
               </div>
               
+              {/* Online Status Indicator */}
+              <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-background-dark flex items-center justify-center shadow-lg transition-all duration-300 ${
+                isOnline 
+                  ? 'bg-emerald-500 shadow-emerald-500/50' 
+                  : 'bg-zinc-600'
+              }`}>
+                {isOnline && (
+                  <div className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
+                )}
+              </div>
+              
               {/* Race Icon Badge */}
-              <div className={`absolute -bottom-2 -right-2 w-8 h-8 rounded-xl ${theme.bg} backdrop-blur-md border border-white/10 flex items-center justify-center shadow-lg`}>
+              <div className={`absolute -bottom-2 -left-2 w-8 h-8 rounded-xl ${theme.bg} backdrop-blur-md border border-white/10 flex items-center justify-center shadow-lg`}>
                 <span className={`material-symbols-rounded text-base ${theme.color}`}>{theme.icon}</span>
               </div>
             </div>
@@ -57,6 +73,10 @@ export const GlobalUsersGrid: React.FC<GlobalUsersGridProps> = ({ members, onSel
               </h4>
               <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest">
                 @{user.username}
+              </p>
+              {/* Online Status Text */}
+              <p className={`text-[8px] font-bold uppercase tracking-wider ${isOnline ? 'text-emerald-500' : 'text-zinc-500'}`}>
+                {isOnline ? '● Online' : '○ Offline'}
               </p>
             </div>
 

@@ -316,7 +316,6 @@ const App: React.FC = () => {
       case TabType.Destaque:
         return (
           <div className="pb-40">
-            <Stories members={communityMembers} onSelectArtist={setSelectedUser} />
             <FeedView 
               currentUserId={currentUser.id} 
               showFeaturedOnly={true}
@@ -341,7 +340,8 @@ const App: React.FC = () => {
         return (
           <GlobalUsersGrid 
             members={communityMembers} 
-            onSelectUser={setSelectedUser} 
+            onSelectUser={setSelectedUser}
+            currentUserId={currentUser.id}
           />
         );
       case TabType.Locais:
