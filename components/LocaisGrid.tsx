@@ -134,6 +134,35 @@ export const LocaisGrid: React.FC<LocaisGridProps> = ({
 
   return (
     <div className="p-4 grid grid-cols-1 gap-5 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Chat OFF - Sempre disponível */}
+      <div className="px-2 mb-1">
+        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400/80">💬 Conversa Livre</h3>
+      </div>
+      
+      <button
+        onClick={() => onSelect('chat_off')}
+        className="relative group h-32 w-full rounded-[32px] overflow-hidden border-2 border-cyan-500/50 shadow-[0_0_30px_rgba(6,182,212,0.3)] hover:shadow-[0_0_50px_rgba(6,182,212,0.5)] hover:border-cyan-400 transition-all duration-500 transform active:scale-[0.96]"
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/80 via-slate-900 to-purple-900/50"></div>
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&auto=format&fit=crop')] opacity-20 mix-blend-overlay"></div>
+        
+        <div className="relative h-full flex flex-col justify-center items-center p-6">
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center shadow-xl border border-white/30 group-hover:rotate-6 group-hover:scale-110 transition-all duration-300">
+              <span className="material-symbols-rounded text-white text-4xl">forum</span>
+            </div>
+            <div className="text-left">
+              <h4 className="text-2xl font-black text-white tracking-tighter leading-none drop-shadow-md">Chat OFF</h4>
+              <p className="text-[10px] font-bold text-cyan-300 uppercase tracking-widest mt-1">Fora do Roleplay</p>
+              <p className="text-[9px] text-white/50 mt-1">Converse sem personagem</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-cyan-500/30 border border-cyan-400/50 backdrop-blur-sm">
+          <span className="text-[8px] font-black text-cyan-300 uppercase tracking-widest">Sempre Aberto</span>
+        </div>
+      </button>
       {/* Casa do Usuário - Aparece primeiro se tiver */}
       {userHouse && (
         <>
