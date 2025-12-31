@@ -109,6 +109,33 @@ export const supabaseService = {
     if (error) throw error;
   },
 
+  async applyDiseaseFromRoulette(userId: string, diseaseId: string, hpImpact: number): Promise<void> {
+    const { data: profile } = await supabase.from('profiles').select('health').eq('user_id', userId).single();
+    const currentHealth = profile?.health ?? 100;
+    const newHealth = Math.max(0, Math.min(100, currentHealth + hpImpact));
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        current_disease: diseaseId,
+        disease_started_at: new Date().toISOString(),
+        health: newHealth
+      })
+      .eq('user_id', userId);
+    if (error) throw error;
+  },
+
+  async applyPrizeFromRoulette(userId: string, prizeAmount: number): Promise<void> {
+    const { data: profile } = await supabase.from('profiles').select('money').eq('user_id', userId).single();
+    const currentMoney = profile?.money ?? 0;
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ money: currentMoney + prizeAmount })
+      .eq('user_id', userId);
+    if (error) throw error;
+  },
+
   async addToInventory(userId: string, item: MenuItem): Promise<void> {
     const { data: existing } = await supabase
       .from('inventory')
