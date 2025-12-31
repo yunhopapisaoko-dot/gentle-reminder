@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useRef } from 'react';
 import { usePrivateConversations, PrivateConversation } from '../src/hooks/usePrivateConversations';
+import { useChatNotifications } from '../src/hooks/useChatNotifications';
 
 interface AllChatsViewProps {
   onClose: () => void;
@@ -27,6 +28,7 @@ export const AllChatsView: React.FC<AllChatsViewProps> = ({ onClose, onSelectCha
   const pressTimer = useRef<any>(null);
   
   const { conversations, loading: loadingConversations, totalUnread } = usePrivateConversations(currentUserId);
+  const { getLocationUnread, totalUnread: totalRoleplayUnread } = useChatNotifications(currentUserId);
 
   const handleClose = () => {
     setIsClosing(true);
@@ -123,11 +125,14 @@ export const AllChatsView: React.FC<AllChatsViewProps> = ({ onClose, onSelectCha
           </button>
           <button
             onClick={() => setActiveTab('roleplay')}
-            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative ${
               activeTab === 'roleplay' ? 'bg-primary text-white shadow-lg' : 'text-white/40 hover:text-white/60'
             }`}
           >
             Roleplay
+            {totalRoleplayUnread > 0 && activeTab !== 'roleplay' && (
+              <span className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+            )}
           </button>
         </div>
 
@@ -224,13 +229,18 @@ export const AllChatsView: React.FC<AllChatsViewProps> = ({ onClose, onSelectCha
                 <div className={`w-16 h-16 rounded-[24px] bg-gradient-to-br ${chat.color} flex items-center justify-center text-white shadow-2xl transition-transform group-hover:scale-110`}>
                   <span className="material-symbols-rounded text-3xl">{chat.icon}</span>
                 </div>
+                {getLocationUnread(chat.id) > 0 && (
+                  <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse shadow-lg">
+                    {getLocationUnread(chat.id) > 9 ? '9+' : getLocationUnread(chat.id)}
+                  </span>
+                )}
               </div>
               <div className="flex-1 text-left min-w-0 pr-4">
                 <div className="flex justify-between items-center mb-1.5">
-                  <h4 className="text-[15px] font-black text-white tracking-tight leading-none truncate">{chat.name}</h4>
-                  <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">{chat.timestamp}</span>
+                  <h4 className={`text-[15px] font-black tracking-tight leading-none truncate ${getLocationUnread(chat.id) > 0 ? 'text-white' : 'text-white/80'}`}>{chat.name}</h4>
+                  <span className={`text-[9px] font-black uppercase tracking-widest ${getLocationUnread(chat.id) > 0 ? 'text-primary' : 'text-white/20'}`}>{chat.timestamp}</span>
                 </div>
-                <p className="text-xs text-white/40 font-bold truncate italic leading-relaxed">"{chat.lastMessage}"</p>
+                <p className={`text-xs font-bold truncate italic leading-relaxed ${getLocationUnread(chat.id) > 0 ? 'text-white/60' : 'text-white/40'}`}>"{chat.lastMessage}"</p>
               </div>
               
               {/* Options Overlay (Hold to exit) */}

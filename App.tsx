@@ -26,6 +26,7 @@ import { TabType, User, Post, MenuItem } from './types';
 import { supabase } from './supabase';
 import { supabaseService } from './services/supabaseService';
 import { usePrivateConversations, PrivateConversation } from './src/hooks/usePrivateConversations';
+import { useChatNotifications } from './src/hooks/useChatNotifications';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -59,6 +60,7 @@ const App: React.FC = () => {
   // Private chat state
   const [activePrivateChat, setActivePrivateChat] = useState<PrivateConversation | null>(null);
   const { startConversation, markConversationAsRead, totalUnread } = usePrivateConversations(currentUser?.id || null);
+  const { markChatAsRead, getLocationUnread, totalUnread: totalChatUnread } = useChatNotifications(currentUser?.id || null);
 
   useEffect(() => {
     const savedConfirmed = localStorage.getItem('magic_confirmed_rooms');
@@ -438,7 +440,7 @@ const App: React.FC = () => {
           />
         )}
         {selectedUser && <ProfileView user={selectedUser} currentUserId={currentUser.id} allPosts={posts} onClose={() => setSelectedUser(null)} onUpdate={(u) => { setCurrentUser(u); fetchInitialData(u.id); }} onStartChat={handleStartPrivateChat} />}
-        {selectedLocalChat && <ChatInterface onUpdateStatus={handleUpdateStatus} onConsumeItems={handleBuyItems} currentUser={currentUser} locationContext={selectedLocalChat} onNavigate={handleEnterRoom} onClose={() => setSelectedLocalChat(null)} />}
+        {selectedLocalChat && <ChatInterface onUpdateStatus={handleUpdateStatus} onConsumeItems={handleBuyItems} currentUser={currentUser} locationContext={selectedLocalChat} onNavigate={handleEnterRoom} onClose={() => setSelectedLocalChat(null)} onMarkAsRead={(loc, subLoc) => markChatAsRead(loc, subLoc)} />}
         {isAllChatsOpen && (
           <AllChatsView 
             visitedRooms={visitedRooms} 
@@ -464,7 +466,7 @@ const App: React.FC = () => {
           />
         )}
         {isRouletteOpen && <RouletteView userId={currentUser.id} lastSpinAt={currentUser.last_spin_at} onClose={() => setIsRouletteOpen(false)} onResult={handleRouletteResult} />}
-        {!selectedLocalChat && !selectedUser && !isCreateModalOpen && !activePrivateChat && <FloatingActionDock activeTab={activeTab} onCreateClick={() => setIsCreateModalOpen(true)} onAllChatsClick={() => setIsAllChatsOpen(true)} onRouletteClick={() => setIsRouletteOpen(true)} unreadMessages={totalUnread} />}
+        {!selectedLocalChat && !selectedUser && !isCreateModalOpen && !activePrivateChat && <FloatingActionDock activeTab={activeTab} onCreateClick={() => setIsCreateModalOpen(true)} onAllChatsClick={() => setIsAllChatsOpen(true)} onRouletteClick={() => setIsRouletteOpen(true)} unreadMessages={totalUnread + totalChatUnread} />}
         {showDbSetup && <DbSetupModal onClose={() => setShowDbSetup(false)} />}
       </div>
     </div>

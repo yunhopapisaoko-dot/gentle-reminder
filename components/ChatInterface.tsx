@@ -31,6 +31,7 @@ interface ChatInterfaceProps {
   onConsumeItems?: (items: MenuItem[]) => void;
   onClearDisease?: (hpRestore: number) => void;
   onNavigate?: (locationId: string) => void;
+  onMarkAsRead?: (location: string, subLocation?: string | null) => void;
 }
 
 const LOCATIONS_LIST = [
@@ -84,7 +85,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onUpdateStatus, 
   onConsumeItems, 
   onClearDisease,
-  onNavigate 
+  onNavigate,
+  onMarkAsRead
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [offMessages, setOffMessages] = useState<ChatMessage[]>([]);
@@ -207,6 +209,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   useEffect(() => {
     loadMessages();
     
+    // Mark chat as read when opening
+    if (locationContext && onMarkAsRead) {
+      onMarkAsRead(locationContext, currentSubLoc?.name);
+    }
+    
     if (locationContext && currentUser?.id) {
       supabaseService.checkWorkerStatus(currentUser.id, locationContext).then(setWorkerRole);
       supabaseService.checkRoomAccess(currentUser.id, locationContext).then(setAuthorizedRooms);
@@ -217,7 +224,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         supabaseService.getActiveVIPReservation(locationContext).then(setActiveVIPReservation);
       }
     }
-  }, [locationContext, currentUser?.id, loadMessages]);
+  }, [locationContext, currentUser?.id, loadMessages, currentSubLoc?.name, onMarkAsRead]);
 
   useEffect(() => {
     if (scrollRef.current) {
