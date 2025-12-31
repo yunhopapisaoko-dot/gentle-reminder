@@ -51,7 +51,12 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, current
           <div className="flex items-center space-x-3">
             <div className="relative">
               <button 
-                onClick={() => setShowNotifications(!showNotifications)}
+                onClick={() => {
+                  if (!showNotifications && unreadCount > 0) {
+                    markAllAsRead();
+                  }
+                  setShowNotifications(!showNotifications);
+                }}
                 className="w-11 h-11 bg-white/5 backdrop-blur-2xl rounded-[18px] border border-white/10 flex items-center justify-center text-white/50 hover:text-white transition-all active:scale-90"
               >
                 <span className="material-symbols-rounded">notifications</span>
