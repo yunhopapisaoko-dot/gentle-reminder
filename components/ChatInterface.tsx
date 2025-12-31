@@ -535,33 +535,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </div>
 
-      {/* Toggle RP/OFF Chat - Hidden for chat_off location */}
-      {!isChatOff && (
-        <div className="relative z-10 px-6 py-3 flex items-center justify-center gap-2 bg-black/20 backdrop-blur-sm border-b border-white/5">
-          <button
-            onClick={() => setIsOffChatMode(false)}
-            className={`flex-1 py-3 px-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
-              !isOffChatMode 
-                ? 'bg-primary text-white shadow-lg shadow-primary/30' 
-                : 'bg-white/5 text-white/40 hover:bg-white/10'
-            }`}
-          >
-            <span className="material-symbols-rounded text-sm">swords</span>
-            Roleplay
-          </button>
-          <button
-            onClick={() => setIsOffChatMode(true)}
-            className={`flex-1 py-3 px-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
-              isOffChatMode 
-                ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 animate-pulse' 
-                : 'bg-white/5 text-white/40 hover:bg-white/10'
-            }`}
-          >
-            <span className="material-symbols-rounded text-sm">chat</span>
-            OFF
-          </button>
-        </div>
-      )}
+      {/* Toggle RP/OFF Chat removed - roleplay chats are only roleplay, OFF is separate location */}
 
       {/* OFF Chat Banner when active */}
       {isOffChatMode && (
@@ -596,16 +570,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           
           // RP Chat mode - full display with race tags
           return (
-            <div key={msg.id} className={`flex items-start space-x-3 ${msg.role === 'user' && !isJYP ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
+            <div key={msg.id} className={`flex items-start space-x-3 ${isOwnMessage && !isJYP ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}>
               <button onClick={() => msg.author && onMemberClick?.(msg.author)} className={`w-10 h-10 rounded-[16px] flex-shrink-0 border-2 border-white/20 overflow-hidden shadow-xl flex items-center justify-center ${isJYP ? 'bg-pink-500' : 'bg-surface-purple'}`}>
                 {isJYP ? <img src="/jyp-avatar.jpg" className="w-full h-full object-cover" alt="JYP" /> : <img src={msg.author?.avatar} className="w-full h-full object-cover" alt="avatar" />}
               </button>
-              <div className={`flex flex-col space-y-1.5 max-w-[80%] ${msg.role === 'user' && !isJYP ? 'items-end' : 'items-start'}`}>
-                <div className={`flex items-center space-x-2 ${msg.role === 'user' && !isJYP ? 'flex-row-reverse space-x-reverse' : ''}`}>
+              <div className={`flex flex-col space-y-1.5 max-w-[80%] ${isOwnMessage && !isJYP ? 'items-end' : 'items-start'}`}>
+                <div className={`flex items-center space-x-2 ${isOwnMessage && !isJYP ? 'flex-row-reverse space-x-reverse' : ''}`}>
                    <span className="text-[13px] font-black text-white tracking-tight">{isJYP ? 'JYP' : (msg.author?.name || 'Viajante')}</span>
                    <div className={`flex items-center space-x-1 px-1.5 py-0.5 rounded-md ${isJYP ? 'bg-pink-500 text-white' : `${theme.bg.replace('/10', '')} ${theme.color.replace('text-', 'text-white')}`} border border-white/10`}><span className="material-symbols-rounded text-[10px]">{isJYP ? 'theater_comedy' : theme.icon}</span><span className="text-[8px] font-black uppercase tracking-widest">{isJYP ? 'Bandido' : (msg.author?.race || 'Humano')}</span></div>
                 </div>
-                <div className={`px-5 py-3.5 rounded-[24px] text-[13.5px] font-bold leading-relaxed shadow-2xl border border-white/5 ${isJYP ? 'bg-pink-700 text-white rounded-tl-none' : msg.role === 'user' ? 'bg-primary text-white rounded-tr-none' : 'bg-zinc-800 text-white rounded-tl-none'}`}>
+                <div className={`px-5 py-3.5 rounded-[24px] text-[13.5px] font-bold leading-relaxed shadow-2xl border border-white/5 ${isJYP ? 'bg-pink-700 text-white rounded-tl-none' : isOwnMessage ? 'bg-primary text-white rounded-tr-none' : 'bg-zinc-800 text-white rounded-tl-none'}`}>
                   {msg.text.split('\n').map((line, i) => {
                     const parts = line.split(/(\*[^*]+\*)/g);
                     return (
