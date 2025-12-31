@@ -250,7 +250,8 @@ const App: React.FC = () => {
   };
 
   const handleEnterRoom = (roomId: string) => {
-    if (!currentUser?.isActiveRP && roomId !== 'supermercado' && roomId !== 'imobiliaria') {
+    // Chat OFF e supermercado não precisam de RP ativo
+    if (!currentUser?.isActiveRP && roomId !== 'supermercado' && roomId !== 'imobiliaria' && roomId !== 'chat_off') {
         alert("Ative seu status de Roleplay no menu lateral para entrar em locais.");
         return;
     }
