@@ -121,14 +121,22 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const contextKey = locationContext?.toLowerCase() || 'default';
+  const isChatOff = contextKey === 'chat_off';
   const isHospital = contextKey === 'hospital';
   const isPharmacy = contextKey === 'farmacia';
   const isPousadaKitchen = contextKey === 'pousada' && currentSubLoc?.name === 'Cozinha';
   const activeWallpaper = currentSubLoc ? currentSubLoc.wallpaper : (WALLPAPERS[contextKey] || WALLPAPERS.default);
   
-  const icon = ICONS[contextKey] || ICONS.default;
+  const icon = isChatOff ? 'forum' : (ICONS[contextKey] || ICONS.default);
   const hasMenu = MENUS[contextKey] !== undefined;
   const [showPharmacy, setShowPharmacy] = useState(false);
+
+  // Força modo OFF para chat_off location
+  useEffect(() => {
+    if (isChatOff) {
+      setIsOffChatMode(true);
+    }
+  }, [isChatOff]);
   
   const internalLocs = (SUB_LOCATIONS[contextKey] || []).filter(loc => {
     if (!loc.restricted) return true;
@@ -462,27 +470,27 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </div>
 
-      <div className="relative z-10 px-6 pt-12 pb-6 flex items-center justify-between backdrop-blur-3xl bg-black/40 border-b border-white/10">
+      <div className={`relative z-10 px-6 pt-12 pb-6 flex items-center justify-between backdrop-blur-3xl border-b ${isChatOff ? 'bg-cyan-900/40 border-cyan-500/30' : 'bg-black/40 border-white/10'}`}>
         <div className="flex items-center space-x-4">
           {currentSubLoc ? (
             <button onClick={() => setCurrentSubLoc(null)} className="w-12 h-12 rounded-[20px] bg-white/10 flex items-center justify-center text-white border border-white/20"><span className="material-symbols-rounded">arrow_back</span></button>
           ) : (
-            <div className={`w-12 h-12 rounded-[20px] shadow-[0_0_25px_rgba(139,92,246,0.6)] border border-white/30 flex items-center justify-center text-white ${isHospital ? 'bg-blue-500 shadow-blue-500/50' : 'bg-primary/90'}`}>
+            <div className={`w-12 h-12 rounded-[20px] border border-white/30 flex items-center justify-center text-white ${isChatOff ? 'bg-gradient-to-br from-cyan-500 to-purple-600 shadow-[0_0_25px_rgba(6,182,212,0.6)]' : isHospital ? 'bg-blue-500 shadow-blue-500/50' : 'bg-primary/90 shadow-[0_0_25px_rgba(139,92,246,0.6)]'}`}>
               <span className="material-symbols-rounded text-2xl">{icon}</span>
             </div>
           )}
           
           <div>
-            <h3 className="text-xl font-black text-white leading-none capitalize tracking-tighter">{currentSubLoc ? currentSubLoc.name : (locationContext || 'Magic Chat')}</h3>
+            <h3 className="text-xl font-black text-white leading-none capitalize tracking-tighter">{isChatOff ? 'Chat OFF' : currentSubLoc ? currentSubLoc.name : (locationContext || 'Magic Chat')}</h3>
             <div className="flex items-center mt-1.5 space-x-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-              <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em]">{currentSubLoc ? `Cenário: ${locationContext}` : 'Canal Ativo'}</span>
+              <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isChatOff ? 'bg-cyan-400' : 'bg-green-500'}`}></div>
+              <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isChatOff ? 'text-cyan-300/70' : 'text-white/50'}`}>{isChatOff ? 'Fora do Roleplay' : currentSubLoc ? `Cenário: ${locationContext}` : 'Canal Ativo'}</span>
             </div>
           </div>
         </div>
         
         <div className="flex items-center space-x-2">
-          {isPousadaKitchen && (
+          {!isChatOff && isPousadaKitchen && (
             <>
               <button onClick={() => setShowFridge(true)} className="w-11 h-11 rounded-2xl bg-cyan-500 text-white flex items-center justify-center shadow-lg border border-white/20 active:scale-90 transition-all">
                 <span className="material-symbols-rounded">kitchen</span>
@@ -493,7 +501,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </>
           )}
 
-          {locationContext && !currentSubLoc && (
+          {!isChatOff && locationContext && !currentSubLoc && (
             <>
               {workerRole ? (
                 <button onClick={() => setShowWorkerPanel(true)} className="w-11 h-11 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg border border-white/20 active:scale-90 transition-all">
@@ -507,50 +515,52 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </>
           )}
 
-          {isHospital && !currentSubLoc && (
+          {!isChatOff && isHospital && !currentSubLoc && (
             <button onClick={() => setShowConsultations(true)} className="w-11 h-11 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg border border-white/20 active:scale-90"><span className="material-symbols-rounded">stethoscope</span></button>
           )}
-          {isPharmacy && !currentSubLoc && (
+          {!isChatOff && isPharmacy && !currentSubLoc && (
             <button onClick={() => setShowPharmacy(true)} className="px-5 py-3 rounded-2xl bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest shadow-xl border border-white/20 active:scale-95 transition-all">Balcão</button>
           )}
-          {hasMenu && !currentSubLoc && !isHospital && !isPharmacy && (
+          {!isChatOff && hasMenu && !currentSubLoc && !isHospital && !isPharmacy && (
             <button onClick={() => setShowMenu(true)} className="px-5 py-3 rounded-2xl bg-secondary text-white text-[10px] font-black uppercase tracking-widest shadow-xl border border-white/20 active:scale-95 transition-all">Menu</button>
           )}
           <button onClick={handleClose} className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-2xl flex items-center justify-center border border-white/10 text-white shadow-lg active:scale-90"><span className="material-symbols-rounded">close</span></button>
         </div>
       </div>
 
-      {/* Toggle RP/OFF Chat */}
-      <div className="relative z-10 px-6 py-3 flex items-center justify-center gap-2 bg-black/20 backdrop-blur-sm border-b border-white/5">
-        <button
-          onClick={() => setIsOffChatMode(false)}
-          className={`flex-1 py-3 px-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
-            !isOffChatMode 
-              ? 'bg-primary text-white shadow-lg shadow-primary/30' 
-              : 'bg-white/5 text-white/40 hover:bg-white/10'
-          }`}
-        >
-          <span className="material-symbols-rounded text-sm">swords</span>
-          Roleplay
-        </button>
-        <button
-          onClick={() => setIsOffChatMode(true)}
-          className={`flex-1 py-3 px-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
-            isOffChatMode 
-              ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 animate-pulse' 
-              : 'bg-white/5 text-white/40 hover:bg-white/10'
-          }`}
-        >
-          <span className="material-symbols-rounded text-sm">chat</span>
-          OFF
-        </button>
-      </div>
+      {/* Toggle RP/OFF Chat - Hidden for chat_off location */}
+      {!isChatOff && (
+        <div className="relative z-10 px-6 py-3 flex items-center justify-center gap-2 bg-black/20 backdrop-blur-sm border-b border-white/5">
+          <button
+            onClick={() => setIsOffChatMode(false)}
+            className={`flex-1 py-3 px-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+              !isOffChatMode 
+                ? 'bg-primary text-white shadow-lg shadow-primary/30' 
+                : 'bg-white/5 text-white/40 hover:bg-white/10'
+            }`}
+          >
+            <span className="material-symbols-rounded text-sm">swords</span>
+            Roleplay
+          </button>
+          <button
+            onClick={() => setIsOffChatMode(true)}
+            className={`flex-1 py-3 px-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+              isOffChatMode 
+                ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 animate-pulse' 
+                : 'bg-white/5 text-white/40 hover:bg-white/10'
+            }`}
+          >
+            <span className="material-symbols-rounded text-sm">chat</span>
+            OFF
+          </button>
+        </div>
+      )}
 
       {/* OFF Chat Banner when active */}
       {isOffChatMode && (
-        <div className="relative z-10 px-6 py-2 bg-amber-500/20 border-b border-amber-500/30 flex items-center justify-center gap-2">
-          <span className="material-symbols-rounded text-amber-500 text-sm">info</span>
-          <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Chat fora do roleplay - Converse livremente!</span>
+        <div className={`relative z-10 px-6 py-2 border-b flex items-center justify-center gap-2 ${isChatOff ? 'bg-cyan-500/20 border-cyan-500/30' : 'bg-amber-500/20 border-amber-500/30'}`}>
+          <span className={`material-symbols-rounded text-sm ${isChatOff ? 'text-cyan-400' : 'text-amber-500'}`}>info</span>
+          <span className={`text-[9px] font-black uppercase tracking-widest ${isChatOff ? 'text-cyan-400' : 'text-amber-500'}`}>{isChatOff ? 'Chat livre - Sem personagem, sem roleplay!' : 'Chat fora do roleplay - Converse livremente!'}</span>
         </div>
       )}
 
