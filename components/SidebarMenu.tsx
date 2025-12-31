@@ -152,6 +152,7 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({
             <StatusItem label="Saúde" value={user.hp || 100} icon="favorite" color="bg-rose-500" />
             <StatusItem label="Fome" value={user.hunger || 0} icon="restaurant" color="bg-orange-500" />
             <StatusItem label="Sede" value={user.thirst || 0} icon="water_drop" color="bg-cyan-500" />
+            <StatusItem label="Alcoolismo" value={user.alcohol || 0} icon="local_bar" color="bg-purple-500" />
           </div>
 
           <div className="space-y-2 pt-4">
