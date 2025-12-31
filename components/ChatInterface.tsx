@@ -133,12 +133,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const hasMenu = MENUS[contextKey] !== undefined;
   const [showPharmacy, setShowPharmacy] = useState(false);
 
-  // Força modo OFF para chat_off location
+  // Força modo OFF para chat_off location, reseta para RP em outros locais
   useEffect(() => {
     if (isChatOff) {
       setIsOffChatMode(true);
+    } else {
+      setIsOffChatMode(false);
     }
-  }, [isChatOff]);
+  }, [isChatOff, locationContext]);
   
   const internalLocs = (SUB_LOCATIONS[contextKey] || []).filter(loc => {
     if (!loc.restricted) return true;
