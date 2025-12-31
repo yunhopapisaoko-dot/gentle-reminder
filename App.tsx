@@ -97,6 +97,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!currentUser || !currentUser.isActiveRP) return;
     
+    // Decrementa 1 ponto a cada 1 hora (3600000ms)
     const interval = setInterval(() => {
       setCurrentUser(prev => {
         if (!prev) return prev;
@@ -114,7 +115,7 @@ const App: React.FC = () => {
           thirst: newThirst
         };
       });
-    }, 60000);
+    }, 3600000); // 1 hora = 3600000ms
     
     return () => clearInterval(interval);
   }, [currentUser?.id, currentUser?.isActiveRP]);
