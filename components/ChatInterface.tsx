@@ -443,7 +443,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         isOffChatMode ? undefined : currentUser.avatar,
         isOffChatMode ? 'OFF' : currentSubLoc?.name
       );
-      await loadMessages();
+      // Não recarrega mensagens após enviar - a mensagem já foi adicionada localmente
+      // Isso evita que erros de rede limpem as mensagens exibidas
     } catch (error) {
       console.error("Erro ao salvar mensagem:", error);
     }
