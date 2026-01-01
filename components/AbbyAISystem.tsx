@@ -4,9 +4,10 @@ import React, { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../supabase';
 import { supabaseService } from '../services/supabaseService';
 import { ChatMessage, User, OrderItem } from '../types';
+import abbyAvatar from '../src/assets/abby-avatar.jpg';
 
 // Avatar da ABBY - IA funcionária dos estabelecimentos
-const ABBY_AVATAR = 'https://api.dicebear.com/7.x/personas/svg?seed=abby&backgroundColor=c0aede&hair=short01&hairColor=6b4423&mouth=smile&eyes=happy&skinColor=f5d0c5';
+const ABBY_AVATAR = abbyAvatar;
 
 const ABBY_USER: User = {
   id: 'abby-ai',
