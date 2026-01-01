@@ -58,8 +58,17 @@ export const AbbyAISystem: React.FC<AbbyAISystemProps> = ({
 
   const sendAbbyMessage = useCallback(async (content: string) => {
     try {
-      // A ABBY não persiste mensagens no banco (não tem auth),
-      // apenas notifica localmente quem está presente no chat
+      // Persistir no chat para não sumir ao sair/entrar novamente
+      await supabaseService.sendChatMessage(
+        currentUser.id,
+        locationContext,
+        content,
+        ABBY_USER.name,
+        ABBY_USER.avatar,
+        undefined
+      );
+
+      // Também notifica localmente quem está com o chat aberto (UI imediata)
       if (onAbbyMessage) {
         const abbyMsg: ChatMessage = {
           id: `abby-${Date.now()}`,
@@ -72,7 +81,7 @@ export const AbbyAISystem: React.FC<AbbyAISystemProps> = ({
     } catch (error) {
       console.error('Erro ao enviar mensagem da ABBY:', error);
     }
-  }, [onAbbyMessage]);
+  }, [currentUser.id, locationContext, onAbbyMessage]);
 
   const processPendingOrder = useCallback(async (order: any) => {
     const orderId = order.id;
@@ -95,32 +104,26 @@ export const AbbyAISystem: React.FC<AbbyAISystemProps> = ({
       await sendAbbyMessage(`*${startPhrase}* — Preparando pedido para ${customerName}: ${itemNames}`);
 
       // 2. Aprovar o pedido no banco (mudar status para 'preparing')
-      await supabase
+      // e registrar o horário estimado de conclusão baseado no tempo de preparo (minutos reais)
+      const approvedAtIso = new Date().toISOString();
+      const readyAtIso = new Date(Date.now() + prepTime * 60 * 1000).toISOString();
+
+      const { error: approveError } = await supabase
         .from('food_orders')
-        .update({ 
-          status: 'preparing', 
-          approved_by: 'abby-ai', 
-          approved_at: new Date().toISOString()
+        .update({
+          status: 'preparing',
+          approved_by: currentUser.id,
+          approved_at: approvedAtIso,
+          ready_at: readyAtIso
         })
         .eq('id', orderId);
 
-      // 3. Aguardar o tempo de preparo (em segundos para simulação, máximo 30s)
-      const waitTime = Math.min(prepTime * 3000, 30000); // 3 segundos por minuto de preparo, máximo 30s
-      await new Promise(resolve => setTimeout(resolve, waitTime));
-
-      // 4. Mensagem intermediária se o tempo for longo
-      if (prepTime > 5) {
-        const progressPhrase = getRandomPhrase(COOKING_PHRASES);
-        await sendAbbyMessage(`*${progressPhrase}* — Quase pronto, ${customerName}! ✨`);
-        await new Promise(resolve => setTimeout(resolve, 3000));
+      if (approveError) {
+        throw approveError;
       }
 
-      // 5. Completar o pedido (adicionar ao inventário e descontar dinheiro)
-      await supabaseService.completeFoodOrder(orderId);
-
-      // 6. Mensagem de entrega
-      const deliveryPhrase = getRandomPhrase(DELIVERY_PHRASES);
-      await sendAbbyMessage(`*${deliveryPhrase} ${customerName}!* — Seu pedido está pronto: ${itemNames}. Bom apetite! 🍽️`);
+      // A entrega (completeFoodOrder + mensagem) acontece quando o tempo de preparo terminar
+      // via deliverPreparingOrder() nas próximas verificações.
 
     } catch (error: any) {
       console.error('Erro ao processar pedido:', error);
@@ -141,10 +144,10 @@ export const AbbyAISystem: React.FC<AbbyAISystemProps> = ({
     }
   }, [sendAbbyMessage]);
 
-  // Processar pedido que já está em preparing (entrega direta)
+  // Processar pedido que já está em preparing (entrega quando o tempo terminar)
   const deliverPreparingOrder = useCallback(async (order: any) => {
     const orderId = order.id;
-    
+
     // Verificar se já está processando este pedido
     if (processingOrdersRef.current.has(orderId)) {
       return;
@@ -157,17 +160,16 @@ export const AbbyAISystem: React.FC<AbbyAISystemProps> = ({
       const itemNames = items.map(i => `${i.quantity}x ${i.name}`).join(', ');
       const customerName = order.customer_name;
 
-      // Verificar se o tempo de preparo já passou
-      const approvedAt = new Date(order.approved_at).getTime();
-      const prepTimeMs = order.preparation_time * 60 * 1000; // em milissegundos
-      const now = Date.now();
-      const timeRemaining = (approvedAt + prepTimeMs) - now;
+      // Respeitar o tempo de preparo REAL (minutos)
+      // Preferir ready_at; se não existir, calcular via approved_at/created_at + preparation_time.
+      const prepTimeMs = (order.preparation_time || 0) * 60 * 1000;
+      const baseTime = order.approved_at || order.created_at;
+      const readyAtMs = order.ready_at
+        ? new Date(order.ready_at).getTime()
+        : new Date(baseTime).getTime() + prepTimeMs;
 
-      if (timeRemaining > 0) {
-        // Ainda está preparando, aguardar
-        const waitTime = Math.min(timeRemaining, 30000); // máximo 30s de espera
-        await sendAbbyMessage(`*verifica o pedido de ${customerName}* — Está quase pronto! ⏳`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+      if (Date.now() < readyAtMs) {
+        return; // ainda está preparando
       }
 
       // Completar o pedido (adicionar ao inventário e descontar dinheiro)
