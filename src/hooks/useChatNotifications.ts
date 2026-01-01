@@ -51,16 +51,13 @@ export function useChatNotifications(userId: string | null) {
       const updated = new Map(prev);
       const existing = updated.get(key);
       if (existing) {
+        // Update totalUnread using functional update to avoid dependency
+        setTotalUnread(currentTotal => Math.max(0, currentTotal - existing.unreadCount));
         updated.set(key, { ...existing, unreadCount: 0 });
       }
       return updated;
     });
-
-    setTotalUnread(prev => {
-      const existing = chatNotifications.get(key);
-      return Math.max(0, prev - (existing?.unreadCount || 0));
-    });
-  }, [userId, chatNotifications]);
+  }, [userId]);
 
   // Subscribe to new chat messages
   useEffect(() => {

@@ -221,11 +221,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   useEffect(() => {
     loadMessages();
     
-    // Mark chat as read when opening
-    if (locationContext && onMarkAsRead) {
-      onMarkAsRead(locationContext, currentSubLoc?.name);
-    }
-    
     if (locationContext && currentUser?.id) {
       supabaseService.checkWorkerStatus(currentUser.id, locationContext).then(setWorkerRole);
       supabaseService.checkRoomAccess(currentUser.id, locationContext).then(setAuthorizedRooms);
@@ -236,7 +231,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         supabaseService.getActiveVIPReservation(locationContext).then(setActiveVIPReservation);
       }
     }
-  }, [locationContext, currentUser?.id, loadMessages, currentSubLoc?.name, onMarkAsRead]);
+  }, [locationContext, currentUser?.id, loadMessages, currentSubLoc?.name]);
+
+  // Separate effect to mark chat as read (only runs once per location change)
+  useEffect(() => {
+    if (locationContext && onMarkAsRead) {
+      onMarkAsRead(locationContext, currentSubLoc?.name);
+    }
+  }, [locationContext, currentSubLoc?.name]);
 
   useEffect(() => {
     if (scrollRef.current) {
