@@ -11,6 +11,7 @@ import { VIPReservationModal } from './VIPReservationModal';
 import { PharmacyView } from './PharmacyView';
 import { FridgeModal } from './FridgeModal';
 import { RecipesModal } from './RecipesModal';
+import { AbbyAISystem } from './AbbyAISystem';
 import { supabaseService } from '../services/supabaseService';
 
 // Import wallpapers
@@ -894,6 +895,22 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {showConsultations && isHospital && <HospitalConsultations onClose={() => setShowConsultations(false)} onTreat={handleTreat} currentUserId={currentUser?.id} />}
       {showVIPModal && locationContext && <VIPReservationModal location={locationContext} currentUser={currentUser} onClose={() => setShowVIPModal(false)} onSuccess={() => { setShowVIPModal(false); supabaseService.checkVIPAccess(currentUser.id, locationContext).then(setHasVIPAccess); }} onMoneyChange={(amount) => onUpdateStatus?.({ money: amount })} />}
       {contextKey === 'pousada' && <JYPBanditSystem location={contextKey} subLocation={currentSubLoc?.name} currentUser={currentUser} onlineUsers={[currentUser, ...onlineMembers.filter(m => m.id !== currentUser.id)]} onRobbery={handleJYPRobbery} onJYPMessage={handleJYPMessage} />}
+      {(contextKey === 'restaurante' || contextKey === 'padaria') && (
+        <AbbyAISystem 
+          locationContext={contextKey} 
+          currentUser={currentUser}
+          onAbbyMessage={(msg) => {
+            if (currentSubLoc) {
+              setRoomMessages(prev => ({
+                ...prev,
+                [currentSubLoc.name]: [...(prev[currentSubLoc.name] || []), msg]
+              }));
+            } else {
+              setMessages(prev => [...prev, msg]);
+            }
+          }}
+        />
+      )}
       {showPharmacy && <PharmacyView onClose={() => setShowPharmacy(false)} currentUser={currentUser} onUpdateMoney={(amount) => onUpdateStatus?.({ money: amount })} />}
       {showFridge && <FridgeModal userId={currentUser.id} userName={currentUser.name} onClose={() => setShowFridge(false)} />}
       {showRecipes && <RecipesModal userId={currentUser.id} userName={currentUser.name} onClose={() => setShowRecipes(false)} />}
