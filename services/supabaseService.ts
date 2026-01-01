@@ -447,7 +447,7 @@ export const supabaseService = {
   },
 
   // ============ CHAT MESSAGES ============
-  async getChatMessages(location: string, subLocation?: string): Promise<any[]> {
+  async getChatMessages(location: string, subLocation?: string): Promise<any[] | null> {
     // Query sem join - buscar profiles separadamente porque não há FK
     let query = supabase
       .from('chat_messages')
@@ -465,7 +465,8 @@ export const supabaseService = {
     const { data, error } = await query;
     if (error) {
       console.error("Erro ao buscar mensagens:", error);
-      return [];
+      // Retorna null em caso de erro para que o componente saiba que não deve limpar as mensagens
+      return null;
     }
     
     if (!data || data.length === 0) return [];

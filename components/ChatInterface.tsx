@@ -160,6 +160,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     try {
       // Load RP messages
       const dbMessages = await supabaseService.getChatMessages(loc, currentSubLoc?.name);
+      
+      // Se a busca retornar null/undefined, não atualiza o estado (mantém mensagens existentes)
+      if (!dbMessages) {
+        console.warn("Nenhuma mensagem retornada, mantendo estado atual");
+        return;
+      }
+      
       const formattedMessages: ChatMessage[] = dbMessages.map(msg => ({
         id: msg.id,
         role: msg.user_id === 'jyp-bandit' ? 'model' : 'user',
@@ -190,20 +197,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       // Load OFF messages (stored with sub_location = 'OFF')
       const offDbMessages = await supabaseService.getChatMessages(loc, 'OFF');
-      const formattedOffMessages: ChatMessage[] = offDbMessages.map(msg => ({
-        id: msg.id,
-        role: 'user',
-        text: msg.content,
-        author: {
-          id: msg.user_id,
-          name: msg.profiles?.full_name || 'Viajante',
-          username: msg.profiles?.username || 'user',
-          avatar: msg.profiles?.avatar_url || '',
-          race: 'draeven' as any
-        }
-      }));
-      setOffMessages(formattedOffMessages);
+      if (offDbMessages) {
+        const formattedOffMessages: ChatMessage[] = offDbMessages.map(msg => ({
+          id: msg.id,
+          role: 'user',
+          text: msg.content,
+          author: {
+            id: msg.user_id,
+            name: msg.profiles?.full_name || 'Viajante',
+            username: msg.profiles?.username || 'user',
+            avatar: msg.profiles?.avatar_url || '',
+            race: 'draeven' as any
+          }
+        }));
+        setOffMessages(formattedOffMessages);
+      }
     } catch (error) {
+      // Em caso de erro, NÃO limpa as mensagens - mantém o estado atual
       console.error("Erro ao carregar mensagens:", error);
     }
   }, [locationContext, currentSubLoc]);
