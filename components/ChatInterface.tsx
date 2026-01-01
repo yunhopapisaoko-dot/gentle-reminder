@@ -12,6 +12,7 @@ import { PharmacyView } from './PharmacyView';
 import { FridgeModal } from './FridgeModal';
 import { RecipesModal } from './RecipesModal';
 import { supabaseService } from '../services/supabaseService';
+import abbyAvatar from '../src/assets/abby-avatar.jpg';
 
 // Import wallpapers
 import hospitalEntrance from '../src/assets/wallpapers/hospital-entrance.jpg';
@@ -169,24 +170,46 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         return;
       }
       
-      const formattedMessages: ChatMessage[] = dbMessages.map(msg => ({
-        id: msg.id,
-        role: msg.user_id === 'jyp-bandit' ? 'model' : 'user',
-        text: msg.content,
-        author: msg.user_id === 'jyp-bandit' ? {
-          id: 'jyp-bandit',
-          name: 'JYP',
-          username: 'jyp',
-          avatar: '/jyp-avatar.jpg',
-          race: 'draeven' as any
-        } : {
-          id: msg.user_id,
-          name: msg.character_name || msg.profiles?.full_name || 'Viajante',
-          username: msg.profiles?.username || 'user',
-          avatar: msg.character_avatar || msg.profiles?.avatar_url || '',
-          race: 'draeven' as any
+      const formattedMessages: ChatMessage[] = dbMessages.map(msg => {
+        // Verificar se é um personagem especial (JYP ou ABBY)
+        const isJYP = msg.user_id === 'jyp-bandit';
+        const isAbby = msg.user_id === 'abby-worker';
+        const isSpecialCharacter = isJYP || isAbby;
+        
+        let author: User;
+        if (isJYP) {
+          author = {
+            id: 'jyp-bandit',
+            name: 'JYP',
+            username: 'jyp',
+            avatar: '/jyp-avatar.jpg',
+            race: 'draeven' as any
+          };
+        } else if (isAbby) {
+          author = {
+            id: 'abby-worker',
+            name: 'ABBY',
+            username: 'abby',
+            avatar: abbyAvatar,
+            race: 'draeven' as any
+          };
+        } else {
+          author = {
+            id: msg.user_id,
+            name: msg.character_name || msg.profiles?.full_name || 'Viajante',
+            username: msg.profiles?.username || 'user',
+            avatar: msg.character_avatar || msg.profiles?.avatar_url || '',
+            race: 'draeven' as any
+          };
         }
-      }));
+        
+        return {
+          id: msg.id,
+          role: isSpecialCharacter ? 'model' : 'user',
+          text: msg.content,
+          author
+        } as ChatMessage;
+      });
       
       if (currentSubLoc) {
         setRoomMessages(prev => ({
