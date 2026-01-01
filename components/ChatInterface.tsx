@@ -168,11 +168,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         return;
       }
       
-      const formattedMessages: ChatMessage[] = dbMessages.map(msg => ({
-        id: msg.id,
-        role: msg.user_id === 'jyp-bandit' ? 'model' : 'user',
-        text: msg.content,
-        author: msg.user_id === 'jyp-bandit' ? {
+       const formattedMessages: ChatMessage[] = dbMessages.map(msg => ({
+         id: msg.id,
+         role: (msg.user_id === 'jyp-bandit' || msg.character_name === 'ABBY') ? 'model' : 'user',
+         text: msg.content,
+         author: msg.user_id === 'jyp-bandit' ? {
           id: 'jyp-bandit',
           name: 'JYP',
           username: 'jyp',
