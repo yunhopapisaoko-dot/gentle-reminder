@@ -73,7 +73,7 @@ export const AbbyAISystem: React.FC<AbbyAISystemProps> = ({
     }
   }, [onAbbyMessage]);
 
-  const processOrder = useCallback(async (order: any) => {
+  const processPendingOrder = useCallback(async (order: any) => {
     const orderId = order.id;
     
     // Verificar se já está processando este pedido
@@ -140,7 +140,51 @@ export const AbbyAISystem: React.FC<AbbyAISystemProps> = ({
     }
   }, [sendAbbyMessage]);
 
-  const checkForPendingOrders = useCallback(async () => {
+  // Processar pedido que já está em preparing (entrega direta)
+  const deliverPreparingOrder = useCallback(async (order: any) => {
+    const orderId = order.id;
+    
+    // Verificar se já está processando este pedido
+    if (processingOrdersRef.current.has(orderId)) {
+      return;
+    }
+
+    processingOrdersRef.current.add(orderId);
+
+    try {
+      const items = order.items as OrderItem[];
+      const itemNames = items.map(i => `${i.quantity}x ${i.name}`).join(', ');
+      const customerName = order.customer_name;
+
+      // Verificar se o tempo de preparo já passou
+      const approvedAt = new Date(order.approved_at).getTime();
+      const prepTimeMs = order.preparation_time * 60 * 1000; // em milissegundos
+      const now = Date.now();
+      const timeRemaining = (approvedAt + prepTimeMs) - now;
+
+      if (timeRemaining > 0) {
+        // Ainda está preparando, aguardar
+        const waitTime = Math.min(timeRemaining, 30000); // máximo 30s de espera
+        await sendAbbyMessage(`*verifica o pedido de ${customerName}* — Está quase pronto! ⏳`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+
+      // Completar o pedido (adicionar ao inventário e descontar dinheiro)
+      await supabaseService.completeFoodOrder(orderId);
+
+      // Mensagem de entrega
+      const deliveryPhrase = getRandomPhrase(DELIVERY_PHRASES);
+      await sendAbbyMessage(`*${deliveryPhrase} ${customerName}!* — Seu pedido está pronto: ${itemNames}. Bom apetite! 🍽️`);
+
+    } catch (error: any) {
+      console.error('Erro ao entregar pedido:', error);
+      await sendAbbyMessage(`*olha preocupada* — Desculpe ${order.customer_name}, houve um problema com a entrega. Por favor, chame um funcionário!`);
+    } finally {
+      processingOrdersRef.current.delete(orderId);
+    }
+  }, [sendAbbyMessage]);
+
+  const checkForOrders = useCallback(async () => {
     // Evitar verificações muito frequentes
     const now = Date.now();
     if (now - lastCheckRef.current < 5000) {
@@ -149,12 +193,12 @@ export const AbbyAISystem: React.FC<AbbyAISystemProps> = ({
     lastCheckRef.current = now;
 
     try {
-      // Buscar pedidos pendentes para este local
-      const { data: pendingOrders, error } = await supabase
+      // Buscar pedidos pendentes E em preparo para este local
+      const { data: orders, error } = await supabase
         .from('food_orders')
         .select('*')
         .eq('location', locationContext)
-        .eq('status', 'pending')
+        .in('status', ['pending', 'preparing'])
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -162,18 +206,23 @@ export const AbbyAISystem: React.FC<AbbyAISystemProps> = ({
         return;
       }
 
-      // Processar cada pedido pendente
-      for (const order of (pendingOrders || [])) {
+      // Processar cada pedido
+      for (const order of (orders || [])) {
         if (!processingOrdersRef.current.has(order.id)) {
           // Processar com pequeno delay entre pedidos
           await new Promise(resolve => setTimeout(resolve, 1000));
-          processOrder(order);
+          
+          if (order.status === 'pending') {
+            processPendingOrder(order);
+          } else if (order.status === 'preparing') {
+            deliverPreparingOrder(order);
+          }
         }
       }
     } catch (error) {
       console.error('Erro ao verificar pedidos:', error);
     }
-  }, [locationContext, processOrder]);
+  }, [locationContext, processPendingOrder, deliverPreparingOrder]);
 
   // Verificar pedidos periodicamente
   useEffect(() => {
@@ -183,10 +232,10 @@ export const AbbyAISystem: React.FC<AbbyAISystemProps> = ({
     }
 
     // Verificar pedidos imediatamente ao entrar
-    checkForPendingOrders();
+    checkForOrders();
 
     // Configurar verificação periódica
-    const interval = setInterval(checkForPendingOrders, 10000); // A cada 10 segundos
+    const interval = setInterval(checkForOrders, 10000); // A cada 10 segundos
 
     // Subscrever a novos pedidos em tempo real
     const channel = supabase
@@ -203,7 +252,7 @@ export const AbbyAISystem: React.FC<AbbyAISystemProps> = ({
           console.log('Novo pedido detectado:', payload.new);
           // Aguardar um pouco antes de processar para dar tempo de exibir a mensagem do usuário
           setTimeout(() => {
-            checkForPendingOrders();
+            checkForOrders();
           }, 2000);
         }
       )
@@ -213,7 +262,7 @@ export const AbbyAISystem: React.FC<AbbyAISystemProps> = ({
       clearInterval(interval);
       supabase.removeChannel(channel);
     };
-  }, [locationContext, checkForPendingOrders]);
+  }, [locationContext, checkForOrders]);
 
   // Este componente não renderiza nada visualmente
   return null;
