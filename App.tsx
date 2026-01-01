@@ -27,6 +27,7 @@ import { supabase } from './supabase';
 import { supabaseService } from './services/supabaseService';
 import { usePrivateConversations, PrivateConversation } from './src/hooks/usePrivateConversations';
 import { useChatNotifications } from './src/hooks/useChatNotifications';
+import { useAbbyWorker } from './src/hooks/useAbbyWorker';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -61,6 +62,9 @@ const App: React.FC = () => {
   const [activePrivateChat, setActivePrivateChat] = useState<PrivateConversation | null>(null);
   const { startConversation, markConversationAsRead, totalUnread } = usePrivateConversations(currentUser?.id || null);
   const { markChatAsRead, getLocationUnread, totalUnread: totalChatUnread } = useChatNotifications(currentUser?.id || null);
+  
+  // ABBY - IA trabalhadora dos estabelecimentos
+  useAbbyWorker();
 
   useEffect(() => {
     const savedConfirmed = localStorage.getItem('magic_confirmed_rooms');
