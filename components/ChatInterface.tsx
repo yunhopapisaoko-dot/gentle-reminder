@@ -161,9 +161,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       // Load RP messages
       const dbMessages = await supabaseService.getChatMessages(loc, currentSubLoc?.name);
       
-      // Se a busca retornar null/undefined, não atualiza o estado (mantém mensagens existentes)
-      if (!dbMessages) {
-        console.warn("Nenhuma mensagem retornada, mantendo estado atual");
+      console.log(`[Chat] Carregando mensagens para ${loc}/${currentSubLoc?.name || 'main'}:`, dbMessages?.length || 0);
+      
+      // Se a busca retornar null (erro de rede), não atualiza o estado
+      if (dbMessages === null) {
+        console.warn("[Chat] Erro ao buscar - mantendo estado atual");
         return;
       }
       
@@ -197,7 +199,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       // Load OFF messages (stored with sub_location = 'OFF')
       const offDbMessages = await supabaseService.getChatMessages(loc, 'OFF');
-      if (offDbMessages) {
+      if (offDbMessages !== null) {
         const formattedOffMessages: ChatMessage[] = offDbMessages.map(msg => ({
           id: msg.id,
           role: 'user',
@@ -214,7 +216,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }
     } catch (error) {
       // Em caso de erro, NÃO limpa as mensagens - mantém o estado atual
-      console.error("Erro ao carregar mensagens:", error);
+      console.error("[Chat] Erro ao carregar mensagens:", error);
     }
   }, [locationContext, currentSubLoc]);
 
