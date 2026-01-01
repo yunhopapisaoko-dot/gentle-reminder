@@ -170,22 +170,28 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       
        const formattedMessages: ChatMessage[] = dbMessages.map(msg => ({
          id: msg.id,
-         role: (msg.user_id === 'jyp-bandit' || msg.character_name === 'ABBY') ? 'model' : 'user',
+         role: (msg.user_id === 'jyp-bandit' || msg.user_id === 'abby-ai' || msg.character_name === 'ABBY') ? 'model' : 'user',
          text: msg.content,
          author: msg.user_id === 'jyp-bandit' ? {
-          id: 'jyp-bandit',
-          name: 'JYP',
-          username: 'jyp',
-          avatar: '/jyp-avatar.jpg',
-          race: 'draeven' as any
-        } : {
-          id: msg.user_id,
-          name: msg.character_name || msg.profiles?.full_name || 'Viajante',
-          username: msg.profiles?.username || 'user',
-          avatar: msg.character_avatar || msg.profiles?.avatar_url || '',
-          race: 'draeven' as any
-        }
-      }));
+           id: 'jyp-bandit',
+           name: 'JYP',
+           username: 'jyp',
+           avatar: '/jyp-avatar.jpg',
+           race: 'draeven' as any
+         } : (msg.user_id === 'abby-ai' || msg.character_name === 'ABBY') ? {
+           id: 'abby-ai',
+           name: 'ABBY',
+           username: 'abby',
+           avatar: msg.character_avatar || '',
+           race: 'draeven' as any
+         } : {
+           id: msg.user_id,
+           name: msg.character_name || msg.profiles?.full_name || 'Viajante',
+           username: msg.profiles?.username || 'user',
+           avatar: msg.character_avatar || msg.profiles?.avatar_url || '',
+           race: 'draeven' as any
+         }
+       }));
       
       if (currentSubLoc) {
         setRoomMessages(prev => ({

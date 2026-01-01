@@ -58,9 +58,10 @@ export const AbbyAISystem: React.FC<AbbyAISystemProps> = ({
 
   const sendAbbyMessage = useCallback(async (content: string) => {
     try {
-      // Persistir no chat para não sumir ao sair/entrar novamente
+      // Persistir no banco com user_id = 'abby-ai' para identificar que é da ABBY
+      // E character_name = 'ABBY' para exibir corretamente
       await supabaseService.sendChatMessage(
-        currentUser.id,
+        ABBY_USER.id, // usar ID fixo da ABBY, não do usuário atual
         locationContext,
         content,
         ABBY_USER.name,
@@ -81,7 +82,7 @@ export const AbbyAISystem: React.FC<AbbyAISystemProps> = ({
     } catch (error) {
       console.error('Erro ao enviar mensagem da ABBY:', error);
     }
-  }, [currentUser.id, locationContext, onAbbyMessage]);
+  }, [locationContext, onAbbyMessage]);
 
   const processPendingOrder = useCallback(async (order: any) => {
     const orderId = order.id;
@@ -153,8 +154,6 @@ export const AbbyAISystem: React.FC<AbbyAISystemProps> = ({
       return;
     }
 
-    processingOrdersRef.current.add(orderId);
-
     try {
       const items = order.items as OrderItem[];
       const itemNames = items.map(i => `${i.quantity}x ${i.name}`).join(', ');
@@ -169,8 +168,13 @@ export const AbbyAISystem: React.FC<AbbyAISystemProps> = ({
         : new Date(baseTime).getTime() + prepTimeMs;
 
       if (Date.now() < readyAtMs) {
-        return; // ainda está preparando
+        // Ainda não está pronto - NÃO adicionar ao processingOrdersRef
+        // para verificar novamente na próxima iteração
+        return;
       }
+
+      // Agora sim, marcar como processando para não duplicar a entrega
+      processingOrdersRef.current.add(orderId);
 
       // Completar o pedido (adicionar ao inventário e descontar dinheiro)
       await supabaseService.completeFoodOrder(orderId);
@@ -179,11 +183,11 @@ export const AbbyAISystem: React.FC<AbbyAISystemProps> = ({
       const deliveryPhrase = getRandomPhrase(DELIVERY_PHRASES);
       await sendAbbyMessage(`*${deliveryPhrase} ${customerName}!* — Seu pedido está pronto: ${itemNames}. Bom apetite! 🍽️`);
 
+      processingOrdersRef.current.delete(orderId);
     } catch (error: any) {
       console.error('Erro ao entregar pedido:', error);
-      await sendAbbyMessage(`*olha preocupada* — Desculpe ${order.customer_name}, houve um problema com a entrega. Por favor, chame um funcionário!`);
-    } finally {
       processingOrdersRef.current.delete(orderId);
+      await sendAbbyMessage(`*olha preocupada* — Desculpe ${order.customer_name}, houve um problema com a entrega. Por favor, chame um funcionário!`);
     }
   }, [sendAbbyMessage]);
 
