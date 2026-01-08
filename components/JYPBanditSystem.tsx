@@ -5,8 +5,8 @@ import { User } from '../types';
 // Avatar do JYP (foto de perfil)
 const JYP_AVATAR = '/jyp-avatar.jpg';
 
-// UUID fixo do sistema para o JYP (permite inserção válida no banco)
-const JYP_SYSTEM_UUID = '00000000-0000-0000-0000-000000000002';
+// UUID fixo do sistema para o JYP (diferente do MonkeyDoctor)
+const JYP_SYSTEM_UUID = '00000000-0000-0000-0000-000000000003';
 
 // JYP só pode roubar novamente após 70 horas (em ms)
 const JYP_COOLDOWN_MS = 70 * 60 * 60 * 1000; // 70 horas = 252.000.000 ms

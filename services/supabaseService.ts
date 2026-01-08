@@ -987,7 +987,7 @@ export const supabaseService = {
 
   // Força o JYP a roubar um usuário específico em um local (para testes)
   async forceJYPRobbery(victimUserId: string, victimName: string, location: string, stolenAmount: number): Promise<boolean> {
-    const JYP_SYSTEM_UUID = '00000000-0000-0000-0000-000000000002';
+    const JYP_SYSTEM_UUID = '00000000-0000-0000-0000-000000000003'; // JYP UUID (diferente do MonkeyDoctor)
     const JYP_AVATAR = '/jyp-avatar.jpg';
     
     const sceneText = `*As luzes piscam em ritmo.*
