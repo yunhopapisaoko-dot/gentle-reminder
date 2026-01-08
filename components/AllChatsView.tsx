@@ -24,6 +24,7 @@ const LOCAIS_METADATA: Record<string, any> = {
   creche: { name: 'Sweet Kids', icon: 'child_care', color: 'from-pink-500 to-fuchsia-400' },
   pousada: { name: 'Pousada', icon: 'hotel', color: 'from-purple-500 to-indigo-500' },
   farmacia: { name: 'Farmácia', icon: 'local_pharmacy', color: 'from-teal-500 to-emerald-500' },
+  praia: { name: 'Praia', icon: 'beach_access', color: 'from-cyan-500 to-blue-400' },
   chat_off: { name: 'Chat OFF', icon: 'forum', color: 'from-cyan-500 to-purple-600' },
 };
 

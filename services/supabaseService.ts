@@ -169,7 +169,7 @@ export const supabaseService = {
     const PAGE_SIZE = 1000;
 
     const fetchAll = async (
-      build: (from: number, to: number) => ReturnType<typeof supabase.from>
+      build: (from: number, to: number) => any
     ): Promise<any[] | null> => {
       const rows: any[] = [];
       let from = 0;
