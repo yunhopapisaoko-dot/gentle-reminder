@@ -494,8 +494,8 @@ export const supabaseService = {
   },
 
   async getUserPendingTreatment(userId: string) {
-    const { data } = await supabase.from('treatment_requests').select('*').eq('patient_id', userId).eq('status', 'pending').maybeSingle();
-    return data;
+    const { data } = await supabase.from('treatment_requests').select('*').eq('patient_id', userId).eq('status', 'pending').order('created_at', { ascending: false }).limit(1);
+    return data?.[0] || null;
   },
 
   async getUserActiveTreatment(userId: string) {
