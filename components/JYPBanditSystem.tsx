@@ -8,8 +8,8 @@ const JYP_AVATAR = '/jyp-avatar.jpg';
 // UUID fixo do sistema para o JYP (permite inserção válida no banco)
 const JYP_SYSTEM_UUID = '00000000-0000-0000-0000-000000000002';
 
-// JYP só pode roubar novamente após 2 minutos (em ms) - para testes
-const JYP_COOLDOWN_MS = 2 * 60 * 1000;
+// JYP só pode roubar novamente após 70 horas (em ms)
+const JYP_COOLDOWN_MS = 70 * 60 * 60 * 1000; // 70 horas = 252.000.000 ms
 
 // Locais onde o JYP pode aparecer (escolhido aleatoriamente)
 const JYP_LOCATIONS = ['pousada', 'praia'];
