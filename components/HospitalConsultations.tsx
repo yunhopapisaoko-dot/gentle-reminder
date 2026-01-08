@@ -93,11 +93,6 @@ export const HospitalConsultations: React.FC<HospitalConsultationsProps> = ({
       
       // Buscar a solicitação criada
       const pending = await supabaseService.getUserPendingTreatment(currentUserId);
-      
-      if (!pending) {
-        throw new Error('Erro ao criar solicitação');
-      }
-
       setPendingRequest(pending);
       
     } catch (error: any) {
