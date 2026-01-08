@@ -1,0 +1,170 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 220 20% 97%;
+    --foreground: 220 30% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 30% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 30% 15%;
+    --primary: 142 70% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 15% 92%;
+    --secondary-foreground: 220 30% 20%;
+    --muted: 220 15% 94%;
+    --muted-foreground: 220 10% 45%;
+    --accent: 330 85% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 142 70% 45%;
+    --radius: 0.75rem;
+    --pharmacy: 142 70% 45%;
+    --pharmacy-foreground: 0 0% 100%;
+    --pharmacy-muted: 142 40% 92%;
+    --pregnancy: 330 85% 65%;
+    --pregnancy-foreground: 0 0% 100%;
+    --scratch-gold: 45 90% 55%;
+    --scratch-silver: 220 10% 70%;
+    --money: 142 60% 40%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 142 70% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 142 40% 95%;
+    --sidebar-accent-foreground: 142 70% 30%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 142 70% 45%;
+  }
+
+  .dark {
+    --background: 220 30% 8%;
+    --foreground: 220 10% 95%;
+    --card: 220 30% 12%;
+    --card-foreground: 220 10% 95%;
+    --popover: 220 30% 10%;
+    --popover-foreground: 220 10% 95%;
+    --primary: 142 70% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 25% 18%;
+    --secondary-foreground: 220 10% 90%;
+    --muted: 220 25% 15%;
+    --muted-foreground: 220 10% 60%;
+    --accent: 330 85% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 25% 20%;
+    --input: 220 25% 20%;
+    --ring: 142 70% 50%;
+    --pharmacy: 142 70% 50%;
+    --pharmacy-foreground: 0 0% 100%;
+    --pharmacy-muted: 142 30% 15%;
+    --pregnancy: 330 80% 60%;
+    --pregnancy-foreground: 0 0% 100%;
+    --scratch-gold: 45 85% 50%;
+    --scratch-silver: 220 10% 50%;
+    --money: 142 60% 45%;
+    --sidebar-background: 220 30% 10%;
+    --sidebar-foreground: 220 10% 90%;
+    --sidebar-primary: 142 70% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 142 30% 15%;
+    --sidebar-accent-foreground: 142 60% 70%;
+    --sidebar-border: 220 25% 18%;
+    --sidebar-ring: 142 70% 50%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .pharmacy-gradient {
+    background: linear-gradient(135deg, hsl(var(--pharmacy)) 0%, hsl(142 70% 35%) 100%);
+  }
+  .pregnancy-tag {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium;
+    background-color: hsl(var(--pregnancy));
+    color: hsl(var(--pregnancy-foreground));
+  }
+  .scratch-card-surface {
+    background: linear-gradient(135deg, hsl(var(--scratch-silver)) 0%, hsl(220 10% 60%) 100%);
+  }
+  .gold-shimmer {
+    background: linear-gradient(135deg, hsl(var(--scratch-gold)) 0%, hsl(45 90% 65%) 50%, hsl(var(--scratch-gold)) 100%);
+    background-size: 200% 200%;
+    animation: shimmer 2s ease-in-out infinite;
+  }
+
+  /* Custom Tab Transitions */
+  .tab-slide-right {
+    animation: tabSlideRight 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .tab-slide-left {
+    animation: tabSlideLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes tabSlideRight {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes tabSlideLeft {
+    from { opacity: 0; transform: translateX(-30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  /* Chat Messages Animation */
+  .messages-fade-in {
+    animation: messagesFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes messagesFadeIn {
+    from {
+      opacity: 0;
+      filter: blur(10px);
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0);
+      transform: translateY(0);
+    }
+  }
+
+  /* Chat view entrance animation */
+  .chat-view-enter {
+    animation: chatViewEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes chatViewEnter {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+}

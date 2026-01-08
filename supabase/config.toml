@@ -1,0 +1,10 @@
+project_id = "ltjtzyzxpxrbqiajafcm"
+
+[functions.admin-get-conversations]
+verify_jwt = false
+
+[functions.hospital-ai-treatment]
+verify_jwt = false
+
+[functions.send-push-notification]
+verify_jwt = false

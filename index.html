@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="theme-color" content="#8B5CF6">
+  
+  <!-- Apple / iOS Specific -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MagicTalk">
+  <link rel="apple-touch-icon" href="https://storage.googleapis.com/gpt-engineer-file-uploads/dPbn5UDBIwfTs3KC0nnQke3sXQm2/uploads/1767287753010-ChatGPT_Image_1_de_jan._de_2026,_14_12_48.png">
+  
+  <!-- Splash Screens (iOS) -->
+  <link rel="apple-touch-startup-image" href="https://storage.googleapis.com/gpt-engineer-file-uploads/dPbn5UDBIwfTs3KC0nnQke3sXQm2/uploads/1767287753010-ChatGPT_Image_1_de_jan._de_2026,_14_12_48.png">
+
+  <title>MagicTalk - Purple Edition</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#8B5CF6", 
+            secondary: "#D946EF", 
+            "deep-purple": "#0F051D",
+            "surface-purple": "#1A0B2E",
+            "background-dark": "#070210",
+          },
+          fontFamily: {
+            display: ["Plus Jakarta Sans", "sans-serif"],
+            sans: ["Plus Jakarta Sans", "sans-serif"],
+          },
+          borderRadius: {
+            DEFAULT: "16px",
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    body {
+      background-color: #070210;
+      color: #E2E8F0;
+      overflow: hidden; 
+      -webkit-tap-highlight-color: transparent; /* Remove flash de toque no iOS */
+    }
+    
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    
+    @keyframes slideInRight { 
+      from { transform: translateX(100%); } 
+      to { transform: translateX(0); } 
+    }
+    @keyframes slideOutRight { 
+      from { transform: translateX(0); } 
+      to { transform: translateX(100%); } 
+    }
+
+    @keyframes slideInLeft { 
+      from { transform: translateX(-100%); } 
+      to { transform: translateX(0); } 
+    }
+    @keyframes slideOutLeft { 
+      from { transform: translateX(0); } 
+      to { transform: translateX(-100%); } 
+    }
+    
+    @keyframes slideInBottom { 
+      from { transform: translateY(100%); } 
+      to { transform: translateY(0); } 
+    }
+    @keyframes slideOutBottom { 
+      from { transform: translateY(0); } 
+      to { transform: translateY(100%); } 
+    }
+
+    @keyframes slideInTop { 
+      from { transform: translateY(-100%); } 
+      to { transform: translateY(0); } 
+    }
+    @keyframes slideOutTop { 
+      from { transform: translateY(0); } 
+      to { transform: translateY(-100%); } 
+    }
+
+    @keyframes zoomIn { 
+      from { transform: scale(0.9) opacity(0); } 
+      to { transform: scale(1) opacity(1); } 
+    }
+    @keyframes zoomOut { 
+      from { transform: scale(1) opacity(1); } 
+      to { transform: scale(0.9) opacity(0); } 
+    }
+
+    .animate-in {
+      animation: fadeIn 400ms cubic-bezier(0.32, 0.72, 0, 1) both;
+    }
+    .animate-out {
+      animation: fadeOut 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
+    }
+
+    .slide-in-right { animation-name: slideInRight; }
+    .slide-out-right { animation-name: slideOutRight; }
+
+    .slide-in-left { animation-name: slideInLeft; }
+    .slide-out-left { animation-name: slideOutLeft; }
+    
+    .slide-in-bottom { animation-name: slideInBottom; }
+    .slide-out-bottom { animation-name: slideOutBottom; }
+
+    .slide-in-top { animation-name: slideInTop; }
+    .slide-out-top { animation-name: slideOutTop; }
+    
+    .zoom-in { animation-name: zoomIn; }
+    .zoom-out { animation-name: zoomOut; }
+
+    .neon-border {
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+    }
+    .glass-card {
+      background: rgba(26, 11, 46, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.45.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "vite": "https://esm.sh/vite@^7.3.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "lovable-tagger": "https://esm.sh/lovable-tagger@^1.1.13"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+  <meta property="og:title" content="MagicTalk - Purple Edition">
+  <meta name="twitter:title" content="MagicTalk - Purple Edition">
+  <meta name="description" content="Venham se divertir">
+  <meta property="og:description" content="Venham se divertir">
+  <meta name="twitter:description" content="Venham se divertir">
+  <link rel="icon" type="image/png" href="https://storage.googleapis.com/gpt-engineer-file-uploads/dPbn5UDBIwfTs3KC0nnQke3sXQm2/uploads/1767287753010-ChatGPT_Image_1_de_jan._de_2026,_14_12_48.png">
+  <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/dPbn5UDBIwfTs3KC0nnQke3sXQm2/social-images/social-1767287767129-ChatGPT_Image_1_de_jan._de_2026,_14_12_48.png">
+  <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/dPbn5UDBIwfTs3KC0nnQke3sXQm2/social-images/social-1767287767129-ChatGPT_Image_1_de_jan._de_2026,_14_12_48.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:type" content="website">
+</head>
+<body class="font-sans">
+  <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

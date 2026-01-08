@@ -1,0 +1,1 @@
+UPDATE profiles SET money = 100000 WHERE user_id = '2ef0fa8b-441c-43c4-800e-73bd477aff97';
