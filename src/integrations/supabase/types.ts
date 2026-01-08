@@ -1144,6 +1144,8 @@ export type Database = {
           disease_name: string
           id: string
           patient_id: string
+          required_room: string | null
+          started_at: string | null
           status: string
           treatment_cost: number
         }
@@ -1157,6 +1159,8 @@ export type Database = {
           disease_name: string
           id?: string
           patient_id: string
+          required_room?: string | null
+          started_at?: string | null
           status?: string
           treatment_cost: number
         }
@@ -1170,6 +1174,8 @@ export type Database = {
           disease_name?: string
           id?: string
           patient_id?: string
+          required_room?: string | null
+          started_at?: string | null
           status?: string
           treatment_cost?: number
         }

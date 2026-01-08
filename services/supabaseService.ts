@@ -768,11 +768,18 @@ export const supabaseService = {
     }));
   },
 
-  async approveTreatment(treatmentId: string, workerId: string) {
+  async approveTreatment(treatmentId: string, workerId: string, requiredRoom?: string) {
     await supabase.from('treatment_requests').update({ 
       status: 'approved', 
       approved_by: workerId, 
-      approved_at: new Date().toISOString() 
+      approved_at: new Date().toISOString(),
+      required_room: requiredRoom || null
+    }).eq('id', treatmentId);
+  },
+
+  async startTreatmentTimer(treatmentId: string) {
+    await supabase.from('treatment_requests').update({ 
+      started_at: new Date().toISOString()
     }).eq('id', treatmentId);
   },
 
