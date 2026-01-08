@@ -332,10 +332,10 @@ export const supabaseService = {
     return data || [];
   },
 
-  async addToInventory(userId: string, item: any) {
+  async addToInventory(userId: string, item: any, quantity: number = 1) {
     const { data: existing } = await supabase.from('inventory').select('id, quantity').eq('user_id', userId).eq('item_id', item.id).maybeSingle();
     if (existing) {
-      await supabase.from('inventory').update({ quantity: (existing.quantity || 1) + 1 }).eq('id', existing.id);
+      await supabase.from('inventory').update({ quantity: (existing.quantity || 1) + quantity }).eq('id', existing.id);
     } else {
       await supabase.from('inventory').insert([{
         user_id: userId,
@@ -343,7 +343,8 @@ export const supabaseService = {
         item_name: item.name,
         item_image: item.image,
         category: item.category,
-        attributes: { hunger: item.hungerRestore, thirst: item.thirstRestore, alcohol: item.alcoholLevel }
+        attributes: { hunger: item.hungerRestore, thirst: item.thirstRestore, alcohol: item.alcoholLevel },
+        quantity: quantity
       }]);
     }
   },
@@ -488,7 +489,7 @@ export const supabaseService = {
     if (order) {
       const items = order.items as any[];
       for (const item of items) {
-        await this.addToInventory(order.customer_id, item);
+        await this.addToInventory(order.customer_id, item, item.quantity || 1);
       }
       await supabase.from('food_orders').update({ status: 'delivered' }).eq('id', id);
     }
