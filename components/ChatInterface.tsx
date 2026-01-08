@@ -704,6 +704,27 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     };
   }, [isHospital, currentUser?.id]);
 
+  // Start treatment timer when patient enters required room
+  useEffect(() => {
+    if (!isHospital || !currentUser?.id || !activeTreatment) return;
+    
+    // If treatment has required_room but no started_at, check if user is in the room
+    if (activeTreatment.required_room && !activeTreatment.started_at) {
+      const userCurrentRoom = currentSubLoc?.name;
+      
+      if (userCurrentRoom === activeTreatment.required_room) {
+        // User entered the required room, start the timer
+        console.log('[Treatment] Starting timer - user entered required room:', activeTreatment.required_room);
+        supabaseService.startTreatmentTimer(activeTreatment.id)
+          .then(() => {
+            // Reload the treatment to get updated started_at
+            supabaseService.getUserActiveTreatment(currentUser.id).then(setActiveTreatment);
+          })
+          .catch(console.error);
+      }
+    }
+  }, [isHospital, currentUser?.id, activeTreatment, currentSubLoc?.name]);
+
   // Load approver profile (avatar + name)
   useEffect(() => {
     const approvedBy = activeTreatment?.approved_by as string | undefined;
@@ -732,17 +753,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     fetchApprover().catch(() => setTreatmentApprover(null));
   }, [isHospital, activeTreatment?.approved_by]);
 
-  // Treatment timer countdown
+  // Treatment timer countdown - uses started_at (when patient entered room)
   useEffect(() => {
-    if (!activeTreatment?.approved_at) {
+    // If treatment has required_room but no started_at, timer hasn't started yet
+    if (!activeTreatment?.started_at) {
       setTreatmentTimeRemaining(0);
       return;
     }
 
     const calculateRemaining = () => {
-      const approvedAt = new Date(activeTreatment.approved_at).getTime();
+      const startedAt = new Date(activeTreatment.started_at).getTime();
       const cureTimeMs = activeTreatment.cure_time_minutes * 60 * 1000;
-      const endTime = approvedAt + cureTimeMs;
+      const endTime = startedAt + cureTimeMs;
       const now = Date.now();
       const remaining = Math.max(0, endTime - now);
       
@@ -1103,15 +1125,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           {!isChatOff && isHospital && !currentSubLoc && (
             <button 
               onClick={() => {
-                if (activeTreatment && treatmentTimeRemaining > 0) {
+                if (activeTreatment) {
                   setShowTreatmentStatus(true); // Abre o novo modal moderno
                 } else {
                   setShowConsultations(true);
                 }
               }} 
-              className="w-11 h-11 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg border border-white/20 active:scale-90"
+              className={`w-11 h-11 rounded-full ${activeTreatment && !activeTreatment.started_at ? 'bg-amber-500 animate-pulse' : 'bg-blue-500'} text-white flex items-center justify-center shadow-lg border border-white/20 active:scale-90`}
             >
-              <span className="material-symbols-rounded">stethoscope</span>
+              <span className="material-symbols-rounded">{activeTreatment && !activeTreatment.started_at ? 'door_open' : 'stethoscope'}</span>
             </button>
           )}
           {!isChatOff && isPharmacy && !currentSubLoc && (
@@ -1129,9 +1151,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <TreatmentStatusModal
           diseaseName={activeTreatment.disease_name}
           timeRemaining={formatTreatmentTime(treatmentTimeRemaining)}
-          progress={(1 - treatmentTimeRemaining / (activeTreatment.cure_time_minutes * 60 * 1000)) * 100}
+          progress={activeTreatment.started_at ? (1 - treatmentTimeRemaining / (activeTreatment.cure_time_minutes * 60 * 1000)) * 100 : 0}
           approverName={treatmentApprover?.name}
           approverAvatar={treatmentApprover?.avatar_url}
+          requiredRoom={activeTreatment.required_room}
+          isWaitingForRoom={!activeTreatment.started_at && !!activeTreatment.required_room}
           onClose={() => setShowTreatmentStatus(false)}
         />
       )}

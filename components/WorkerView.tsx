@@ -208,8 +208,8 @@ export const WorkerView: React.FC<WorkerViewProps> = ({ location, role, onClose,
     setProcessingId(treatment.id);
     
     try {
-      // Aprovar tratamento
-      await supabaseService.approveTreatment(treatment.id, currentUserId);
+      // Aprovar tratamento com a sala necessária
+      await supabaseService.approveTreatment(treatment.id, currentUserId, roomName);
       
       // Dar acesso à sala para o paciente
       await supabaseService.grantRoomAccess(
