@@ -1214,7 +1214,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       <div ref={scrollRef} className={`flex-1 overflow-y-auto overflow-x-hidden p-6 space-y-4 relative z-10 scrollbar-hide pb-32 ${messagesLoaded ? 'messages-fade-in' : 'opacity-0'}`}>
         {activeMessages.map((msg, index) => {
-          const isJYP = msg.author?.id === 'jyp-bandit';
+          const isJYP = msg.author?.id === '00000000-0000-0000-0000-000000000003' || msg.author?.name === 'JYP';
           const isSystemMsg = msg.isSystemMessage || msg.author?.id === '00000000-0000-0000-0000-000000000000';
           const theme = getRaceTheme(msg.author?.race, isJYP);
           const isOwnMessage = msg.author?.id === currentUser.id;
