@@ -117,14 +117,26 @@ export const supabaseService = {
   },
 
   async grantRoomAccess(userId: string, location: string, roomName: string, grantedBy: string) {
+    // Check if authorization already exists to avoid upsert issues with RLS
+    const { data: existing } = await supabase
+      .from('room_authorizations')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('location', location)
+      .eq('room_name', roomName)
+      .maybeSingle();
+    
+    // If already exists, no need to insert again
+    if (existing) return;
+    
     const { error } = await supabase
       .from('room_authorizations')
-      .upsert([{ 
+      .insert([{ 
         user_id: userId, 
         location, 
         room_name: roomName, 
         granted_by: grantedBy 
-      }], { onConflict: 'user_id,location,room_name' });
+      }]);
     if (error) throw error;
   },
 
