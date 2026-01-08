@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { supabaseService } from '../services/supabaseService';
 import { User } from '../types';
 
@@ -106,10 +106,10 @@ export const JYPBanditSystem: React.FC<JYPBanditSystemProps> = ({
   currentUser,
   onRobbery,
 }) => {
-  const [isActive, setIsActive] = useState(false);
-  
-  // Usar ref para evitar stale closure
+  // Usar refs para evitar re-execuções e stale closures
   const onRobberyRef = useRef(onRobbery);
+  const isExecutingRef = useRef(false);
+  const hasInitializedRef = useRef(false);
   
   useEffect(() => {
     onRobberyRef.current = onRobbery;
@@ -162,9 +162,7 @@ export const JYPBanditSystem: React.FC<JYPBanditSystemProps> = ({
   };
 
   // Dispara o roubo do JYP
-  const triggerJYPRobbery = useCallback(async () => {
-    setIsActive(true);
-    
+  const triggerJYPRobbery = async () => {
     console.log('[JYP] Buscando usuários ativos na praia/pousada...');
     
     // Busca usuários que estavam ativamente conversando nos últimos 60 minutos
@@ -172,7 +170,6 @@ export const JYPBanditSystem: React.FC<JYPBanditSystemProps> = ({
     
     if (!activeUsers || activeUsers.length === 0) {
       console.log('[JYP] Nenhum usuário ativo no chat encontrado');
-      setIsActive(false);
       return;
     }
     
@@ -182,7 +179,6 @@ export const JYPBanditSystem: React.FC<JYPBanditSystemProps> = ({
     const possibleVictims = activeUsers.filter(u => (u.money || 0) > 10);
     if (possibleVictims.length === 0) {
       console.log('[JYP] Nenhuma vítima com dinheiro suficiente encontrada');
-      setIsActive(false);
       return;
     }
     
@@ -196,47 +192,55 @@ export const JYPBanditSystem: React.FC<JYPBanditSystemProps> = ({
       { id: victim.user_id, name: victim.full_name, money: victim.money || 0 },
       robberyLocation
     );
-    
-    setIsActive(false);
-  }, []);
+  };
 
   // Verifica se JYP deve aparecer
-  const checkJYPAppearance = useCallback(async () => {
-    if (isActive) {
-      console.log('[JYP] Check: já está ativo, ignorando');
+  const checkJYPAppearance = async () => {
+    // Evita múltiplas execuções simultâneas
+    if (isExecutingRef.current) {
+      console.log('[JYP] Check: já está executando, ignorando');
       return;
     }
     
+    isExecutingRef.current = true;
     console.log('[JYP] Check: tentando adquirir lock atômico...');
     
-    // Tenta adquirir lock atômico no banco (cooldown de 70 horas entre roubos)
     try {
+      // Tenta adquirir lock atômico no banco (cooldown de 70 horas entre roubos)
       const canRob = await supabaseService.tryTriggerJYPRobbery(JYP_COOLDOWN_MS);
       if (canRob) {
         console.log('[JYP] Lock adquirido! Executando roubo...');
-        triggerJYPRobbery();
+        await triggerJYPRobbery();
       } else {
         console.log('[JYP] Check: ainda em cooldown de 70 horas');
       }
     } catch (e) {
       console.error("[JYP] Erro ao verificar JYP:", e);
+    } finally {
+      isExecutingRef.current = false;
     }
-  }, [isActive, triggerJYPRobbery]);
+  };
 
   useEffect(() => {
+    // Evita inicialização duplicada em StrictMode/re-renders
+    if (hasInitializedRef.current) {
+      return;
+    }
+    hasInitializedRef.current = true;
+    
     console.log('[JYP] Sistema global iniciado');
     
     // Verifica a cada 5 minutos se JYP deve aparecer
     const interval = setInterval(checkJYPAppearance, 5 * 60 * 1000);
     
-    // Também verifica imediatamente ao montar (após 10 segundos)
+    // Verifica apenas uma vez ao montar (após 10 segundos)
     const timeout = setTimeout(checkJYPAppearance, 10000);
     
     return () => {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [checkJYPAppearance]);
+  }, []);
 
   return null;
 };
