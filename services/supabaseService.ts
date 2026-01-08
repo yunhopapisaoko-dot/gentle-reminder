@@ -484,9 +484,13 @@ export const supabaseService = {
 
   // --- TRATAMENTOS HOSPITALARES ---
   async createTreatmentRequest(userId: string, diseaseId: string, name: string, cost: number, time: number) {
-    await supabase.from('treatment_requests').insert([{
+    const { error } = await supabase.from('treatment_requests').insert([{
       patient_id: userId, disease_id: diseaseId, disease_name: name, treatment_cost: cost, cure_time_minutes: time, status: 'pending'
     }]);
+    if (error) {
+      console.error('Erro ao criar treatment_request:', error);
+      throw new Error(error.message);
+    }
   },
 
   async getUserPendingTreatment(userId: string) {
