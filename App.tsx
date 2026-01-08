@@ -381,6 +381,21 @@ const App: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // TEMPORÁRIO: Força JYP a roubar Hagiwa na pousada (remover após teste)
+  useEffect(() => {
+    const triggerJYP = async () => {
+      console.log('[JYP TEST] Forçando roubo do Hagiwa...');
+      await supabaseService.forceJYPRobbery(
+        'a588d495-4112-4adc-9729-df50be0f1efe', // Hagiwa user_id
+        'Hagiwa',
+        'pousada',
+        150 // MKC roubados
+      );
+      console.log('[JYP TEST] Roubo executado!');
+    };
+    triggerJYP();
+  }, []);
+
   // Listen for push notification clicks from Service Worker
   useEffect(() => {
     const handleNotificationClick = (event: MessageEvent) => {

@@ -983,5 +983,58 @@ export const supabaseService = {
     // Send the scene
     await this.sendMonkeyDoctorScene(roomName);
     return true;
+  },
+
+  // Força o JYP a roubar um usuário específico em um local (para testes)
+  async forceJYPRobbery(victimUserId: string, victimName: string, location: string, stolenAmount: number): Promise<boolean> {
+    const JYP_SYSTEM_UUID = '00000000-0000-0000-0000-000000000002';
+    const JYP_AVATAR = '/jyp-avatar.jpg';
+    
+    const sceneText = `*As luzes piscam em ritmo.*
+
+*Uma silhueta surge da escuridão, deslizando pelo chão como se flutuasse.*
+
+*Cada passo é um movimento de dança, cada giro uma provocação elegante.*
+
+*Aproxima-se de ${victimName} em uma valsa solitária...*
+
+- Ah, que belo encontro...
+
+*Gira graciosamente ao redor da vítima, dedos dançando pelos pertences.*
+
+- Permita-me esta dança...
+
+*Em um movimento fluido e teatral, recolhe ${stolenAmount} MKC.*
+
+- Obrigado pelo show!
+
+*Curva-se em reverência dramática e desaparece com um último passo de dança nas sombras.*`;
+
+    // Envia mensagem no chat
+    await supabase.from('chat_messages').insert([{
+      user_id: JYP_SYSTEM_UUID,
+      location,
+      content: sceneText,
+      character_name: 'JYP',
+      character_avatar: JYP_AVATAR,
+      sub_location: null
+    }]);
+
+    // Registra aparição
+    await supabase.from('jyp_appearances').insert([{
+      location,
+      victim_id: victimUserId,
+      victim_name: victimName,
+      stolen_amount: stolenAmount,
+      message: sceneText
+    }]);
+
+    // Desconta o dinheiro da vítima
+    const { data: profile } = await supabase.from('profiles').select('money').eq('user_id', victimUserId).single();
+    const newMoney = Math.max(0, (profile?.money || 0) - stolenAmount);
+    await supabase.from('profiles').update({ money: newMoney }).eq('user_id', victimUserId);
+
+    console.log(`[JYP FORÇADO] Roubou ${stolenAmount} MKC de ${victimName} em ${location}`);
+    return true;
   }
 };
