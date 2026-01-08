@@ -882,14 +882,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         });
       }
       
-      const targetProfile = await supabaseService.getProfile(targetUser.id);
-      if (targetProfile) {
-        // targetProfile usa User (thirst, alcohol), mas banco usa (energy, alcoholism)
-        await supabaseService.updateVitalStatus(targetUser.id, {
-          hunger: Math.min(100, (targetProfile.hunger || 0) + hungerBonus),
-          energy: Math.min(100, (targetProfile.thirst || 0) + thirstBonus),
-          alcoholism: Math.min(100, (targetProfile.alcohol || 0) + alcoholBonus)
+      // Atualiza o outro usuário via Edge Function (bypassa RLS de forma segura)
+      if (hungerBonus || thirstBonus || alcoholBonus) {
+        const { error: fnError } = await supabase.functions.invoke('apply-vital-deltas', {
+          body: {
+            userId: targetUser.id,
+            hungerDelta: hungerBonus,
+            thirstDelta: thirstBonus,
+            alcoholDelta: alcoholBonus,
+          }
         });
+
+        if (fnError) throw fnError;
       }
       
       handleSend(`*Dividiu ${item.item_name} com ${targetUser.name} — ambos receberam os benefícios!*`);
