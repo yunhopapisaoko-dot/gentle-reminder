@@ -884,7 +884,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       
       const targetProfile = await supabaseService.getProfile(targetUser.id);
       if (targetProfile) {
-        // targetProfile.thirst = energy no banco, targetProfile.alcohol = alcoholism no banco
+        // targetProfile usa User (thirst, alcohol), mas banco usa (energy, alcoholism)
         await supabaseService.updateVitalStatus(targetUser.id, {
           hunger: Math.min(100, (targetProfile.hunger || 0) + hungerBonus),
           energy: Math.min(100, (targetProfile.thirst || 0) + thirstBonus),
