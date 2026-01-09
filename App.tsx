@@ -105,14 +105,14 @@ const App: React.FC = () => {
   useGlobalPresence(currentUser?.id || null);
 
   // Sistema de decaimento de fome e sede
-  // Fome: -2 a cada 30 minutos | Sede: -3 a cada 20 minutos
+  // Fome: -1 a cada 3 horas | Sede: -3 a cada 2 horas
   useVitalDecay({
     userId: currentUser?.id || null,
     onHungerDecay: useCallback((amount: number) => {
       setCurrentUser(prev => {
         if (!prev) return prev;
         const newHunger = Math.max(0, (prev.hunger || 50) + amount);
-        // Persiste usando o valor mais recente (prev), evitando estado “travado” no intervalo
+        // Persiste usando o valor mais recente (prev), evitando estado "travado" no intervalo
         supabaseService.updateVitalStatus(prev.id, { hunger: newHunger }).catch(err => {
           console.error('[VitalDecay] Error updating hunger:', err);
         });
@@ -130,9 +130,9 @@ const App: React.FC = () => {
         return { ...prev, thirst: newThirst };
       });
     }, []),
-    hungerIntervalMs: 30 * 60 * 1000, // 30 minutos
-    thirstIntervalMs: 20 * 60 * 1000, // 20 minutos
-    hungerDecayAmount: -2,
+    hungerIntervalMs: 3 * 60 * 60 * 1000, // 3 horas
+    thirstIntervalMs: 2 * 60 * 60 * 1000, // 2 horas
+    hungerDecayAmount: -1,
     thirstDecayAmount: -3
   });
   // Garante persistência: sempre que um chat público estiver aberto, registra o usuário como membro
