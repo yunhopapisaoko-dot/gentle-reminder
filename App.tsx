@@ -568,6 +568,10 @@ const App: React.FC = () => {
 
   const handleRouletteResult = (id: string, name: string, hpImpact: number) => {
     if (!currentUser) return;
+    
+    // Atualiza o last_spin_at no estado local para aplicar o cooldown de 24h
+    setCurrentUser(prev => prev ? { ...prev, last_spin_at: new Date().toISOString() } : prev);
+    
     if (id.startsWith('d')) {
        supabaseService.applyDiseaseFromRoulette(currentUser.id, id, (currentUser.hp || 100) + hpImpact);
        handleUpdateStatus({ hp: hpImpact });
