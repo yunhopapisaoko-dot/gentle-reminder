@@ -263,7 +263,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     
     // Try to trigger MonkeyDoctor in hospital rooms
     if (contextKey === 'hospital' && ['Sala 1', 'Sala 2', 'Sala 3'].includes(loc.name)) {
-      supabaseService.tryTriggerMonkeyDoctor(loc.name).then(triggered => {
+      supabaseService.tryTriggerMonkeyDoctor(loc.name, currentUser.username).then(triggered => {
         if (triggered) {
           console.log('[MonkeyDoctor] Appeared in', loc.name);
         }

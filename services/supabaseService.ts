@@ -942,6 +942,26 @@ export const supabaseService = {
     return (data && data.length > 0);
   },
 
+  // Check how many times MonkeyDoctor has interacted with a specific user today
+  async getMonkeyDoctorInteractionsToday(username: string): Promise<number> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Get interactions count from localStorage (simpler approach without DB changes)
+    const key = `monkeydoctor_interactions_${username}_${today.toDateString()}`;
+    const count = parseInt(localStorage.getItem(key) || '0', 10);
+    return count;
+  },
+
+  // Increment MonkeyDoctor interaction count for a user
+  incrementMonkeyDoctorInteraction(username: string): void {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const key = `monkeydoctor_interactions_${username}_${today.toDateString()}`;
+    const count = parseInt(localStorage.getItem(key) || '0', 10);
+    localStorage.setItem(key, (count + 1).toString());
+  },
+
   // Send MonkeyDoctor random scene to a hospital room
   async sendMonkeyDoctorScene(roomName: string) {
     const MONKEYDOCTOR_UUID = '00000000-0000-0000-0000-000000000002';
@@ -972,7 +992,16 @@ export const supabaseService = {
   },
 
   // Try to trigger MonkeyDoctor appearance (random chance)
-  async tryTriggerMonkeyDoctor(roomName: string): Promise<boolean> {
+  async tryTriggerMonkeyDoctor(roomName: string, username?: string): Promise<boolean> {
+    // Special limit for hagiwa: max 3 interactions per day
+    if (username?.toLowerCase() === 'hagiwa') {
+      const interactions = await this.getMonkeyDoctorInteractionsToday('hagiwa');
+      if (interactions >= 3) {
+        console.log('[MonkeyDoctor] Hagiwa reached daily limit (3 interactions)');
+        return false;
+      }
+    }
+    
     // 15% chance of appearing
     if (Math.random() > 0.15) return false;
     
@@ -982,6 +1011,12 @@ export const supabaseService = {
     
     // Send the scene
     await this.sendMonkeyDoctorScene(roomName);
+    
+    // Increment interaction count for hagiwa
+    if (username?.toLowerCase() === 'hagiwa') {
+      this.incrementMonkeyDoctorInteraction('hagiwa');
+    }
+    
     return true;
   },
 
