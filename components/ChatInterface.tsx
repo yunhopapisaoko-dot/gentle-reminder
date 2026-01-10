@@ -142,6 +142,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [showGrantAccess, setShowGrantAccess] = useState(false);
   const [showChatInfo, setShowChatInfo] = useState(false);
   const [hasVIPAccess, setHasVIPAccess] = useState(false);
+  const [showVIPModal, setShowVIPModal] = useState(false);
 
   const [onlineMembers, setOnlineMembers] = useState<User[]>([]);
   const [presentMembers, setPresentMembers] = useState<User[]>([]); // Members currently in this chat room
@@ -803,37 +804,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
         
         <div className="flex items-center space-x-2">
-          {!isChatOff && isHospital && !currentSubLoc && (
-            <button 
-              onClick={() => {
-                if (activeTreatment) {
-                  setShowTreatmentStatus(true);
-                } else {
-                  setShowConsultations(true);
-                }
-              }} 
-              className={`w-11 h-11 rounded-full ${activeTreatment && !activeTreatment.started_at ? 'bg-amber-500 animate-pulse' : 'bg-blue-500'} text-white flex items-center justify-center shadow-lg border border-white/20 active:scale-90`}
-            >
-              <span className="material-symbols-rounded">{activeTreatment && !activeTreatment.started_at ? 'door_open' : 'stethoscope'}</span>
-            </button>
-          )}
           <button onClick={handleClose} className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-2xl flex items-center justify-center border border-white/10 text-white shadow-lg active:scale-90" title="Voltar"><span className="material-symbols-rounded">close</span></button>
         </div>
       </div>
-
-      {/* Outros modais... */}
-      {showTreatmentStatus && activeTreatment && (
-        <TreatmentStatusModal
-          diseaseName={activeTreatment.disease_name}
-          timeRemaining={formatTreatmentTime(treatmentTimeRemaining)}
-          progress={activeTreatment.started_at ? (1 - treatmentTimeRemaining / (activeTreatment.cure_time_minutes * 60 * 1000)) * 100 : 0}
-          approverName={treatmentApprover?.name}
-          approverAvatar={treatmentApprover?.avatar_url}
-          requiredRoom={activeTreatment.required_room}
-          isWaitingForRoom={!activeTreatment.started_at && !!activeTreatment.required_room}
-          onClose={() => setShowTreatmentStatus(false)}
-        />
-      )}
 
       {isOffChatMode && (
         <div className={`relative z-10 px-6 py-2 border-b flex items-center justify-center gap-2 ${isChatOff ? 'bg-cyan-500/20 border-cyan-500/30' : 'bg-amber-500/20 border-amber-500/30'}`}>
@@ -842,50 +815,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       )}
 
-      {/* Treatment Timer - shown in hospital chats when treatment is active */}
-      {isHospital && activeTreatment && treatmentTimeRemaining > 0 && (
-        <div className="relative z-10 px-6 py-4 border-b bg-gradient-to-r from-emerald-900/60 to-cyan-900/60 border-emerald-500/30 animate-in fade-in slide-in-from-top duration-500">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <img
-                src={treatmentApprover?.avatar_url || '/jyp-avatar.jpg'}
-                alt={treatmentApprover ? `Avatar de ${treatmentApprover.name}` : 'Avatar do aprovador'}
-                className="w-12 h-12 rounded-2xl object-cover border border-emerald-500/30"
-              />
-              <div>
-                <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">Tratamento aprovado</p>
-                <p className="text-white/60 text-[11px] font-bold">
-                  {activeTreatment.disease_name}
-                  {treatmentApprover?.name ? ` • ${treatmentApprover.name}` : ''}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="text-right">
-                <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">Tempo Restante</p>
-                <p className="text-2xl font-black text-emerald-400 italic tracking-tight">{formatTreatmentTime(treatmentTimeRemaining)}</p>
-              </div>
-              <div className="w-12 h-12 relative">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3"/>
-                  <circle 
-                    cx="18" cy="18" r="15" 
-                    fill="none" 
-                    stroke="#10b981" 
-                    strokeWidth="3" 
-                    strokeLinecap="round"
-                    strokeDasharray={`${(1 - treatmentTimeRemaining / (activeTreatment.cure_time_minutes * 60 * 1000)) * 94.2} 94.2`}
-                    className="transition-all duration-1000"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="material-symbols-rounded text-emerald-400 text-lg">schedule</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div ref={scrollRef} className={`flex-1 overflow-y-auto overflow-x-hidden p-6 space-y-4 relative z-10 scrollbar-hide pb-32 ${messagesLoaded ? 'messages-fade-in' : 'opacity-0'}`}>
         {activeMessages.map((msg, index) => {
@@ -949,7 +878,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           }
           
           // Only show room button if it's for this patient or no patient specified
-          const shouldShowRoomButton = roomButtonName && isMonkeyDoctor && activeTreatment && treatmentTimeRemaining > 0 && 
+          const shouldShowRoomButton = roomButtonName && isMonkeyDoctor && 
             (!roomButtonPatientId || roomButtonPatientId === currentUser?.id);
           
           const bubbleClasses = `max-w-full px-5 py-3.5 rounded-[24px] text-[13.5px] font-bold leading-relaxed shadow-[0_10px_20px_rgba(0,0,0,0.3)] border border-white bg-white text-black break-words [overflow-wrap:anywhere] [word-break:break-word]`;
@@ -1108,18 +1037,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <div className="absolute bottom-[calc(100%+12px)] left-6 right-6 bg-background-dark rounded-[32px] border border-white/10 p-5 shadow-[0_-20px_60px_rgba(0,0,0,0.5)] animate-in slide-in-bottom duration-300 max-h-[60vh] overflow-hidden flex flex-col">
              <div className="flex items-center space-x-2 mb-4">
                <button 
-                 onClick={() => { setSuggestionTab('locais'); setSelectedItem(null); setItemActionMode(null); }}
+                 onClick={() => { setSuggestionTab('locais'); }}
                  className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${suggestionTab === 'locais' ? 'bg-primary text-white' : 'bg-white/5 text-white/40'}`}
                >
                  <span className="material-symbols-rounded text-sm mr-2">location_on</span>
                  Locais
                </button>
                <button 
-                 onClick={() => { setSuggestionTab('acoes'); setSelectedItem(null); setItemActionMode(null); }}
+                 onClick={() => { setSuggestionTab('acoes'); }}
                  className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${suggestionTab === 'acoes' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-white/40'}`}
                >
-                 <span className="material-symbols-rounded text-sm mr-2">restaurant</span>
-                 Ações
+                 <span className="material-symbols-rounded text-sm mr-2">group</span>
+                 Usuários
                </button>
              </div>
              
@@ -1203,118 +1132,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         </div>
                       )}
                     </div>
-
-                    {/* Divider */}
-                    <div className="flex items-center gap-3 px-2">
-                      <div className="flex-1 h-px bg-white/10"></div>
-                      <span className="text-[7px] font-black text-white/20 uppercase tracking-widest">Inventário</span>
-                      <div className="flex-1 h-px bg-white/10"></div>
-                    </div>
-
-                    {!selectedItem ? (
-                      inventoryItems.length === 0 ? (
-                        <div className="py-6 text-center opacity-40">
-                          <span className="material-symbols-rounded text-3xl mb-2 block">inventory_2</span>
-                          <p className="text-[9px] font-black uppercase tracking-widest">Inventário vazio</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2 max-h-[200px] overflow-y-auto scrollbar-hide">
-                          {inventoryItems.map(item => (
-                            <button
-                              key={item.id}
-                              onClick={() => setSelectedItem(item)}
-                              className="w-full flex items-center space-x-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-emerald-500 hover:border-emerald-500 transition-all active:scale-98 group"
-                            >
-                              <img src={item.item_image} className="w-12 h-12 rounded-xl object-cover border border-white/10" alt={item.item_name} />
-                              <div className="flex-1 text-left">
-                                <p className="text-[11px] font-black text-white">{item.item_name}</p>
-                                <p className="text-[8px] text-white/30 uppercase tracking-widest">{item.category} • x{item.quantity}</p>
-                              </div>
-                              <div className="flex items-center space-x-2 text-[8px] text-white/40">
-                                {item.attributes?.hunger && <span className="flex items-center"><span className="material-symbols-rounded text-xs text-amber-400 mr-1">restaurant</span>{item.attributes.hunger}</span>}
-                                {item.attributes?.thirst && <span className="flex items-center"><span className="material-symbols-rounded text-xs text-cyan-400 mr-1">water_drop</span>{item.attributes.thirst}</span>}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )
-                   ) : !itemActionMode ? (
-                     <div className="space-y-4 animate-in zoom-in">
-                       <div className="flex items-center space-x-4 p-4 bg-white/5 rounded-2xl border border-white/10">
-                         <img src={selectedItem.item_image} className="w-16 h-16 rounded-xl object-cover" alt={selectedItem.item_name} />
-                         <div>
-                           <p className="text-sm font-black text-white">{selectedItem.item_name}</p>
-                           <p className="text-[9px] text-white/40">{selectedItem.category}</p>
-                         </div>
-                       </div>
-                       
-                       <div className="grid grid-cols-3 gap-3">
-                         <button
-                           onClick={() => handleUseItem(selectedItem)}
-                           className="flex flex-col items-center p-4 rounded-2xl bg-emerald-500 text-white hover:bg-emerald-600 transition-all active:scale-95"
-                         >
-                           <span className="material-symbols-rounded text-2xl mb-2">restaurant</span>
-                           <span className="text-[8px] font-black uppercase tracking-widest">Usar</span>
-                         </button>
-                         <button
-                           onClick={() => setItemActionMode('send')}
-                           className="flex flex-col items-center p-4 rounded-2xl bg-blue-500 text-white hover:bg-blue-600 transition-all active:scale-95"
-                         >
-                           <span className="material-symbols-rounded text-2xl mb-2">send</span>
-                           <span className="text-[8px] font-black uppercase tracking-widest">Enviar</span>
-                         </button>
-                         <button
-                           onClick={() => setItemActionMode('share')}
-                           className="flex flex-col items-center p-4 rounded-2xl bg-pink-500 text-white hover:bg-pink-600 transition-all active:scale-95"
-                         >
-                           <span className="material-symbols-rounded text-2xl mb-2">group</span>
-                           <span className="text-[8px] font-black uppercase tracking-widest">Dividir</span>
-                         </button>
-                       </div>
-                       
-                       <button onClick={() => setSelectedItem(null)} className="w-full py-3 rounded-xl bg-white/5 text-white/20 text-[8px] font-black uppercase tracking-widest">Voltar</button>
-                     </div>
-                   ) : (
-                      <div className="space-y-4 animate-in zoom-in">
-                        <div className="px-2">
-                          <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">
-                            {itemActionMode === 'send' ? 'Enviar para quem?' : 'Dividir com quem?'}
-                          </p>
-                        </div>
-                        
-                        {presentMembers.filter(m => m.id !== currentUser.id).length === 0 ? (
-                          <div className="py-8 text-center opacity-40">
-                            <span className="material-symbols-rounded text-4xl mb-2 block">person_off</span>
-                            <p className="text-[10px] font-black uppercase tracking-widest">Nenhum usuário no chat</p>
-                            <p className="text-[8px] text-white/30 mt-1">Apenas usuários presentes aparecem aqui</p>
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-3 gap-3">
-                            {presentMembers.filter(m => m.id !== currentUser.id).map(member => (
-                              <button
-                                key={member.id}
-                                onClick={() => {
-                                  if (itemActionMode === 'send') {
-                                    handleSendItem(selectedItem, member);
-                                  } else {
-                                    handleShareItem(selectedItem, member);
-                                  }
-                                }}
-                                className="flex flex-col items-center p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all active:scale-95"
-                              >
-                                <img src={member.avatar} className="w-12 h-12 rounded-2xl border border-white/10 mb-2" alt={member.name} />
-                                <span className="text-[8px] font-black text-white/60 uppercase truncate w-full text-center">{member.name}</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        
-                        <button onClick={() => setItemActionMode(null)} className="w-full py-3 rounded-xl bg-white/5 text-white/20 text-[8px] font-black uppercase tracking-widest">Voltar</button>
-                      </div>
-                   )}
-                 </div>
-               )}
-             </div>
+                  </div>
+                )}
+              </div>
              
           </div>
         )}
@@ -1551,8 +1371,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       )}
 
-      {showConsultations && isHospital && <HospitalConsultations onClose={() => setShowConsultations(false)} onTreat={handleTreat} currentUserId={currentUser?.id} currentUserName={currentUser?.name} />}
-      {showVIPModal && locationContext && <VIPReservationModal location={locationContext} currentUser={currentUser} onClose={() => setShowVIPModal(false)} onSuccess={() => { setShowVIPModal(false); supabaseService.checkVIPAccess(currentUser.id, locationContext).then(setHasVIPAccess); }} />}
       
       {/* Chat Info Panel */}
       <ChatInfoPanel
