@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { User } from '../../types';
-import { DISEASE_DETAILS } from '../../constants';
 import { supabase } from '../../supabase';
 
 interface UserStatusModalProps {
@@ -10,45 +9,10 @@ interface UserStatusModalProps {
   onViewProfile: (user: User) => void;
 }
 
-interface FullUserData {
-  hp: number;
-  maxHp: number;
-  hunger: number;
-  thirst: number;
-  alcohol: number;
-  money: number;
-  currentDisease?: string;
-  isActiveRP: boolean;
-}
-
 const RACE_THEMES: Record<string, { color: string; icon: string; bg: string; gradient: string }> = {
   draeven: { color: 'text-rose-400', icon: 'local_fire_department', bg: 'bg-rose-500/20', gradient: 'from-rose-500/20 to-rose-900/20' },
   sylven: { color: 'text-emerald-400', icon: 'eco', bg: 'bg-emerald-500/20', gradient: 'from-emerald-500/20 to-emerald-900/20' },
   lunari: { color: 'text-cyan-400', icon: 'dark_mode', bg: 'bg-cyan-500/20', gradient: 'from-cyan-500/20 to-cyan-900/20' },
-};
-
-const StatusBar: React.FC<{ label: string; value: number; max: number; icon: string; color: string; bgColor: string }> = ({
-  label, value, max, icon, color, bgColor
-}) => {
-  const percentage = Math.min(100, Math.max(0, (value / max) * 100));
-  
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <span className={`material-symbols-rounded text-sm ${color}`}>{icon}</span>
-          <span className="text-[10px] font-bold text-white/60 uppercase tracking-wider">{label}</span>
-        </div>
-        <span className="text-[11px] font-black text-white">{value}/{max}</span>
-      </div>
-      <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-        <div 
-          className={`h-full ${bgColor} rounded-full transition-all duration-500`}
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
-    </div>
-  );
 };
 
 export const UserStatusModal: React.FC<UserStatusModalProps> = ({
@@ -57,14 +21,12 @@ export const UserStatusModal: React.FC<UserStatusModalProps> = ({
   onClose,
   onViewProfile
 }) => {
-  const [userData, setUserData] = useState<FullUserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isActiveRP, setIsActiveRP] = useState(true);
   const [isClosing, setIsClosing] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      // Small delay to trigger the animation
       requestAnimationFrame(() => {
         setIsVisible(true);
       });
@@ -77,26 +39,15 @@ export const UserStatusModal: React.FC<UserStatusModalProps> = ({
     if (!isOpen || !user?.id) return;
 
     const fetchUserData = async () => {
-      setIsLoading(true);
       const { data } = await supabase
         .from('profiles')
-        .select('health, hunger, energy, alcoholism, money, current_disease, is_active_rp')
+        .select('is_active_rp')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (data) {
-        setUserData({
-          hp: data.health ?? 100,
-          maxHp: 100,
-          hunger: data.hunger ?? 100,
-          thirst: data.energy ?? 100,
-          alcohol: data.alcoholism ?? 0,
-          money: data.money ?? 0,
-          currentDisease: data.current_disease || undefined,
-          isActiveRP: data.is_active_rp ?? true
-        });
+        setIsActiveRP(data.is_active_rp ?? true);
       }
-      setIsLoading(false);
     };
 
     fetchUserData();
@@ -126,7 +77,6 @@ export const UserStatusModal: React.FC<UserStatusModalProps> = ({
 
   const raceKey = (user.race || 'draeven').toLowerCase();
   const raceTheme = RACE_THEMES[raceKey] || RACE_THEMES.draeven;
-  const disease = userData?.currentDisease ? DISEASE_DETAILS[userData.currentDisease] : null;
 
   return (
     <div 
@@ -167,15 +117,10 @@ export const UserStatusModal: React.FC<UserStatusModalProps> = ({
             isVisible && !isClosing ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}>
             <div className="relative">
-              <div className={`w-20 h-20 rounded-[24px] overflow-hidden border-2 ${disease ? 'border-red-500' : 'border-white/20'} shadow-xl`}>
+              <div className="w-20 h-20 rounded-[24px] overflow-hidden border-2 border-white/20 shadow-xl">
                 <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
               </div>
-              {disease && (
-                <div className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 rounded-full border-2 border-background-dark flex items-center justify-center animate-pulse">
-                  <span className="material-symbols-rounded text-white text-sm">coronavirus</span>
-                </div>
-              )}
-              {userData?.isActiveRP && (
+              {isActiveRP && (
                 <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-background-dark flex items-center justify-center">
                   <span className="material-symbols-rounded text-white text-[10px]">circle</span>
                 </div>
@@ -200,57 +145,6 @@ export const UserStatusModal: React.FC<UserStatusModalProps> = ({
               </div>
             </div>
           </div>
-
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : userData ? (
-            <div className={`transition-all duration-500 delay-150 ${
-              isVisible && !isClosing ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}>
-              {/* Money */}
-              <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-rounded text-amber-400">monetization_on</span>
-                  <span className="text-sm font-bold text-white/60">Dinheiro</span>
-                </div>
-                <span className="text-lg font-black text-amber-400">M$ {userData.money.toLocaleString()}</span>
-              </div>
-
-              {/* Status Bars */}
-              <div className="space-y-3 mb-4">
-                <StatusBar label="Saúde" value={userData.hp} max={100} icon="favorite" color="text-rose-400" bgColor="bg-rose-500" />
-                <StatusBar label="Fome" value={userData.hunger} max={100} icon="restaurant" color="text-orange-400" bgColor="bg-orange-500" />
-                <StatusBar label="Sede" value={userData.thirst} max={100} icon="water_drop" color="text-cyan-400" bgColor="bg-cyan-500" />
-                <StatusBar label="Alcoolismo" value={userData.alcohol} max={100} icon="local_bar" color="text-purple-400" bgColor="bg-purple-500" />
-              </div>
-
-              {/* Disease Section */}
-              {disease && (
-                <div className="p-4 bg-gradient-to-br from-red-900/30 to-red-950/30 rounded-2xl border border-red-500/30 mb-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="material-symbols-rounded text-red-400">{disease.icon}</span>
-                    <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-red-400 block">Enfermo</span>
-                      <h4 className="text-sm font-black text-white">{disease.name}</h4>
-                    </div>
-                  </div>
-                  <p className="text-xs text-white/50 mb-3 italic">{disease.description}</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {disease.symptoms.map((symptom, idx) => (
-                      <span 
-                        key={idx} 
-                        className="px-2.5 py-1 rounded-full bg-red-500/20 text-[9px] font-bold text-red-300 border border-red-500/20"
-                      >
-                        {symptom}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : null}
 
           {/* View Profile Button */}
           <button

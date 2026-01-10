@@ -298,8 +298,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             name: msg.character_name || msg.profiles?.full_name || 'Viajante',
             username: msg.profiles?.username || 'user',
             avatar: msg.character_avatar || msg.profiles?.avatar_url || '',
-            race: msg.profiles?.race || 'draeven',
-            currentDisease: msg.profiles?.current_disease || undefined
+            race: msg.profiles?.race || 'draeven'
           }
        }));
       
@@ -492,8 +491,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 username: p.username,
                 avatar: p.avatar_url || '',
                 race: p.race || 'draeven',
-                isLeader: p.is_leader,
-                currentDisease: p.current_disease || undefined
+                isLeader: p.is_leader
               }));
               newPresentMembers = [...newPresentMembers, ...missingMembers];
             }
@@ -963,11 +961,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   <div className={`w-10 h-10 rounded-[16px] border-2 border-white/20 overflow-hidden shadow-xl flex items-center justify-center ${isJYP ? 'bg-pink-500' : isMonkeyDoctor ? 'bg-emerald-500' : 'bg-surface-purple'}`}>
                     {isJYP ? <img src="/jyp-avatar.jpg" className="w-full h-full object-cover" alt="JYP" /> : isMonkeyDoctor ? <span className="text-2xl">🐵</span> : <img src={msg.author?.avatar} className="w-full h-full object-cover" alt="avatar" />}
                   </div>
-                  {msg.author?.currentDisease && !isJYP && !isMonkeyDoctor && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full border-2 border-background-dark flex items-center justify-center animate-pulse">
-                      <span className="material-symbols-rounded text-[10px] text-white">coronavirus</span>
-                    </div>
-                  )}
                 </button>
                 <div className={`flex flex-col space-y-1.5 max-w-[80%] w-full min-w-0 ${isOwnMessage && !forceLeftSide ? 'items-end' : 'items-start'}`}>
                   <div className={`flex items-center space-x-2 ${isOwnMessage && !forceLeftSide ? 'flex-row-reverse space-x-reverse' : ''}`}>
@@ -1120,11 +1113,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                 <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-background-dark flex items-center justify-center">
                                   <span className="material-symbols-rounded text-[8px] text-white">circle</span>
                                 </div>
-                                {member.currentDisease && (
-                                  <div className="absolute -top-1 -left-1 w-5 h-5 bg-red-500 rounded-full border-2 border-background-dark flex items-center justify-center animate-pulse">
-                                    <span className="material-symbols-rounded text-[10px] text-white">coronavirus</span>
-                                  </div>
-                                )}
                               </div>
                               <span className="text-[8px] font-black text-white/60 uppercase truncate w-14 text-center">{member.name.split(' ')[0]}</span>
                             </button>
@@ -1240,20 +1228,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <div className="w-full bg-background-dark rounded-t-[60px] border-t border-white/10 p-10 pb-16 animate-in slide-in-from-bottom duration-500 shadow-[0_-30px_120px_rgba(0,0,0,1)]">
             <div className="w-16 h-1.5 bg-white/5 rounded-full mx-auto mb-6"></div>
             
-            <div className="mb-8 bg-zinc-900 border border-white/10 rounded-[32px] p-6 flex items-center justify-between">
-               <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-white border border-white/10">
-                    <span className="material-symbols-rounded text-2xl">payments</span>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Minha Carteira</p>
-                    <p className="text-xl font-black text-white tracking-tighter">{(currentUser?.money || 0).toFixed(2)} MKC</p>
-                  </div>
-               </div>
-               <div className="bg-primary px-4 py-2 rounded-xl">
-                  <span className="text-[10px] font-black text-white uppercase tracking-widest">Premium</span>
-               </div>
-            </div>
 
             <div className="space-y-8">
               <div className="flex items-center justify-between px-4">
