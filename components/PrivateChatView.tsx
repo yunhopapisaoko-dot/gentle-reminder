@@ -401,7 +401,8 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
                   <div key={msg.id} className={`flex items-end space-x-3 ${isOwn ? 'flex-row-reverse space-x-reverse' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`} onTouchStart={(e) => handleLongPressStart(msg, e)} onTouchEnd={handleLongPressEnd} onMouseDown={(e) => handleLongPressStart(msg, e)} onMouseUp={handleLongPressEnd} onMouseLeave={handleLongPressEnd}>
                     <div className="flex-shrink-0 mb-1"><img src={isOwn ? currentUserAvatar : (otherUser.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default')} className="w-8 h-8 rounded-xl object-cover border border-white/10 shadow-lg" alt="" /></div>
                     <div className={`max-w-[78%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-                      <div className={`px-5 py-3.5 rounded-[26px] shadow-[0_10px_25px_rgba(0,0,0,0.4)] border border-white bg-white text-black transition-transform active:scale-[0.98] ${isOwn ? 'rounded-br-none' : 'rounded-bl-none'} ${replyTo?.id === msg.id ? 'ring-2 ring-primary' : ''}`}>
+                      {/* Updated bubble container classes: added select-none and touch-callout none */}
+                      <div className={`px-5 py-3.5 rounded-[26px] shadow-[0_10px_25px_rgba(0,0,0,0.4)] border border-white bg-white text-black transition-transform active:scale-[0.98] select-none [-webkit-touch-callout:none] ${isOwn ? 'rounded-br-none' : 'rounded-bl-none'} ${replyTo?.id === msg.id ? 'ring-2 ring-primary' : ''}`}>
                         {msg.reply_to_text && (
                           <div className={`mb-3 pl-3 py-1.5 border-l-4 rounded-r-xl bg-black/5 text-[11px] text-black/60 italic overflow-hidden ${isOwn ? 'border-primary' : 'border-zinc-400'}`}>
                             <span className="font-black block not-italic uppercase text-[9px] mb-0.5 opacity-70">@{msg.reply_to_name}</span>

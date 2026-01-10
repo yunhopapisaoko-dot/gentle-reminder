@@ -442,8 +442,8 @@ export const HouseChatView: React.FC<HouseChatViewProps> = ({
             const raceTheme = getRaceTheme(msg.author?.race);
             const isCurrentUser = msg.author?.id === currentUser.id;
 
-            // Constante de estilo igual ao ChatInterface
-            const bubbleClasses = `max-w-full px-5 py-3.5 rounded-[24px] text-[13.5px] font-bold leading-relaxed shadow-[0_10px_20px_rgba(0,0,0,0.3)] border border-white bg-white text-black break-words [overflow-wrap:anywhere] [word-break:break-word]`;
+            // Updated bubble classes: added select-none and touch-callout none
+            const bubbleClasses = `max-w-full px-5 py-3.5 rounded-[24px] text-[13.5px] font-bold leading-relaxed shadow-[0_10px_20px_rgba(0,0,0,0.3)] border border-white bg-white text-black break-words [overflow-wrap:anywhere] [word-break:break-word] select-none [-webkit-touch-callout:none]`;
 
             return (
               <React.Fragment key={msg.id}>

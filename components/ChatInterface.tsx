@@ -927,7 +927,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           const shouldShowRoomButton = roomButtonName && isMonkeyDoctor && 
             (!roomButtonPatientId || roomButtonPatientId === currentUser?.id);
           
-          const bubbleClasses = `max-w-full px-5 py-3.5 rounded-[24px] text-[13.5px] font-bold leading-relaxed shadow-[0_10px_20px_rgba(0,0,0,0.3)] border border-white bg-white text-black break-words [overflow-wrap:anywhere] [word-break:break-word]`;
+          // Updated classes: added select-none and touch-callout none to prevent cursors/context menu
+          const bubbleClasses = `max-w-full px-5 py-3.5 rounded-[24px] text-[13.5px] font-bold leading-relaxed shadow-[0_10px_20px_rgba(0,0,0,0.3)] border border-white bg-white text-black break-words [overflow-wrap:anywhere] [word-break:break-word] select-none [-webkit-touch-callout:none]`;
           
           // Function to handle room button click
           const handleRoomButtonClick = (roomName: string) => {
