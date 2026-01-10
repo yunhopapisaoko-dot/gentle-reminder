@@ -24,7 +24,7 @@ import { FeaturedView } from './src/components/FeaturedView';
 import { GlobalUsersGrid } from './src/components/GlobalUsersGrid';
 import { ConnectivityMonitor } from './components/ConnectivityMonitor';
 import { PostDetailView } from './components/PostDetailView';
-import { TabType, User, Post, MenuItem } from './types';
+import { TabType, User, Post } from './types';
 import { supabase } from './supabase';
 import { supabaseService } from './services/supabaseService';
 import { usePrivateConversations, PrivateConversation } from './src/hooks/usePrivateConversations';
@@ -389,13 +389,6 @@ const App: React.FC = () => {
       if (profile) {
         setCurrentUser({
           ...profile,
-          money: profile.money || 3000,
-          hp: profile.hp ?? 100,
-          maxHp: profile.maxHp || 100,
-          hunger: profile.hunger ?? 100,
-          thirst: profile.thirst ?? 100,
-          alcohol: profile.alcohol ?? 0,
-          currentDisease: profile.currentDisease,
           isActiveRP: profile.isActiveRP
         });
       }

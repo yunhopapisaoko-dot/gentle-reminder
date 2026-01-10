@@ -2,10 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChatMessage, User } from '../types';
-import { SUB_LOCATIONS, SubLocation, DISEASE_DETAILS, DiseaseInfo } from '../constants';
-import { HospitalConsultations } from './HospitalConsultations';
-import { TreatmentStatusModal } from './TreatmentStatusModal';
-import { VIPReservationModal } from './VIPReservationModal';
+import { SUB_LOCATIONS, SubLocation } from '../constants';
 import { ChatInfoPanel } from '../src/components/ChatInfoPanel';
 import { UserStatusModal } from '../src/components/UserStatusModal';
 import { supabaseService } from '../services/supabaseService';
@@ -141,28 +138,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const [showConsultations, setShowConsultations] = useState(false);
   const [showActionModal, setShowActionModal] = useState(false);
   const [showGrantAccess, setShowGrantAccess] = useState(false);
-  const [showVIPModal, setShowVIPModal] = useState(false);
   const [showChatInfo, setShowChatInfo] = useState(false);
-  const [showTreatmentStatus, setShowTreatmentStatus] = useState(false); // Novo estado
   const [hasVIPAccess, setHasVIPAccess] = useState(false);
-  const [activeVIPReservation, setActiveVIPReservation] = useState<any>(null);
-  
-  // Treatment timer state
-  const [activeTreatment, setActiveTreatment] = useState<any>(null);
-  const [treatmentTimeRemaining, setTreatmentTimeRemaining] = useState<number>(0);
-  const [treatmentApprover, setTreatmentApprover] = useState<{ name: string; avatar_url: string | null } | null>(null);
 
   const [onlineMembers, setOnlineMembers] = useState<User[]>([]);
   const [presentMembers, setPresentMembers] = useState<User[]>([]); // Members currently in this chat room
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestionTab, setSuggestionTab] = useState<'locais' | 'acoes'>('locais');
-  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [selectedTargetUser, setSelectedTargetUser] = useState<User | null>(null);
-  const [itemActionMode, setItemActionMode] = useState<'use' | 'send' | 'share' | null>(null);
   
   // Reply functionality
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
@@ -371,7 +355,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       
       if (locationContext === 'restaurante' || locationContext === 'padaria') {
         supabaseService.checkVIPAccess(currentUser.id, locationContext).then(setHasVIPAccess);
-        supabaseService.getActiveVIPReservation(locationContext).then(setActiveVIPReservation);
       }
     }
 
@@ -429,8 +412,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               name: msg.character_name || profile?.full_name || 'Viajante',
               username: profile?.username || 'user',
               avatar: msg.character_avatar || profile?.avatar_url || '',
-              race: profile?.race || 'draeven',
-              currentDisease: profile?.current_disease || undefined
+              race: profile?.race || 'draeven'
             }
           };
 
@@ -651,125 +633,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     };
   }, [locationContext, currentUser?.id, isOffChatMode, contextKey]);
 
-  // Load active treatment when in hospital
-  useEffect(() => {
-    if (!isHospital || !currentUser?.id) return;
-    
-    const loadActiveTreatment = async () => {
-      const treatment = await supabaseService.getUserActiveTreatment(currentUser.id);
-      setActiveTreatment(treatment);
-    };
-    
-    loadActiveTreatment();
-    
-    // Subscribe to treatment updates
-    const channel = supabase
-      .channel('treatment-timer')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'treatment_requests',
-          filter: `patient_id=eq.${currentUser.id}`
-        },
-        () => loadActiveTreatment()
-      )
-      .subscribe();
-    
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [isHospital, currentUser?.id]);
-
-  // Start treatment timer when patient enters required room
-  useEffect(() => {
-    if (!isHospital || !currentUser?.id || !activeTreatment) return;
-    
-    // If treatment has required_room but no started_at, check if user is in the room
-    if (activeTreatment.required_room && !activeTreatment.started_at) {
-      const userCurrentRoom = currentSubLoc?.name;
-      
-      if (userCurrentRoom === activeTreatment.required_room) {
-        // User entered the required room, start the timer
-        console.log('[Treatment] Starting timer - user entered required room:', activeTreatment.required_room);
-        supabaseService.startTreatmentTimer(activeTreatment.id)
-          .then(() => {
-            // Reload the treatment to get updated started_at
-            supabaseService.getUserActiveTreatment(currentUser.id).then(setActiveTreatment);
-          })
-          .catch(console.error);
-      }
-    }
-  }, [isHospital, currentUser?.id, activeTreatment, currentSubLoc?.name]);
+  // Sistema de tratamentos removido
 
   // Load approver profile (avatar + name)
-  useEffect(() => {
-    const approvedBy = activeTreatment?.approved_by as string | undefined;
-    if (!isHospital || !approvedBy) {
-      setTreatmentApprover(null);
-      return;
-    }
-
-    const fetchApprover = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('username, full_name, avatar_url')
-        .eq('user_id', approvedBy)
-        .maybeSingle();
-      
-      if (!data) {
-        setTreatmentApprover(null);
-        return;
-      }
-      setTreatmentApprover({
-        name: (data.full_name || data.username || 'Aprovado') as string,
-        avatar_url: (data.avatar_url || null) as string | null,
-      });
-    };
-    
-    fetchApprover().catch(() => setTreatmentApprover(null));
-  }, [isHospital, activeTreatment?.approved_by]);
-
-  // Treatment timer countdown - uses started_at (when patient entered room)
-  useEffect(() => {
-    // If treatment has required_room but no started_at, timer hasn't started yet
-    if (!activeTreatment?.started_at) {
-      setTreatmentTimeRemaining(0);
-      return;
-    }
-
-    const calculateRemaining = () => {
-      const startedAt = new Date(activeTreatment.started_at).getTime();
-      const cureTimeMs = activeTreatment.cure_time_minutes * 60 * 1000;
-      const endTime = startedAt + cureTimeMs;
-      const now = Date.now();
-      const remaining = Math.max(0, endTime - now);
-      
-      if (remaining === 0 && currentUser?.id) {
-        supabaseService.completeTreatment(activeTreatment.id, currentUser.id)
-          .then(() => setActiveTreatment(null))
-          .catch(console.error);
-      }
-      
-      return remaining;
-    };
-
-    setTreatmentTimeRemaining(calculateRemaining());
-    
-    const interval = setInterval(() => {
-      setTreatmentTimeRemaining(calculateRemaining());
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [activeTreatment, currentUser?.id]);
-  const formatTreatmentTime = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
@@ -779,93 +645,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [messages, roomMessages, offMessages, currentSubLoc, isLoading, isOffChatMode]);
 
-  // Clear approver info when treatment ends
-  useEffect(() => {
-    if (!activeTreatment) {
-      setTreatmentApprover(null);
-    }
-  }, [activeTreatment]);
-
   useEffect(() => {
     if (input === '/' || input === '*') {
       setShowSuggestions(true);
-      setSuggestionTab('acoes'); // Default to "Ações" tab to show present users
-      setSelectedItem(null);
-      setItemActionMode(null);
-      supabaseService.getInventory(currentUser.id).then(setInventoryItems);
+      setSuggestionTab('acoes');
     } else if (!input.startsWith('/') && !input.startsWith('*')) {
       setShowSuggestions(false);
     }
-  }, [input, currentUser.id]);
-
-  const handleUseItem = async (item: any) => {
-    try {
-      await supabaseService.consumeFromInventory(item.id, item.quantity);
-      handleSend(`*Usou ${item.item_name}*`);
-      setShowSuggestions(false);
-      setSelectedItem(null);
-      setInput('');
-    } catch (error: any) {
-      alert("Erro ao usar item: " + error.message);
-    }
-  };
-
-  const handleSendItem = async (item: any, targetUser: User) => {
-    try {
-      await supabaseService.consumeFromInventory(item.id, 1);
-      handleSend(`*Enviou ${item.item_name} para ${targetUser.name}*`);
-      setShowSuggestions(false);
-      setSelectedItem(null);
-      setSelectedTargetUser(null);
-      setItemActionMode(null);
-      setInput('');
-    } catch (error: any) {
-      alert("Erro ao enviar item: " + error.message);
-    }
-  };
-
-  const handleShareItem = async (item: any, targetUser: User) => {
-    try {
-      await supabaseService.consumeFromInventory(item.id, item.quantity);
-      handleSend(`*Dividiu ${item.item_name} com ${targetUser.name}*`);
-      setShowSuggestions(false);
-      setSelectedItem(null);
-      setSelectedTargetUser(null);
-      setItemActionMode(null);
-      setInput('');
-    } catch (error: any) {
-      alert("Erro ao dividir item: " + error.message);
-    }
-  };
-
-  const handleTreat = async (disease: DiseaseInfo) => {
-    try {
-      handleSend(`*Está recebendo tratamento para ${disease.name}*`);
-      setShowConsultations(false);
-    } catch (error: any) {
-      alert("Erro ao processar tratamento: " + error.message);
-    }
-  };
-
-  const handleTreat = async (disease: DiseaseInfo) => {
-    if ((currentUser.money || 0) < disease.treatmentCost) {
-      alert("Saldo insuficiente para o tratamento!");
-      return;
-    }
-
-    try {
-      const newBalance = (currentUser.money || 0) - disease.treatmentCost;
-      await supabaseService.updateMoney(currentUser.id, newBalance);
-      
-      if (onUpdateStatus) onUpdateStatus({ money: -disease.treatmentCost });
-      if (onClearDisease) onClearDisease(Math.abs(disease.hpImpact));
-      
-      handleSend(`*Pagou ${disease.treatmentCost} MKC pelo antídoto e está se sentindo muito melhor!*`);
-      setShowConsultations(false);
-    } catch (error: any) {
-      alert("Erro ao processar pagamento: " + error.message);
-    }
-  };
+  }, [input]);
 
 
   const activeMessages = isOffChatMode 
