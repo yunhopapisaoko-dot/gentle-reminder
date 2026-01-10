@@ -4,7 +4,7 @@ import { PostDetailView } from './PostDetailView';
 import { EditProfileModal } from './EditProfileModal';
 import { supabaseService } from '../services/supabaseService';
 import { supabase } from '../supabase';
-import { DISEASE_DETAILS } from '../constants';
+import { SUB_LOCATIONS } from '../constants';
 
 interface UserConversation {
   id: string;
@@ -229,11 +229,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, c
                   <span className="material-symbols-rounded text-lg fill-current">shield_person</span>
                 </div>
               )}
-              {user.currentDisease && (
-                <div className="absolute -top-2 -left-2 bg-red-500 text-white p-2 rounded-2xl shadow-xl border-4 border-background-dark flex items-center justify-center animate-pulse">
-                  <span className="material-symbols-rounded text-lg">coronavirus</span>
-                </div>
-              )}
             </div>
             
             <div className="flex flex-col items-center space-y-4">
@@ -268,31 +263,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, currentUserId, c
         {/* Info & Tabs Section */}
         <div className="px-6 space-y-8 pb-32">
           {/* Disease Card - only show if user has a disease */}
-          {user.currentDisease && DISEASE_DETAILS[user.currentDisease] && (
-            <div className="relative bg-gradient-to-br from-red-900/40 to-red-950/40 backdrop-blur-3xl p-6 rounded-[32px] border border-red-500/30 overflow-hidden animate-pulse-slow">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent"></div>
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-red-500/20 flex items-center justify-center flex-shrink-0 border border-red-500/30">
-                  <span className="material-symbols-rounded text-2xl text-red-400">{DISEASE_DETAILS[user.currentDisease].icon}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-red-400">Enfermo</span>
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                  </div>
-                  <h4 className="text-lg font-black text-white mb-2">{DISEASE_DETAILS[user.currentDisease].name}</h4>
-                  <p className="text-xs text-white/50 mb-3 italic">{DISEASE_DETAILS[user.currentDisease].description}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {DISEASE_DETAILS[user.currentDisease].symptoms.map((symptom, idx) => (
-                      <span key={idx} className="px-3 py-1.5 rounded-full bg-red-500/20 text-[10px] font-bold text-red-300 border border-red-500/20">
-                        {symptom}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className="relative bg-white/[0.03] backdrop-blur-3xl p-8 rounded-[48px] border border-white/5 text-center overflow-hidden group">
              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>

@@ -1,5 +1,5 @@
 import { supabase } from '../supabase';
-import { Post, User, JobApplication, MenuItem, FoodOrder, OrderItem, VIPReservation } from '../types';
+import { Post, User, VIPReservation } from '../types';
 
 const withTimeout = <T>(promise: Promise<T>, timeoutMs: number = 30000): Promise<T> => {
   return Promise.race([
@@ -26,14 +26,6 @@ export const supabaseService = {
         bio: data.bio || '',
         banner: data.banner_url,
         isLeader: data.is_leader || false,
-        money: data.money || 0,
-        hp: data.health ?? 100,
-        maxHp: 100,
-        hunger: data.hunger ?? 100,
-        thirst: data.energy ?? 100,
-        alcohol: data.alcoholism ?? 0,
-        currentDisease: data.current_disease || undefined,
-        last_spin_at: data.last_spin_at,
         isActiveRP: data.is_active_rp ?? true
       };
     } catch { return null; }
@@ -49,7 +41,6 @@ export const supabaseService = {
       race: p.race,
       bio: p.bio || '',
       banner: p.banner_url,
-      money: p.money,
       isActiveRP: p.is_active_rp,
       isLeader: p.is_leader
     }));
@@ -87,13 +78,7 @@ export const supabaseService = {
     };
   },
 
-  async updateMoney(userId: string, newBalance: number) {
-    await supabase.from('profiles').update({ money: newBalance }).eq('user_id', userId);
-  },
-
-  async updateVitalStatus(userId: string, updates: any) {
-    await supabase.from('profiles').update(updates).eq('user_id', userId);
-  },
+  // Funções de dinheiro e status removidas
 
   // --- CASAS E ACESSOS ---
   async getUserHouse(userId: string) {
@@ -326,33 +311,7 @@ export const supabaseService = {
     ]);
   },
 
-  // --- ECONOMIA E INVENTÁRIO ---
-  async getInventory(userId: string) {
-    const { data } = await supabase.from('inventory').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-    return data || [];
-  },
-
-  async addToInventory(userId: string, item: any, quantity: number = 1) {
-    const { data: existing } = await supabase.from('inventory').select('id, quantity').eq('user_id', userId).eq('item_id', item.id).maybeSingle();
-    if (existing) {
-      await supabase.from('inventory').update({ quantity: (existing.quantity || 1) + quantity }).eq('id', existing.id);
-    } else {
-      await supabase.from('inventory').insert([{
-        user_id: userId,
-        item_id: item.id,
-        item_name: item.name,
-        item_image: item.image,
-        category: item.category,
-        attributes: { hunger: item.hungerRestore, thirst: item.thirstRestore, alcohol: item.alcoholLevel },
-        quantity: quantity
-      }]);
-    }
-  },
-
-  async consumeFromInventory(id: string, qty: number) {
-    if (qty > 1) await supabase.from('inventory').update({ quantity: qty - 1 }).eq('id', id);
-    else await supabase.from('inventory').delete().eq('id', id);
-  },
+  // Sistemas de inventário e economia removidos
 
   // --- TRABALHO E GERÊNCIA ---
   async checkWorkerStatus(userId: string, location: string) {
@@ -360,52 +319,7 @@ export const supabaseService = {
     return data?.role || null;
   },
 
-  async applyForJob(app: any) {
-    const payload = {
-      ...app,
-      location: typeof app?.location === 'string' ? app.location.toLowerCase() : app.location,
-    };
-    await supabase.from('job_applications').insert([payload]);
-  },
-
-  async getJobApplications(location: string): Promise<JobApplication[]> {
-    const loc = (location || '').toLowerCase();
-
-    // 1) Busca fichas pendentes (normalizando o location)
-    const { data: apps, error: appsError } = await supabase
-      .from('job_applications')
-      .select('*')
-      .eq('status', 'pending')
-      .eq('location', loc);
-
-    if (appsError) throw appsError;
-    if (!apps || apps.length === 0) return [];
-
-    // 2) Busca profiles separadamente (pra exibir username/avatar)
-    const userIds = apps.map(a => a.user_id).filter(Boolean);
-    const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('user_id, username, avatar_url')
-      .in('user_id', userIds);
-
-    if (profilesError) throw profilesError;
-
-    const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
-
-    return apps.map(app => ({
-      ...app,
-      profiles: profileMap.get(app.user_id) || null,
-    })) as unknown as JobApplication[];
-  },
-
-  async approveApplication(id: string, userId: string, location: string, role: string) {
-    await supabase.from('job_applications').update({ status: 'approved' }).eq('id', id);
-    await supabase.from('establishment_workers').upsert([{ user_id: userId, location, role }]);
-  },
-
-  async rejectApplication(id: string) {
-    await supabase.from('job_applications').update({ status: 'rejected' }).eq('id', id);
-  },
+  // Sistema de ficha de trabalho removido
 
   async getLocationWorkers(location: string) {
     const loc = (location || '').toLowerCase();
@@ -466,34 +380,7 @@ export const supabaseService = {
     await supabase.from('vip_reservation_guests').insert(guestRows);
   },
 
-  // --- PEDIDOS DE COMIDA ---
-  async createFoodOrder(userId: string, name: string, loc: string, items: any[], total: number, time: number) {
-    const { error } = await supabase.from('food_orders').insert([{
-      customer_id: userId, customer_name: name, location: loc, items, total_price: Math.round(total), preparation_time: time, status: 'pending'
-    }]);
-    if (error) throw new Error(error.message);
-  },
-
-  async getPendingFoodOrders(location: string): Promise<FoodOrder[]> {
-    const { data } = await supabase.from('food_orders').select('*').eq('location', location).in('status', ['pending', 'preparing']).order('created_at', { ascending: true });
-    return (data || []) as unknown as FoodOrder[];
-  },
-
-  async approveFoodOrder(id: string, workerId: string) {
-    const readyAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // Mock 5 min
-    await supabase.from('food_orders').update({ status: 'preparing', approved_by: workerId, approved_at: new Date().toISOString(), ready_at: readyAt }).eq('id', id);
-  },
-
-  async completeFoodOrder(id: string) {
-    const { data: order } = await supabase.from('food_orders').select('*').eq('id', id).single();
-    if (order) {
-      const items = order.items as any[];
-      for (const item of items) {
-        await this.addToInventory(order.customer_id, item, item.quantity || 1);
-      }
-      await supabase.from('food_orders').update({ status: 'delivered' }).eq('id', id);
-    }
-  },
+  // Sistemas de pedidos de comida, tratamentos e inventário removidos
 
   // --- TRATAMENTOS HOSPITALARES ---
   async createTreatmentRequest(userId: string, diseaseId: string, name: string, cost: number, time: number) {

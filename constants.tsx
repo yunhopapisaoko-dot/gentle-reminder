@@ -1,4 +1,4 @@
-import { User, MenuItem } from './types';
+import { User } from './types';
 
 // Wallpapers imports
 import hospitalEntrance from './src/assets/wallpapers/hospital-entrance.jpg';
@@ -133,31 +133,7 @@ export const SUB_LOCATIONS: Record<string, SubLocation[]> = {
   praia: []
 };
 
-export const MENUS: Record<string, MenuItem[]> = {
-  padaria: [
-    { id: 'p1', category: 'Comidas', name: 'Croissant Amêndoas', description: 'Massa folhada artesanal com creme frangipane.', price: 18.50, image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=400', hungerRestore: 15, preparationTime: 3 },
-    { id: 'p2', category: 'Comidas', name: 'Pão Hokkaido', description: 'Pão ultra macio japonês amanteigado.', price: 15.00, image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400', hungerRestore: 20, preparationTime: 2 },
-    { id: 'p6', category: 'Comidas', name: 'Tamago Sando', description: 'Sanduíche de ovo com maionese kewpie.', price: 22.00, image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?q=80&w=400', hungerRestore: 25, preparationTime: 5 },
-    { id: 'p3', category: 'Bebidas', name: 'Matcha Neon', description: 'Matcha cerimonial com leite de aveia.', price: 16.00, image: 'https://images.unsplash.com/photo-1515823064-d6e0c04616a7?q=80&w=400', thirstRestore: 25, preparationTime: 2 },
-    { id: 'p7', category: 'Bebidas', name: 'Taro Latte', description: 'Cremoso de taro com pérolas negras.', price: 19.00, image: 'https://images.unsplash.com/photo-1553909489-cd47e0907d3f?q=80&w=400', thirstRestore: 30, preparationTime: 4 },
-    { id: 'p4', category: 'Alcoólicas', name: 'Miku Beer', description: 'Witbier leve com notas de laranja.', price: 24.00, image: 'https://images.unsplash.com/photo-1535958636474-b021ee887b13?q=80&w=400', thirstRestore: 10, alcoholLevel: 15, preparationTime: 1 },
-    { id: 'p5', category: 'Sobremesas', name: 'Sonho Baunilha', description: 'Recheado com favas de baunilha.', price: 12.00, image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?q=80&w=400', hungerRestore: 10, preparationTime: 2 },
-    { id: 'p8', category: 'Sobremesas', name: 'Taiyaki Nutella', description: 'Peixinho quente com avelã.', price: 14.00, image: 'https://images.unsplash.com/photo-1590186883177-33989e7c53e8?q=80&w=400', hungerRestore: 12, preparationTime: 4 },
-  ],
-  restaurante: [
-    { id: 'r1', category: 'Comidas', name: 'Miku Ramen', description: 'Caldo tonkotsu cremoso 24h e chashu.', price: 48.00, image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=400', hungerRestore: 45, preparationTime: 12 },
-    { id: 'r2', category: 'Comidas', name: 'Neon Sushi', description: '12 peças com salmão e trufas.', price: 62.00, image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400', hungerRestore: 35, preparationTime: 15 },
-    { id: 'r7', category: 'Comidas', name: 'Takoyaki', description: '6 bolinhos de polvo com katsuobushi.', price: 34.00, image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?q=80&w=400', hungerRestore: 20, preparationTime: 8 },
-    { id: 'r8', category: 'Comidas', name: 'Okonomiyaki', description: 'Panqueca de bacon e repolho.', price: 38.00, image: 'https://images.unsplash.com/photo-1617093727343-374698b1b08d?q=80&w=400', hungerRestore: 30, preparationTime: 10 },
-    { id: 'r3', category: 'Bebidas', name: 'Ramune Blue', description: 'Refrigerante clássico japonês.', price: 14.00, image: 'https://images.unsplash.com/photo-1543250609-bc0353982823?q=80&w=400', thirstRestore: 25, preparationTime: 1 },
-    { id: 'r9', category: 'Bebidas', name: 'Melon Float', description: 'Soda de melão com sorvete.', price: 22.00, image: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=400', thirstRestore: 35, preparationTime: 3 },
-    { id: 'r4', category: 'Alcoólicas', name: 'Sakura Sake', description: 'Sake premium com pétalas de sakura.', price: 32.00, image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=400', thirstRestore: 15, alcoholLevel: 25, preparationTime: 1 },
-    { id: 'r5', category: 'Alcoólicas', name: 'Cyber Drink', description: 'Gin e violeta com glitter.', price: 38.00, image: 'https://images.unsplash.com/photo-1536935338788-846bb9981813?q=80&w=400', thirstRestore: 20, alcoholLevel: 35, preparationTime: 5 },
-    { id: 'r10', category: 'Alcoólicas', name: 'Whisky High', description: 'Suntory com gelo esculpido.', price: 42.00, image: 'https://images.unsplash.com/photo-1597075091910-dc992183e9ab?q=80&w=400', thirstRestore: 10, alcoholLevel: 45, preparationTime: 2 },
-    { id: 'r6', category: 'Sobremesas', name: 'Ichigo Mochi', description: 'Arroz elástico e morango fresco.', price: 18.00, image: 'https://images.unsplash.com/photo-1582760902830-976458564209?q=80&w=400', hungerRestore: 15, preparationTime: 3 },
-    { id: 'r11', category: 'Sobremesas', name: 'Fruit Parfait', description: 'Chantilly, sorvete e pocky.', price: 28.00, image: 'https://images.unsplash.com/photo-1474978528675-4a50a4508dc3?q=80&w=400', hungerRestore: 20, preparationTime: 5 },
-  ]
-};
+// MENUS removido - sistema de cardápios removido
 
 export const ARTISTS: User[] = [
   { 

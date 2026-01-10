@@ -1,45 +1,4 @@
-export interface MenuItem {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  category: string;
-  hungerRestore?: number;
-  thirstRestore?: number;
-  alcoholLevel?: number;
-  preparationTime?: number; // tempo em minutos
-}
-
-export interface FoodOrder {
-  id: string;
-  customer_id: string;
-  customer_name: string;
-  location: string;
-  items: OrderItem[];
-  total_price: number;
-  preparation_time: number;
-  status: 'pending' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
-  created_at: string;
-  approved_at?: string;
-  approved_by?: string;
-  ready_at?: string;
-}
-
-export interface OrderItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-  hungerRestore?: number;
-  thirstRestore?: number;
-  alcoholLevel?: number;
-}
-
-export interface CartItem extends MenuItem {
-  quantity: number;
-}
+// Tipos removidos: MenuItem, FoodOrder, OrderItem, CartItem (sistema de cardápio removido)
 
 export interface Comment {
   id: string;
@@ -58,28 +17,10 @@ export interface User {
   banner?: string;
   posts?: Post[];
   isLeader?: boolean;
-  money?: number;
-  hp?: number;
-  maxHp?: number;
-  hunger?: number;
-  thirst?: number;
-  alcohol?: number;
-  currentDisease?: string;
-  last_spin_at?: string;
   isActiveRP?: boolean;
 }
 
-export interface JobApplication {
-  id: string;
-  user_id: string;
-  location: string;
-  applicant_name: string;
-  applicant_age: number;
-  experience: string;
-  role: string;
-  status: 'pending' | 'approved' | 'rejected';
-  profiles?: any;
-}
+// Interface JobApplication removida (sistema de ficha de trabalho removido)
 
 export interface Post {
   id: string;
