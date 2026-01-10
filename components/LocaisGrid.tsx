@@ -31,14 +31,15 @@ interface LocaisGridProps {
 }
 
 const LOCAIS_DATA: Local[] = [
-  { id: 'hospital', name: 'Hospital', icon: 'medical_services', color: 'bg-blue-500', image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=400&auto=format&fit=crop', activeCount: 'Saúde' },
-  { id: 'creche', name: 'Creche', icon: 'child_care', color: 'bg-pink-500', image: 'https://images.unsplash.com/photo-1560523160-754a9e25c68f?q=80&w=400&auto=format&fit=crop', activeCount: 'Infantil' },
-  { id: 'restaurante', name: 'Neon Grill', icon: 'restaurant', color: 'bg-orange-500', image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400&auto=format&fit=crop', activeCount: 'Gastronomia' },
-  { id: 'padaria', name: 'Baguette', icon: 'bakery_dining', color: 'bg-yellow-600', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400&auto=format&fit=crop', activeCount: 'Padaria' },
-  { id: 'pousada', name: 'Pousada', icon: 'hotel', color: 'bg-purple-500', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=400&auto=format&fit=crop', activeCount: 'Hospedagem' },
-  { id: 'praia', name: 'Praia', icon: 'beach_access', color: 'bg-cyan-500', image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=400&auto=format&fit=crop', activeCount: 'Lazer' },
-  { id: 'farmacia', name: 'Farmácia', icon: 'local_pharmacy', color: 'bg-teal-500', image: 'https://images.unsplash.com/photo-1576602976047-174e57a47881?q=80&w=400&auto=format&fit=crop', activeCount: 'Remédios' },
-  { id: 'imobiliaria', name: 'Imóveis', icon: 'real_estate_agent', color: 'bg-emerald-500', image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=400&auto=format&fit=crop', activeCount: 'Vendas' },
+  { id: 'imobiliaria', name: 'Imobiliária', icon: 'real_estate_agent', color: 'from-emerald-500', image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=400&auto=format&fit=crop', activeCount: 'Compre sua casa' },
+  { id: 'hospital', name: 'Hospital', icon: 'medical_services', color: 'from-blue-500', image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=400&auto=format&fit=crop', activeCount: '12 online' },
+  { id: 'creche', name: 'Creche', icon: 'child_care', color: 'from-pink-500', image: 'https://images.unsplash.com/photo-1560523160-754a9e25c68f?q=80&w=400&auto=format&fit=crop', activeCount: '8 online' },
+  { id: 'restaurante', name: 'Neon Grill', icon: 'restaurant', color: 'from-orange-500', image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400&auto=format&fit=crop', activeCount: '24 online' },
+  { id: 'padaria', name: 'Baguette Miku', icon: 'bakery_dining', color: 'from-yellow-600', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400&auto=format&fit=crop', activeCount: '15 online' },
+  { id: 'pousada', name: 'Pousada', icon: 'hotel', color: 'from-purple-500', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=400&auto=format&fit=crop', activeCount: '🚨 Cuidado com JYP!' },
+  { id: 'praia', name: 'Praia', icon: 'beach_access', color: 'from-cyan-500', image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=400&auto=format&fit=crop', activeCount: '🌊 Cuidado com JYP!' },
+  { id: 'farmacia', name: 'Farmácia', icon: 'local_pharmacy', color: 'from-teal-500', image: 'https://images.unsplash.com/photo-1576602976047-174e57a47881?q=80&w=400&auto=format&fit=crop', activeCount: '💊 Saúde & Bem-Estar' },
+  { id: 'supermercado', name: 'Supermercado', icon: 'local_grocery_store', color: 'from-green-500', image: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?q=80&w=400&auto=format&fit=crop', activeCount: '🛒 Só Domingo!' },
 ];
 
 const HOUSE_ROOMS = [
@@ -77,6 +78,7 @@ export const LocaisGrid: React.FC<LocaisGridProps> = ({
     setUserHouse(house);
   };
 
+  // Pega a idade do personagem do usuário
   const userCharacter = characters.find(c => c.user_id === currentUser?.id);
   const userAge = userCharacter?.age || 0;
   const hasCharacter = !!userCharacter;
@@ -108,14 +110,17 @@ export const LocaisGrid: React.FC<LocaisGridProps> = ({
 
   const handleBuyHouse = async () => {
     if (!currentUser) return;
+    
     if (userAge < 18) {
       alert("Você precisa ter um personagem com 18 anos ou mais para comprar uma casa.");
       return;
     }
+
     if ((currentUser.money || 0) < 100000) {
       alert("Você não tem dinheiro suficiente. A casa custa 100.000.");
       return;
     }
+
     setIsBuying(true);
     try {
       await supabaseService.buyHouse(currentUser.id, currentUser.name);
@@ -143,183 +148,274 @@ export const LocaisGrid: React.FC<LocaisGridProps> = ({
   const chatOffUnread = getLocationUnread?.('chat_off') || 0;
 
   return (
-    <div className="p-5 space-y-8 pb-40 animate-in fade-in slide-in-from-bottom-4 duration-700 overflow-x-hidden">
+    <div className="p-4 grid grid-cols-1 gap-5 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Chat OFF - Sempre disponível */}
+      <div className="px-2 mb-1">
+        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400/80">💬 Conversa Livre</h3>
+      </div>
       
-      {/* Seção Especial: Chat OFF e Casa */}
-      <div className="grid grid-cols-1 gap-4">
-        {/* Chat OFF */}
-        <button
-          onClick={() => onSelect('chat_off')}
-          className="relative group w-full h-24 rounded-[28px] overflow-hidden border border-cyan-500/20 shadow-xl transition-all active:scale-[0.98]"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-950 via-blue-950 to-background-dark"></div>
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400')] opacity-10 mix-blend-overlay"></div>
-          
-          <div className="relative h-full flex items-center px-6">
-            <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 flex items-center justify-center border border-cyan-400/30 group-hover:scale-110 transition-transform">
-              <span className="material-symbols-rounded text-cyan-400 text-2xl">forum</span>
+      <button
+        onClick={() => onSelect('chat_off')}
+        className="relative group h-32 w-full rounded-[32px] overflow-hidden border-2 border-cyan-500/50 shadow-[0_0_30px_rgba(6,182,212,0.3)] hover:shadow-[0_0_50px_rgba(6,182,212,0.5)] hover:border-cyan-400 transition-all duration-500 transform active:scale-[0.96]"
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/80 via-slate-900 to-purple-900/50"></div>
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&auto=format&fit=crop')] opacity-20 mix-blend-overlay"></div>
+        
+        {/* Notification Badge for Chat OFF */}
+        {chatOffUnread > 0 && (
+          <div className="absolute top-3 left-3 z-30">
+            <span className="flex items-center justify-center min-w-[24px] h-6 px-2 bg-red-500 text-white text-[11px] font-black rounded-full animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)] border-2 border-white/20">
+              {chatOffUnread > 99 ? '99+' : chatOffUnread}
+            </span>
+          </div>
+        )}
+        
+        <div className="relative h-full flex flex-col justify-center items-center p-6">
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center shadow-xl border border-white/30 group-hover:rotate-6 group-hover:scale-110 transition-all duration-300">
+              <span className="material-symbols-rounded text-white text-4xl">forum</span>
             </div>
-            <div className="ml-4 text-left">
-              <h4 className="text-lg font-black text-white uppercase italic tracking-tighter">Chat OFF</h4>
-              <p className="text-[8px] font-black text-cyan-300/60 uppercase tracking-[0.2em] mt-0.5">Espaço livre • Sem RPG</p>
+            <div className="text-left">
+              <h4 className="text-2xl font-black text-white tracking-tighter leading-none drop-shadow-md">Chat OFF</h4>
+              <p className="text-[10px] font-bold text-cyan-300 uppercase tracking-widest mt-1">Fora do Roleplay</p>
+              <p className="text-[9px] text-white/50 mt-1">Converse sem personagem</p>
             </div>
-            {chatOffUnread > 0 && (
-              <div className="ml-auto w-7 h-7 rounded-full bg-red-500 flex items-center justify-center shadow-lg animate-pulse border-2 border-background-dark">
-                <span className="text-[9px] font-black text-white">{chatOffUnread}</span>
-              </div>
+          </div>
+        </div>
+        
+        <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-cyan-500/30 border border-cyan-400/50 backdrop-blur-sm">
+          <span className="text-[8px] font-black text-cyan-300 uppercase tracking-widest">Sempre Aberto</span>
+        </div>
+      </button>
+      {/* Casa do Usuário - Aparece primeiro se tiver */}
+      {userHouse && (
+        <>
+          <div className="px-2 mb-1 flex items-center justify-between">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">Sua Casa</h3>
+            {!currentUser?.isActiveRP && (
+              <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">Modo Offline</span>
             )}
           </div>
-        </button>
-
-        {/* Sua Casa */}
-        {userHouse && (
-          <div className={`transition-opacity duration-500 ${!currentUser?.isActiveRP ? 'opacity-40 grayscale' : ''}`}>
+          
+          <div className={`relative transition-opacity duration-500 ${!currentUser?.isActiveRP ? 'opacity-40 grayscale-[0.5]' : 'opacity-100'}`}>
             <button
               onClick={() => setExpandedHouse(!expandedHouse)}
-              className="relative group w-full h-24 rounded-[28px] overflow-hidden border border-primary/20 shadow-xl transition-all active:scale-[0.98]"
+              className="relative group h-40 w-full rounded-[32px] overflow-hidden border-2 border-primary/30 shadow-2xl shadow-primary/20 hover:border-primary/50 transition-all duration-500"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/60 to-purple-950/80"></div>
-              <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=400" className="absolute inset-0 w-full h-full object-cover opacity-20" alt="" />
+              <img 
+                src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=400&auto=format&fit=crop" 
+                alt="Sua Casa" 
+                className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-1000" 
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-background-dark via-background-dark/30 to-transparent"></div>
               
-              <div className="relative h-full flex items-center px-6">
-                <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center border border-white/20">
-                  <span className="material-symbols-rounded text-white text-2xl">home</span>
+              <div className="relative h-full flex flex-col justify-end p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-background-dark/80 flex items-center justify-center shadow-xl border border-white/20 group-hover:rotate-3 transition-transform">
+                      <span className="material-symbols-rounded text-white text-3xl">home</span>
+                    </div>
+                    <div className="text-left">
+                      <h4 className="text-2xl font-black text-white tracking-tighter leading-none drop-shadow-md">Casa de {userHouse.owner_name}</h4>
+                      <div className="flex items-center space-x-2 mt-2">
+                        <span className="text-[10px] font-black text-primary/80 uppercase tracking-widest">{HOUSE_ROOMS.length} cômodos</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`w-11 h-11 rounded-full bg-primary/20 backdrop-blur-md border border-primary/40 flex items-center justify-center text-primary transition-all shadow-lg ${expandedHouse ? 'rotate-90' : ''}`}>
+                    <span className="material-symbols-rounded text-2xl">arrow_forward</span>
+                  </div>
                 </div>
-                <div className="ml-4 text-left">
-                  <h4 className="text-lg font-black text-white uppercase italic tracking-tighter truncate max-w-[160px]">Casa de {userHouse.owner_name}</h4>
-                  <p className="text-[8px] font-black text-primary-foreground/50 uppercase tracking-[0.2em] mt-0.5">Seu Refúgio Particular</p>
-                </div>
-                <span className={`ml-auto material-symbols-rounded text-white/30 transition-transform ${expandedHouse ? 'rotate-180' : ''}`}>expand_more</span>
               </div>
             </button>
 
+            {/* Cômodos da casa */}
             {expandedHouse && (
-              <div className="grid grid-cols-3 gap-2 mt-3 animate-in slide-in-from-top-2 duration-300">
-                {HOUSE_ROOMS.map(room => (
+              <div className="mt-3 grid grid-cols-3 gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                {HOUSE_ROOMS.map((room) => (
                   <button
                     key={room.id}
                     onClick={() => handleHouseRoomSelect(room.id)}
-                    className="flex flex-col items-center justify-center py-4 rounded-2xl bg-white/[0.03] border border-white/5 active:scale-95 transition-all hover:bg-white/[0.06]"
+                    className="flex flex-col items-center p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-primary/10 hover:border-primary/30 transition-all active:scale-95"
                   >
-                    <span className="material-symbols-rounded text-primary text-xl mb-1">{room.icon}</span>
-                    <span className="text-[7px] font-black text-white/40 uppercase tracking-tighter truncate w-full text-center px-1">{room.name}</span>
+                    <span className="material-symbols-rounded text-2xl text-primary mb-2">{room.icon}</span>
+                    <span className="text-[9px] font-black text-white/60 uppercase tracking-widest">{room.name}</span>
                   </button>
                 ))}
               </div>
             )}
           </div>
+        </>
+      )}
+
+      <div className="px-2 mb-1 flex items-center justify-between">
+        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Locais de Roleplay</h3>
+        {!currentUser?.isActiveRP && (
+          <div className="flex items-center space-x-2">
+            <span className="material-symbols-rounded text-rose-500 text-xs">lock</span>
+            <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest">Acesso Restrito</span>
+          </div>
         )}
       </div>
 
-      {/* Grid de Locais Públicos (2 Colunas, mais compacto) */}
-      <div className="space-y-5">
-        <div className="flex items-center space-x-3 px-1">
-          <div className="w-1 h-3.5 bg-primary rounded-full shadow-[0_0_8px_rgba(139,92,246,0.5)]"></div>
-          <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30">Locais Públicos</h3>
-        </div>
 
-        <div className="grid grid-cols-2 gap-3.5">
-          {LOCAIS_DATA.map((local) => {
-            if (local.id === 'imobiliaria' && userHouse) return null;
+      {LOCAIS_DATA.map((local) => {
+        // Esconde imobiliária se já tem casa
+        if (local.id === 'imobiliaria' && userHouse) return null;
+        
+        const isRPLocation = local.id !== 'imobiliaria' && local.id !== 'supermercado';
+        const needsCharacter = isRPLocation && !hasCharacter;
+        const isBlocked = (!currentUser?.isActiveRP && isRPLocation) || needsCharacter;
+        const unreadCount = getLocationUnread?.(local.id) || 0;
+
+        return (
+          <button
+            key={local.id}
+            onClick={() => handleSelect(local)}
+            className={`relative group h-40 w-full rounded-[32px] overflow-hidden border border-white/5 shadow-2xl transition-all duration-500 transform active:scale-[0.96] ${isBlocked ? 'opacity-40 grayscale hover:border-rose-500/30' : 'hover:border-primary/50'}`}
+          >
+            <img src={local.image} alt={local.name} className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-1000" />
+            <div className="absolute inset-0 bg-gradient-to-tr from-background-dark via-background-dark/30 to-transparent"></div>
             
-            const isRPLocation = local.id !== 'imobiliaria';
-            const needsCharacter = isRPLocation && !hasCharacter;
-            const isBlocked = (!currentUser?.isActiveRP && isRPLocation) || needsCharacter;
-            const unreadCount = getLocationUnread?.(local.id) || 0;
-
-            return (
-              <button
-                key={local.id}
-                onClick={() => handleSelect(local)}
-                className={`relative group aspect-[1/1.05] rounded-[32px] overflow-hidden border transition-all duration-500 active:scale-[0.96] shadow-2xl ${isBlocked ? 'opacity-40 grayscale border-white/5' : 'border-white/10 hover:border-primary/40'}`}
-              >
-                <img src={local.image} alt={local.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2000ms] group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
-                
-                {/* Badges Flutuantes */}
-                <div className="absolute top-3 left-3 right-3 flex justify-between items-start pointer-events-none">
-                  {unreadCount > 0 && !isBlocked && (
-                    <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shadow-lg animate-pulse border border-background-dark">
-                      <span className="text-[8px] font-black text-white">{unreadCount}</span>
-                    </div>
-                  )}
-                  {isBlocked && (
-                    <div className="w-7 h-7 rounded-xl bg-black/60 backdrop-blur-md flex items-center justify-center border border-white/10">
-                      <span className="material-symbols-rounded text-white/40 text-sm">lock</span>
-                    </div>
+            {/* Notification Badge */}
+            {unreadCount > 0 && !isBlocked && (
+              <div className="absolute top-4 right-4 z-30">
+                <span className="flex items-center justify-center min-w-[24px] h-6 px-2 bg-red-500 text-white text-[11px] font-black rounded-full animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)] border-2 border-white/20">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              </div>
+            )}
+            
+            {isBlocked && (
+              <div className="absolute inset-0 flex items-center justify-center z-20">
+                <div className="bg-black/60 backdrop-blur-md p-4 rounded-full border border-white/10 shadow-2xl flex flex-col items-center">
+                  <span className="material-symbols-rounded text-white text-3xl">lock</span>
+                  {needsCharacter && (
+                    <span className="text-[8px] font-black text-white/60 uppercase tracking-widest mt-2">Crie uma ficha</span>
                   )}
                 </div>
+              </div>
+            )}
 
-                {/* Content */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
-                  <div className={`w-9 h-9 rounded-xl ${local.color} flex items-center justify-center mb-2.5 shadow-lg border border-white/20 transition-transform duration-500 group-hover:rotate-6`}>
-                    <span className="material-symbols-rounded text-white text-lg">{local.icon}</span>
+            <div className="relative h-full flex flex-col justify-end p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className={`relative w-14 h-14 rounded-2xl bg-gradient-to-br ${local.color} to-background-dark/80 flex items-center justify-center shadow-xl border border-white/20 group-hover:rotate-3 transition-transform`}>
+                    <span className="material-symbols-rounded text-white text-3xl">{local.icon}</span>
                   </div>
-                  <h4 className="text-[13px] font-black text-white uppercase tracking-tight leading-none truncate">{local.name}</h4>
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                     <div className="w-1 h-1 bg-white/30 rounded-full"></div>
-                     <p className="text-[7px] font-black text-white/30 uppercase tracking-widest">{local.activeCount}</p>
+                  <div className="text-left">
+                    <h4 className="text-2xl font-black text-white tracking-tighter leading-none drop-shadow-md">{local.name}</h4>
+                    <div className="flex items-center space-x-2 mt-2">
+                      {!isBlocked && local.id !== 'imobiliaria' && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]"></div>
+                      )}
+                      <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">{local.activeCount}</span>
+                    </div>
                   </div>
                 </div>
-                
-                {/* Glow Effect on Hover */}
-                <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Modais de Confirmação e Compra (Estilização Compacta) */}
-      {confirmingLocal && (
-        <div className="fixed inset-0 z-[600] flex items-center justify-center p-8 animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setConfirmingLocal(null)}></div>
-          <div className="relative w-full max-w-[280px] bg-[#0a0a0a] border border-white/10 rounded-[40px] p-8 shadow-[0_0_80px_rgba(139,92,246,0.15)] animate-in zoom-in duration-400 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mx-auto mb-6">
-              <span className="material-symbols-rounded text-4xl">{confirmingLocal.icon}</span>
+                <div className={`w-11 h-11 rounded-full bg-primary/20 backdrop-blur-md border border-primary/40 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-lg ${isBlocked ? 'opacity-0' : ''}`}>
+                  <span className="material-symbols-rounded text-2xl">arrow_forward</span>
+                </div>
+              </div>
             </div>
-            <h3 className="text-lg font-black text-white uppercase italic tracking-tighter mb-2">Entrar?</h3>
-            <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-8 leading-relaxed">Iniciar roleplay em<br/>{confirmingLocal.name}?</p>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirmingLocal(null)} className="flex-1 py-4 rounded-2xl bg-white/5 text-white/40 text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all">Não</button>
-              <button onClick={() => { onSelect(confirmingLocal.id); setConfirmingLocal(null); }} className="flex-1 py-4 rounded-2xl bg-primary text-white text-[9px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Confirmar</button>
+          </button>
+        );
+      })}
+
+      {/* Modal de confirmação de local */}
+      {confirmingLocal && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-8 animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={() => setConfirmingLocal(null)}></div>
+          <div className="relative w-full max-w-xs bg-background-dark border border-white/10 rounded-[48px] p-8 shadow-[0_0_80px_rgba(139,92,246,0.3)] animate-in zoom-in duration-400">
+            <div className="w-20 h-20 rounded-[28px] bg-primary/20 border border-primary/30 flex items-center justify-center text-primary mx-auto mb-6">
+              <span className="material-symbols-rounded text-5xl">{confirmingLocal.icon}</span>
+            </div>
+            <h3 className="text-xl font-black text-white italic tracking-tighter uppercase text-center mb-2">Entrar no Local?</h3>
+            <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] text-center mb-8">Deseja iniciar um roleplay no {confirmingLocal.name}?</p>
+            
+            <div className="flex space-x-4">
+              <button 
+                onClick={() => setConfirmingLocal(null)}
+                className="flex-1 py-4 rounded-2xl bg-white/5 text-white/40 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
+              >
+                Não
+              </button>
+              <button 
+                onClick={() => { onSelect(confirmingLocal.id); setConfirmingLocal(null); }}
+                className="flex-1 py-4 rounded-2xl bg-primary text-white text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all"
+              >
+                Confirmar
+              </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Modal da Imobiliária */}
       {showImobiliaria && (
-        <div className="fixed inset-0 z-[600] flex items-center justify-center p-8 animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setShowImobiliaria(false)}></div>
-          <div className="relative w-full max-w-[320px] bg-[#0a0a0a] border border-white/10 rounded-[40px] p-8 shadow-[0_0_80px_rgba(16,185,129,0.15)] animate-in zoom-in duration-400 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mx-auto mb-6">
-              <span className="material-symbols-rounded text-4xl">real_estate_agent</span>
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-8 animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={() => setShowImobiliaria(false)}></div>
+          <div className="relative w-full max-w-sm bg-background-dark border border-white/10 rounded-[48px] p-8 shadow-[0_0_80px_rgba(16,185,129,0.3)] animate-in zoom-in duration-400">
+            <div className="w-20 h-20 rounded-[28px] bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto mb-6">
+              <span className="material-symbols-rounded text-5xl">real_estate_agent</span>
             </div>
-            <h3 className="text-xl font-black text-white uppercase italic tracking-tighter mb-6">Imobiliária</h3>
-            <div className="bg-white/[0.02] rounded-3xl p-5 border border-white/5 mb-6 text-left">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-xs font-bold text-white/60">Casa Padrão</span>
-                <span className="text-base font-black text-emerald-400">$100.000</span>
+            <h3 className="text-xl font-black text-white italic tracking-tighter uppercase text-center mb-2">Imobiliária</h3>
+            <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] text-center mb-6">Compre sua própria casa!</p>
+            
+            {/* Info da casa */}
+            <div className="bg-white/5 rounded-2xl p-4 border border-white/10 mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-bold text-white">Casa Padrão</span>
+                <span className="text-lg font-black text-emerald-400">$100.000</span>
               </div>
-              <p className="text-[9px] text-white/30 mb-4 leading-relaxed">Propriedade exclusiva com 6 cômodos para sua história.</p>
-              <div className="pt-4 border-t border-white/5 flex justify-between items-center">
-                <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Seu Saldo:</span>
-                <span className={`text-[10px] font-black ${(currentUser?.money || 0) >= 100000 ? 'text-emerald-400' : 'text-rose-500'}`}>${(currentUser?.money || 0).toLocaleString()}</span>
+              <p className="text-[10px] text-white/40 mb-3">Inclui: Sala, 2 Quartos, Banheiro, Cozinha e Área Externa</p>
+              
+              <div className="flex items-center justify-between text-[9px] text-white/30 border-t border-white/5 pt-3">
+                <span>Seu saldo:</span>
+                <span className={`font-bold ${(currentUser?.money || 0) >= 100000 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  ${(currentUser?.money || 0).toLocaleString()}
+                </span>
               </div>
             </div>
-            <div className="flex gap-3">
-              <button onClick={() => setShowImobiliaria(false)} className="flex-1 py-4 rounded-2xl bg-white/5 text-white/40 text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all">Sair</button>
+
+            {/* Aviso de idade */}
+            {userAge < 18 && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-3 mb-4">
+                <p className="text-[10px] text-red-400 font-bold text-center">
+                  <span className="material-symbols-rounded text-sm align-middle mr-1">warning</span>
+                  Seu personagem precisa ter 18+ anos
+                </p>
+              </div>
+            )}
+
+            {!userCharacter && (
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3 mb-4">
+                <p className="text-[10px] text-amber-400 font-bold text-center">
+                  <span className="material-symbols-rounded text-sm align-middle mr-1">person_off</span>
+                  Você precisa criar um personagem primeiro
+                </p>
+              </div>
+            )}
+            
+            <div className="flex space-x-4">
+              <button 
+                onClick={() => setShowImobiliaria(false)}
+                className="flex-1 py-4 rounded-2xl bg-white/5 text-white/40 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
+              >
+                Fechar
+              </button>
               <button 
                 onClick={handleBuyHouse}
-                disabled={isBuying || (currentUser?.money || 0) < 100000}
-                className="flex-1 py-4 rounded-2xl bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-30"
+                disabled={isBuying || userAge < 18 || !userCharacter || (currentUser?.money || 0) < 100000}
+                className="flex-1 py-4 rounded-2xl bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isBuying ? '...' : 'Comprar'}
+                {isBuying ? 'Comprando...' : 'Comprar'}
               </button>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };
