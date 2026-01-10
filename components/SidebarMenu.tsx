@@ -1,39 +1,12 @@
 import React, { useState } from 'react';
 import { User } from '../types';
-import { DISEASE_DETAILS } from '../constants';
 import { supabaseService } from '../services/supabaseService';
-
-interface StatusItemProps {
-  label: string;
-  value: number;
-  icon: string;
-  color: string;
-}
-
-const StatusItem: React.FC<StatusItemProps> = ({ label, value, icon, color }) => (
-  <div className="space-y-2">
-    <div className="flex justify-between items-end">
-      <div className="flex items-center space-x-2">
-        <span className={`material-symbols-rounded text-lg ${color.replace('bg-', 'text-')}`}>{icon}</span>
-        <span className="text-[10px] font-black uppercase tracking-widest text-white/30">{label}</span>
-      </div>
-      <span className="text-[10px] font-black text-white/60">{Math.round(value)}%</span>
-    </div>
-    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden p-[1px]">
-      <div
-        className={`h-full ${color} rounded-full transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(0,0,0,0.5)]`}
-        style={{ width: `${value}%` }}
-      />
-    </div>
-  </div>
-);
 
 interface SidebarMenuProps {
   user: User;
   isOpen: boolean;
   onClose: () => void;
   onOpenProfile: () => void;
-  onOpenInventory: () => void;
   onOpenChats: () => void;
   onLogout: () => void;
   onStatusChange: (isActive: boolean) => void;
@@ -44,15 +17,12 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({
   isOpen, 
   onClose, 
   onOpenProfile, 
-  onOpenInventory, 
   onOpenChats, 
   onLogout,
   onStatusChange
 }) => {
   const [isClosing, setIsClosing] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-
-  const activeDisease = user.currentDisease ? DISEASE_DETAILS[user.currentDisease] : null;
 
   const handleClose = () => {
     setIsClosing(true);
@@ -119,47 +89,6 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({
         </div>
 
         <div className="px-6 py-4 space-y-4 flex-1 overflow-y-auto scrollbar-hide">
-          {/* Doença Ativa - Exibida PRIMEIRO, acima dos status */}
-          {activeDisease && (
-            <div className="bg-gradient-to-br from-rose-500/10 to-rose-900/10 border border-rose-500/30 p-5 rounded-[28px] shadow-lg shadow-rose-500/10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center animate-pulse">
-                  <span className="material-symbols-rounded text-2xl text-rose-400">{activeDisease.icon}</span>
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-rose-400">{activeDisease.name}</h3>
-                  <p className="text-[9px] text-rose-400/60 font-bold uppercase tracking-wider">Enfermidade Ativa</p>
-                </div>
-              </div>
-              
-              <p className="text-xs text-white/70 leading-relaxed mb-4">{activeDisease.description}</p>
-              
-              {/* Sintomas - Agora dinâmicos */}
-              <div className="bg-black/20 rounded-xl p-3 mb-4 border border-rose-500/10">
-                <p className="text-[9px] text-rose-400/80 font-bold uppercase tracking-wider mb-2">Sintomas</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {activeDisease.symptoms.map((symptom, idx) => (
-                    <span key={idx} className="text-[10px] bg-rose-500/10 text-rose-300 px-2 py-1 rounded-lg border border-rose-500/20">
-                      {symptom}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between text-[10px] border-t border-rose-500/10 pt-3">
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center gap-1 text-rose-400 font-bold">
-                    <span className="material-symbols-rounded text-sm">favorite</span>
-                    {activeDisease.hpImpact} HP
-                  </span>
-                  <span className="text-white/20">•</span>
-                  <span className="text-amber-400 font-bold">{activeDisease.treatmentCost} MKC</span>
-                </div>
-              </div>
-              <p className="text-[9px] text-rose-300/60 mt-3 italic text-center">⚕️ Vá ao Hospital para se curar</p>
-            </div>
-          )}
-
           {/* Status Roleplay Toggle */}
           <div className={`p-6 rounded-[32px] border transition-all duration-500 ${user.isActiveRP ? 'bg-green-500/5 border-green-500/20' : 'bg-rose-500/5 border-rose-500/20'}`}>
             <div className="flex items-center justify-between mb-4">
@@ -184,18 +113,6 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({
             </p>
           </div>
 
-          {/* Sinais Vitais */}
-          <div className="bg-white/[0.03] backdrop-blur-3xl p-6 rounded-[40px] border border-white/5 space-y-6 shadow-inner">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20">Sinais Vitais</h3>
-              <span className="material-symbols-rounded text-primary/40 text-sm">bolt</span>
-            </div>
-            <StatusItem label="Saúde" value={user.hp || 100} icon="favorite" color="bg-rose-500" />
-            <StatusItem label="Fome" value={user.hunger || 0} icon="restaurant" color="bg-orange-500" />
-            <StatusItem label="Sede" value={user.thirst || 0} icon="water_drop" color="bg-cyan-500" />
-            <StatusItem label="Alcoolismo" value={user.alcohol || 0} icon="local_bar" color="bg-purple-500" />
-          </div>
-
           <div className="space-y-2 pt-4">
             <div className="px-4 mb-4">
               <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-white/10">Menu Principal</h3>
@@ -207,15 +124,6 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({
                   <span className="material-symbols-rounded text-xl">forum</span>
                 </div>
                 <span className="text-xs font-black uppercase tracking-widest text-white/40 group-hover:text-white transition-colors">Meus Chats</span>
-              </div>
-            </button>
-
-            <button onClick={() => { handleClose(); onOpenInventory(); }} className="w-full flex items-center justify-between p-4 rounded-[24px] hover:bg-white/5 group transition-all">
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 rounded-2xl bg-white/[0.03] flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all text-white/40 border border-white/5">
-                  <span className="material-symbols-rounded text-xl">inventory_2</span>
-                </div>
-                <span className="text-xs font-black uppercase tracking-widest text-white/40 group-hover:text-white transition-colors">Inventário</span>
               </div>
             </button>
           </div>
