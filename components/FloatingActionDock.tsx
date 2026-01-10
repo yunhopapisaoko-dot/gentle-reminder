@@ -6,7 +6,6 @@ import { TabType } from '../types';
 interface FloatingActionDockProps {
   onCreateClick: () => void;
   onAllChatsClick: () => void;
-  onRouletteClick: () => void;
   activeTab: TabType;
   unreadMessages?: number;
   isSidebarOpen?: boolean;
@@ -16,7 +15,6 @@ interface FloatingActionDockProps {
 export const FloatingActionDock: React.FC<FloatingActionDockProps> = ({ 
   onCreateClick, 
   onAllChatsClick, 
-  onRouletteClick,
   activeTab,
   unreadMessages = 0,
   isSidebarOpen = false,
@@ -30,17 +28,6 @@ export const FloatingActionDock: React.FC<FloatingActionDockProps> = ({
       {/* Main Dock Container */}
       <div className="relative flex items-center px-5 py-4 bg-white/[0.03] backdrop-blur-[50px] rounded-[50px] border border-white/10 shadow-[0_20px_100px_rgba(0,0,0,0.8)] space-x-6 animate-in slide-in-bottom duration-1000 pointer-events-auto">
         
-        {/* Botão Roleta - Esquerda */}
-        <button 
-          onClick={onRouletteClick}
-          className="group relative flex flex-col items-center justify-center w-14 h-14 rounded-full transition-all active:scale-75"
-        >
-          <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-white/40 group-hover:text-amber-400 group-hover:border-amber-400/30 group-hover:bg-amber-400/10 transition-all duration-300">
-            <span className="material-symbols-rounded text-2xl group-hover:rotate-180 transition-transform duration-700">casino</span>
-          </div>
-          <span className="absolute -bottom-6 text-[7px] font-black uppercase tracking-[0.2em] text-white/20 opacity-0 group-hover:opacity-100 transition-opacity">Roleta</span>
-        </button>
-
         {/* Botão Central de Criação (+) - O Coração da Dock */}
         <div className="relative">
           {/* Sombra Neon Pulsante */}

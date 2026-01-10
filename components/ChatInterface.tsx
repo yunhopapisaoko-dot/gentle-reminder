@@ -1,19 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ChatMessage, User, MenuItem, OrderItem } from '../types';
-import { MENUS, SUB_LOCATIONS, SubLocation, DISEASE_DETAILS, DiseaseInfo } from '../constants';
-import { MenuView } from './MenuView';
+import { ChatMessage, User } from '../types';
+import { SUB_LOCATIONS, SubLocation, DISEASE_DETAILS, DiseaseInfo } from '../constants';
 import { HospitalConsultations } from './HospitalConsultations';
-import { JobApplicationModal } from './JobApplicationModal';
-import { ManagerDashboard } from './ManagerDashboard';
-import { WorkerView } from './WorkerView';
-import { TreatmentStatusModal } from './TreatmentStatusModal'; // Novo import
-
+import { TreatmentStatusModal } from './TreatmentStatusModal';
 import { VIPReservationModal } from './VIPReservationModal';
-import { PharmacyView } from './PharmacyView';
-import { FridgeModal } from './FridgeModal';
-import { RecipesModal } from './RecipesModal';
 import { ChatInfoPanel } from '../src/components/ChatInfoPanel';
 import { UserStatusModal } from '../src/components/UserStatusModal';
 import { supabaseService } from '../services/supabaseService';
@@ -36,9 +28,6 @@ interface ChatInterfaceProps {
   onLeaveRoom?: () => void;
   currentUser: User;
   onMemberClick?: (user: User) => void;
-  onUpdateStatus?: (changes: { hp?: number; hunger?: number; thirst?: number; alcohol?: number; money?: number }) => void;
-  onConsumeItems?: (items: MenuItem[]) => void;
-  onClearDisease?: (hpRestore: number) => void;
   onNavigate?: (locationId: string) => void;
   onMarkAsRead?: (location: string, subLocation?: string | null) => void;
 }
@@ -138,9 +127,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onLeaveRoom,
   currentUser, 
   onMemberClick, 
-  onUpdateStatus, 
-  onConsumeItems, 
-  onClearDisease,
   onNavigate,
   onMarkAsRead
 }) => {
@@ -148,7 +134,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [offMessages, setOffMessages] = useState<ChatMessage[]>([]);
   const [roomMessages, setRoomMessages] = useState<Record<string, ChatMessage[]>>({});
   const [currentSubLoc, setCurrentSubLoc] = useState<SubLocation | null>(null);
-  const [workerRole, setWorkerRole] = useState<string | null>(null);
   const [authorizedRooms, setAuthorizedRooms] = useState<string[]>([]);
   const [characterAge, setCharacterAge] = useState<number | null>(null);
   const [isOffChatMode, setIsOffChatMode] = useState(false);
@@ -156,16 +141,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
   const [showConsultations, setShowConsultations] = useState(false);
   const [showActionModal, setShowActionModal] = useState(false);
-  const [showJobModal, setShowJobModal] = useState(false);
-  const [showManagerDash, setShowManagerDash] = useState(false);
-  const [showWorkerPanel, setShowWorkerPanel] = useState(false);
   const [showGrantAccess, setShowGrantAccess] = useState(false);
   const [showVIPModal, setShowVIPModal] = useState(false);
-  const [showFridge, setShowFridge] = useState(false);
-  const [showRecipes, setShowRecipes] = useState(false);
   const [showChatInfo, setShowChatInfo] = useState(false);
   const [showTreatmentStatus, setShowTreatmentStatus] = useState(false); // Novo estado
   const [hasVIPAccess, setHasVIPAccess] = useState(false);
@@ -210,7 +189,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const activeWallpaper = currentSubLoc ? currentSubLoc.wallpaper : (WALLPAPERS[contextKey] || WALLPAPERS.default);
   
   const icon = isChatOff ? 'forum' : (ICONS[contextKey] || ICONS.default);
-  const hasMenu = MENUS[contextKey] !== undefined;
   const [showPharmacy, setShowPharmacy] = useState(false);
   
   // Track if messages have loaded for animation
@@ -233,7 +211,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     // Isso também evita que apareça duplicado junto do botão "Voltar" quando estamos em um sub-local.
     if (loc.name === 'Entrada') return false;
     if (!loc.restricted) return true;
-    if (workerRole) return true;
+    
     if (authorizedRooms.includes(loc.name)) return true;
     // Crianças de 1-5 anos podem acessar salas da creche
     if (isCreche && canAccessCrecheByAge) return true;
@@ -386,7 +364,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     loadMessages();
     
     if (locationContext && currentUser?.id) {
-      supabaseService.checkWorkerStatus(currentUser.id, locationContext).then(setWorkerRole);
+      
       supabaseService.checkRoomAccess(currentUser.id, locationContext).then(setAuthorizedRooms);
       supabaseService.getAllProfiles().then(setOnlineMembers);
       supabaseService.getUserCharacterAge(currentUser.id).then(setCharacterAge);
@@ -823,14 +801,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleUseItem = async (item: any) => {
     try {
       await supabaseService.consumeFromInventory(item.id, item.quantity);
-      const attrs = item.attributes || {};
-      if (onUpdateStatus) {
-        onUpdateStatus({
-          hunger: attrs.hunger || 0,
-          thirst: attrs.thirst || 0,
-          alcohol: attrs.alcohol || 0
-        });
-      }
       handleSend(`*Usou ${item.item_name}*`);
       setShowSuggestions(false);
       setSelectedItem(null);
@@ -843,17 +813,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleSendItem = async (item: any, targetUser: User) => {
     try {
       await supabaseService.consumeFromInventory(item.id, 1);
-      await supabaseService.addToInventory(targetUser.id, {
-        id: item.item_id,
-        name: item.item_name,
-        description: item.attributes?.description || '',
-        price: 0,
-        image: item.item_image,
-        category: item.category || 'Item',
-        hungerRestore: item.attributes?.hunger,
-        thirstRestore: item.attributes?.thirst,
-        alcoholLevel: item.attributes?.alcohol
-      });
       handleSend(`*Enviou ${item.item_name} para ${targetUser.name}*`);
       setShowSuggestions(false);
       setSelectedItem(null);
@@ -868,35 +827,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleShareItem = async (item: any, targetUser: User) => {
     try {
       await supabaseService.consumeFromInventory(item.id, item.quantity);
-      const attrs = item.attributes || {};
-      
-      const hungerBonus = attrs.hunger || 0;
-      const thirstBonus = attrs.thirst || 0;
-      const alcoholBonus = attrs.alcohol || 0;
-      
-      if (onUpdateStatus) {
-        onUpdateStatus({
-          hunger: hungerBonus,
-          thirst: thirstBonus,
-          alcohol: alcoholBonus
-        });
-      }
-      
-      // Atualiza o outro usuário via Edge Function (bypassa RLS de forma segura)
-      if (hungerBonus || thirstBonus || alcoholBonus) {
-        const { error: fnError } = await supabase.functions.invoke('apply-vital-deltas', {
-          body: {
-            userId: targetUser.id,
-            hungerDelta: hungerBonus,
-            thirstDelta: thirstBonus,
-            alcoholDelta: alcoholBonus,
-          }
-        });
-
-        if (fnError) throw fnError;
-      }
-      
-      handleSend(`*Dividiu ${item.item_name} com ${targetUser.name} — ambos receberam os benefícios!*`);
+      handleSend(`*Dividiu ${item.item_name} com ${targetUser.name}*`);
       setShowSuggestions(false);
       setSelectedItem(null);
       setSelectedTargetUser(null);
@@ -907,29 +838,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  const handleOrderConfirmed = async (items: MenuItem[], orderItems: OrderItem[], preparationTime: number) => {
-    const total = items.reduce((acc, item) => acc + item.price, 0);
-    const totalInt = Math.round(total); // food_orders.total_price é integer
-
-    if ((currentUser.money || 0) < total) {
-      alert("Saldo insuficiente para este pedido!");
-      return;
-    }
-
+  const handleTreat = async (disease: DiseaseInfo) => {
     try {
-      await supabaseService.createFoodOrder(
-        currentUser.id,
-        currentUser.name,
-        locationContext || 'restaurante',
-        orderItems,
-        totalInt,
-        preparationTime
-      );
-      
-      handleSend(`*Fez um pedido no valor de ${total.toFixed(2)} MKC. Aguardando preparo (~${preparationTime}min)...*`);
-      setShowMenu(false);
+      handleSend(`*Está recebendo tratamento para ${disease.name}*`);
+      setShowConsultations(false);
     } catch (error: any) {
-      alert("Erro ao criar pedido: " + error.message);
+      alert("Erro ao processar tratamento: " + error.message);
     }
   };
 
@@ -1102,36 +1016,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
         
         <div className="flex items-center space-x-2">
-          {!isChatOff && isPousadaKitchen && (
-            <>
-              <button onClick={() => setShowFridge(true)} className="w-11 h-11 rounded-2xl bg-cyan-500 text-white flex items-center justify-center shadow-lg border border-white/20 active:scale-90 transition-all">
-                <span className="material-symbols-rounded">kitchen</span>
-              </button>
-              <button onClick={() => setShowRecipes(true)} className="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-lg border border-white/20 active:scale-90 transition-all">
-                <span className="material-symbols-rounded">menu_book</span>
-              </button>
-            </>
-          )}
-
-          {!isChatOff && locationContext && !currentSubLoc && (
-            <>
-              {workerRole ? (
-                <button onClick={() => setShowWorkerPanel(true)} className="w-11 h-11 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg border border-white/20 active:scale-90 transition-all">
-                  <span className="material-symbols-rounded">assignment</span>
-                </button>
-              ) : (
-                <button onClick={() => setShowJobModal(true)} className="w-11 h-11 rounded-2xl bg-white/5 text-white flex items-center justify-center border border-white/10 active:scale-90 transition-all">
-                  <span className="material-symbols-rounded">work</span>
-                </button>
-              )}
-            </>
-          )}
-
           {!isChatOff && isHospital && !currentSubLoc && (
             <button 
               onClick={() => {
                 if (activeTreatment) {
-                  setShowTreatmentStatus(true); // Abre o novo modal moderno
+                  setShowTreatmentStatus(true);
                 } else {
                   setShowConsultations(true);
                 }
@@ -1140,12 +1029,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             >
               <span className="material-symbols-rounded">{activeTreatment && !activeTreatment.started_at ? 'door_open' : 'stethoscope'}</span>
             </button>
-          )}
-          {!isChatOff && isPharmacy && !currentSubLoc && (
-            <button onClick={() => setShowPharmacy(true)} className="px-5 py-3 rounded-2xl bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest shadow-xl border border-white/20 active:scale-95 transition-all">Balcão</button>
-          )}
-          {!isChatOff && hasMenu && !currentSubLoc && !isHospital && !isPharmacy && (
-            <button onClick={() => setShowMenu(true)} className="px-5 py-3 rounded-2xl bg-secondary text-white text-[10px] font-black uppercase tracking-widest shadow-xl border border-white/20 active:scale-95 transition-all">Menu</button>
           )}
           <button onClick={handleClose} className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-2xl flex items-center justify-center border border-white/10 text-white shadow-lg active:scale-90" title="Voltar"><span className="material-symbols-rounded">close</span></button>
         </div>
@@ -1646,15 +1529,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                )}
              </div>
              
-             {workerRole && suggestionTab === 'locais' && !showGrantAccess && (
-               <button 
-                 onClick={() => setShowGrantAccess(true)}
-                 className="mt-4 flex items-center justify-center space-x-2 bg-primary text-white px-4 py-3 rounded-xl w-full"
-               >
-                 <span className="material-symbols-rounded text-sm">key</span>
-                 <span className="text-[8px] font-black uppercase tracking-widest">Liberar Sala</span>
-               </button>
-             )}
           </div>
         )}
 
@@ -1806,7 +1680,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 
                 {internalLocs.map((loc, idx) => {
                   const isVIPRoom = loc.name === 'Reserva VIP';
-                  const canAccessVIP = isVIPRoom && (hasVIPAccess || workerRole);
+                  const canAccessVIP = isVIPRoom && hasVIPAccess;
                   const hasUnread = unreadSubLocations.includes(loc.name);
                   const isCurrentLocation = currentSubLoc?.name === loc.name;
                   
@@ -1890,16 +1764,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       )}
 
-      {showJobModal && locationContext && <JobApplicationModal location={locationContext} userId={currentUser.id} onClose={() => setShowJobModal(false)} onSuccess={() => setShowJobModal(false)} onManagerAccess={() => { setShowJobModal(false); setShowManagerDash(true); }} />}
-      {showManagerDash && locationContext && <ManagerDashboard location={locationContext} onClose={() => setShowManagerDash(false)} />}
-      {showWorkerPanel && locationContext && workerRole && <WorkerView location={locationContext} role={workerRole} onClose={() => setShowWorkerPanel(false)} onManageTeam={() => { setShowWorkerPanel(false); setShowManagerDash(true); }} currentUserId={currentUser?.id} />}
-      {showMenu && hasMenu && !currentSubLoc && <MenuView locationName={locationContext || ''} items={MENUS[contextKey]} onClose={() => setShowMenu(false)} onOrderConfirmed={handleOrderConfirmed} />}
       {showConsultations && isHospital && <HospitalConsultations onClose={() => setShowConsultations(false)} onTreat={handleTreat} currentUserId={currentUser?.id} currentUserName={currentUser?.name} />}
-      {showVIPModal && locationContext && <VIPReservationModal location={locationContext} currentUser={currentUser} onClose={() => setShowVIPModal(false)} onSuccess={() => { setShowVIPModal(false); supabaseService.checkVIPAccess(currentUser.id, locationContext).then(setHasVIPAccess); }} onMoneyChange={(amount) => onUpdateStatus?.({ money: amount })} />}
-      
-      {showPharmacy && <PharmacyView onClose={() => setShowPharmacy(false)} currentUser={currentUser} onUpdateMoney={(amount) => onUpdateStatus?.({ money: amount })} />}
-      {showFridge && <FridgeModal userId={currentUser.id} userName={currentUser.name} onClose={() => setShowFridge(false)} />}
-      {showRecipes && <RecipesModal userId={currentUser.id} userName={currentUser.name} onClose={() => setShowRecipes(false)} />}
+      {showVIPModal && locationContext && <VIPReservationModal location={locationContext} currentUser={currentUser} onClose={() => setShowVIPModal(false)} onSuccess={() => { setShowVIPModal(false); supabaseService.checkVIPAccess(currentUser.id, locationContext).then(setHasVIPAccess); }} />}
       
       {/* Chat Info Panel */}
       <ChatInfoPanel

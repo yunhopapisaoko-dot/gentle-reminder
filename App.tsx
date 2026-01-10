@@ -16,9 +16,6 @@ import { AuthView } from './components/AuthView';
 import { DbSetupModal } from './components/DbSetupModal';
 import { FloatingActionDock } from './components/FloatingActionDock';
 import { AllChatsView } from './components/AllChatsView';
-import { RouletteView } from './components/RouletteView';
-import { InventoryView } from './components/InventoryView';
-import { SupermarketView } from './components/SupermarketView';
 import { PrivateChatView } from './components/PrivateChatView';
 import { HouseChatView } from './components/HouseChatView';
 import { AdminConversationsView } from './components/AdminConversationsView';
@@ -27,15 +24,13 @@ import { FeaturedView } from './src/components/FeaturedView';
 import { GlobalUsersGrid } from './src/components/GlobalUsersGrid';
 import { ConnectivityMonitor } from './components/ConnectivityMonitor';
 import { PostDetailView } from './components/PostDetailView';
-import { JYPGlobalAlert } from './components/JYPGlobalAlert';
-import { JYPBanditSystem } from './components/JYPBanditSystem';
 import { TabType, User, Post, MenuItem } from './types';
 import { supabase } from './supabase';
 import { supabaseService } from './services/supabaseService';
 import { usePrivateConversations, PrivateConversation } from './src/hooks/usePrivateConversations';
 import { useChatNotifications } from './src/hooks/useChatNotifications';
 import { useRoomAuthorizations } from './src/hooks/useRoomAuthorizations';
-import { useVitalDecay } from './src/hooks/useVitalDecay';
+
 
 import { useNavigationHistory, NavigationState } from './src/hooks/useNavigationHistory';
 import { useNewMessageNotification } from './src/hooks/useNewMessageNotification';
@@ -63,9 +58,6 @@ const App: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
   const [isAllChatsOpen, setIsAllChatsOpen] = useState(false);
-  const [isRouletteOpen, setIsRouletteOpen] = useState(false);
-  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
-  const [isSupermarketOpen, setIsSupermarketOpen] = useState(false);
   const [isCreateCharacterOpen, setIsCreateCharacterOpen] = useState(false);
   const [characters, setCharacters] = useState<any[]>([]);
   
@@ -104,37 +96,6 @@ const App: React.FC = () => {
   // Registra presença global do usuário (independente da tela atual)
   useGlobalPresence(currentUser?.id || null);
 
-  // Sistema de decaimento de fome e sede
-  // Fome: -1 a cada 3 horas | Sede: -3 a cada 2 horas
-  useVitalDecay({
-    userId: currentUser?.id || null,
-    onHungerDecay: useCallback((amount: number) => {
-      setCurrentUser(prev => {
-        if (!prev) return prev;
-        const newHunger = Math.max(0, (prev.hunger || 50) + amount);
-        // Persiste usando o valor mais recente (prev), evitando estado "travado" no intervalo
-        supabaseService.updateVitalStatus(prev.id, { hunger: newHunger }).catch(err => {
-          console.error('[VitalDecay] Error updating hunger:', err);
-        });
-        return { ...prev, hunger: newHunger };
-      });
-    }, []),
-    onThirstDecay: useCallback((amount: number) => {
-      setCurrentUser(prev => {
-        if (!prev) return prev;
-        const newThirst = Math.max(0, (prev.thirst || 50) + amount);
-        // NOTA: O campo 'energy' no banco é usado para armazenar 'thirst'
-        supabaseService.updateVitalStatus(prev.id, { energy: newThirst }).catch(err => {
-          console.error('[VitalDecay] Error updating thirst:', err);
-        });
-        return { ...prev, thirst: newThirst };
-      });
-    }, []),
-    hungerIntervalMs: 3 * 60 * 60 * 1000, // 3 horas
-    thirstIntervalMs: 2 * 60 * 60 * 1000, // 2 horas
-    hungerDecayAmount: -1,
-    thirstDecayAmount: -3
-  });
   // Garante persistência: sempre que um chat público estiver aberto, registra o usuário como membro
   // (resolve casos onde o chat é aberto por notificações/atalhos e não passa pelo fluxo padrão de "entrar").
   useEffect(() => {
@@ -222,15 +183,6 @@ const App: React.FC = () => {
       case 'createModal':
         setIsCreateModalOpen(false);
         return true;
-      case 'roulette':
-        setIsRouletteOpen(false);
-        return true;
-      case 'inventory':
-        setIsInventoryOpen(false);
-        return true;
-      case 'supermarket':
-        setIsSupermarketOpen(false);
-        return true;
       case 'allchats':
         setIsAllChatsOpen(false);
         return true;
@@ -304,20 +256,6 @@ const App: React.FC = () => {
     setSelectedPost(post);
   }, [pushState]);
 
-  const openInventory = useCallback(() => {
-    pushState({ type: 'inventory' });
-    setIsInventoryOpen(true);
-  }, [pushState]);
-
-  const openRoulette = useCallback(() => {
-    pushState({ type: 'roulette' });
-    setIsRouletteOpen(true);
-  }, [pushState]);
-
-  const openSupermarket = useCallback(() => {
-    pushState({ type: 'supermarket' });
-    setIsSupermarketOpen(false);
-  }, [pushState]);
 
   const openCreateModal = useCallback(() => {
     pushState({ type: 'createModal' });
@@ -531,66 +469,6 @@ const App: React.FC = () => {
     }
   };
 
-  const handleUpdateStatus = async (changes: { hp?: number; hunger?: number; thirst?: number; alcohol?: number; money?: number }) => {
-    if (!currentUser) return;
-    
-    const maxHp = currentUser.maxHp || 100;
-    const newValues = {
-      hp: Math.max(0, Math.min(maxHp, (currentUser.hp || 100) + (changes.hp || 0))),
-      hunger: Math.max(0, Math.min(100, (currentUser.hunger || 50) + (changes.hunger || 0))),
-      thirst: Math.max(0, Math.min(100, (currentUser.thirst || 50) + (changes.thirst || 0))),
-      alcohol: Math.max(0, Math.min(100, (currentUser.alcohol || 0) + (changes.alcohol || 0))),
-      money: (currentUser.money || 0) + (changes.money || 0)
-    };
-    
-    // Update local state immediately for responsiveness
-    setCurrentUser(prev => {
-      if (!prev) return prev;
-      return { ...prev, ...newValues };
-    });
-    
-    // Persist to database
-    try {
-      const dbUpdates: Record<string, number> = {};
-      if (changes.hp !== undefined) dbUpdates.health = newValues.hp;
-      if (changes.hunger !== undefined) dbUpdates.hunger = newValues.hunger;
-      if (changes.thirst !== undefined) dbUpdates.energy = newValues.thirst; // energy = thirst in DB
-      if (changes.alcohol !== undefined) dbUpdates.alcoholism = newValues.alcohol;
-      if (changes.money !== undefined) dbUpdates.money = newValues.money;
-      
-      if (Object.keys(dbUpdates).length > 0) {
-        await supabaseService.updateVitalStatus(currentUser.id, dbUpdates);
-      }
-    } catch (error) {
-      console.error('[App] Error saving vital status:', error);
-    }
-  };
-
-  const handleRouletteResult = (id: string, name: string, hpImpact: number) => {
-    if (!currentUser) return;
-    
-    // Atualiza o last_spin_at no estado local para aplicar o cooldown de 24h
-    setCurrentUser(prev => prev ? { ...prev, last_spin_at: new Date().toISOString() } : prev);
-    
-    if (id.startsWith('d')) {
-       supabaseService.applyDiseaseFromRoulette(currentUser.id, id, (currentUser.hp || 100) + hpImpact);
-       handleUpdateStatus({ hp: hpImpact });
-    } else {
-       const amounts: Record<string, number> = { 'p1': 1, 'p2': 10, 'p3': 100, 'p4': 10000 };
-       const amt = amounts[id] || 0;
-       supabaseService.applyPrizeFromRoulette(currentUser.id, amt);
-       handleUpdateStatus({ money: amt });
-    }
-  };
-
-  const handleJYPRobbery = useCallback(async (victimId: string, amount: number) => {
-    if (!currentUser) return;
-    if (victimId === currentUser.id) {
-      const newBalance = Math.max(0, (currentUser.money || 0) - amount);
-      await supabaseService.updateMoney(currentUser.id, newBalance);
-      handleUpdateStatus({ money: -amount });
-    }
-  }, [currentUser, handleUpdateStatus]);
 
   const leaveChatById = async (id: string) => {
     const existing = pendingLeaveByChatIdRef.current.get(id);
@@ -725,11 +603,6 @@ const App: React.FC = () => {
       case TabType.Chat:
         return (
           <ChatInterface 
-            onUpdateStatus={handleUpdateStatus} 
-            onConsumeItems={async (items) => {
-               if (!currentUser) return;
-               for (const item of items) await supabaseService.addToInventory(currentUser.id, item);
-            }}
             currentUser={currentUser!} 
             onMemberClick={(user) => openProfile(user)} 
             onNavigate={(id) => openLocalChat(id)}
@@ -772,22 +645,10 @@ const App: React.FC = () => {
           onClose={() => setIsSidebarOpen(false)} 
           user={currentUser!} 
           onOpenProfile={() => openProfile(currentUser)}
-          onOpenInventory={() => openInventory()}
           onOpenChats={() => openAllChats()}
           onStatusChange={(isActive) => setCurrentUser(prev => prev ? { ...prev, isActiveRP: isActive } : null)}
           onLogout={async () => { await supabase.auth.signOut(); setIsAuthenticated(false); }}
         />
-
-        {isInventoryOpen && <InventoryView userId={currentUser!.id} onClose={() => setIsInventoryOpen(false)} onConsume={(item) => handleUpdateStatus({ hunger: item.attributes?.hunger, thirst: item.attributes?.thirst })} />}
-        {isSupermarketOpen && (
-          <SupermarketView 
-            userId={currentUser!.id} 
-            userName={currentUser!.name}
-            userMoney={currentUser!.money || 0}
-            onClose={() => setIsSupermarketOpen(false)} 
-            onMoneyChange={(newBalance) => setCurrentUser(prev => prev ? { ...prev, money: newBalance } : prev)}
-          />
-        )}
         {isCreateModalOpen && <CreateContentModal onClose={() => setIsCreateModalOpen(false)} onSuccess={() => fetchInitialData(currentUser!.id)} userId={currentUser!.id} />}
         {isCreateCharacterOpen && <CreateCharacterModal userId={currentUser!.id} onClose={() => setIsCreateCharacterOpen(false)} onSuccess={() => { setIsCreateCharacterOpen(false); fetchInitialData(currentUser!.id); }} />}
         
@@ -882,8 +743,6 @@ const App: React.FC = () => {
 
         {selectedLocalChat && (
           <ChatInterface 
-            onUpdateStatus={handleUpdateStatus} 
-            onConsumeItems={async (items) => { if (currentUser) for (const item of items) await supabaseService.addToInventory(currentUser.id, item); }} 
             currentUser={currentUser!} 
             locationContext={selectedLocalChat} 
             onNavigate={(id) => openLocalChat(id)} 
@@ -943,17 +802,8 @@ const App: React.FC = () => {
           />
         )}
         
-        {isRouletteOpen && <RouletteView userId={currentUser!.id} lastSpinAt={currentUser!.last_spin_at} onClose={() => setIsRouletteOpen(false)} onResult={handleRouletteResult} />}
-        
-        {!selectedLocalChat && !selectedUser && !selectedPost && !isCreateModalOpen && !activePrivateChat && !activeHouseChat && <FloatingActionDock activeTab={activeTab} onCreateClick={() => openCreateModal()} onAllChatsClick={() => openAllChats()} onRouletteClick={() => openRoulette()} unreadMessages={totalUnread + totalChatUnread} isSidebarOpen={isSidebarOpen} hasNewMessages={hasNewMessages} />}
+        {!selectedLocalChat && !selectedUser && !selectedPost && !isCreateModalOpen && !activePrivateChat && !activeHouseChat && <FloatingActionDock activeTab={activeTab} onCreateClick={() => openCreateModal()} onAllChatsClick={() => openAllChats()} unreadMessages={totalUnread + totalChatUnread} isSidebarOpen={isSidebarOpen} hasNewMessages={hasNewMessages} />}
         <Toaster />
-        {isAuthenticated && currentUser && <JYPGlobalAlert />}
-        {isAuthenticated && currentUser && (
-          <JYPBanditSystem 
-            currentUser={currentUser} 
-            onRobbery={handleJYPRobbery} 
-          />
-        )}
       </div>
     </div>
   );
