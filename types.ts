@@ -18,8 +18,6 @@ export interface User {
   posts?: Post[];
   isLeader?: boolean;
   isActiveRP?: boolean;
-  currentDisease?: string;
-  money?: number;
 }
 
 // Interface JobApplication removida (sistema de ficha de trabalho removido)
