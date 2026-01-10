@@ -49,8 +49,7 @@ export enum TabType {
   Feed = 'Feed',
   Global = 'Global',
   Locais = 'Locais',
-  Personagens = 'Personagens',
-  Chat = 'Chat JYP'
+  Personagens = 'Personagens'
 }
 
 export interface VIPReservation {

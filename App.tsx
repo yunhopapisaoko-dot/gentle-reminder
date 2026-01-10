@@ -593,15 +593,6 @@ const App: React.FC = () => {
             onRefresh={() => fetchInitialData(currentUser!.id)}
           />
         );
-      case TabType.Chat:
-        return (
-          <ChatInterface 
-            currentUser={currentUser!} 
-            onMemberClick={(user) => openProfile(user)} 
-            onNavigate={(id) => openLocalChat(id)}
-            onClose={() => handleTabChange(TabType.Destaque)} 
-          />
-        );
       default:
         return null;
     }
