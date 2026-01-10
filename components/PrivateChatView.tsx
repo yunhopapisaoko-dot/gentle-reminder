@@ -154,7 +154,7 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
     longPressTimerRef.current = setTimeout(() => {
       setContextMenu({ msg, x: clientX, y: clientY });
       if (navigator.vibrate) navigator.vibrate(50);
-    }, 2000); // 2 seconds
+    }, 1000); // 1 second
   };
 
   const handleLongPressEnd = () => {
