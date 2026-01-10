@@ -63,6 +63,7 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<PrivateMessage | null>(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ msg: PrivateMessage; x: number; y: number } | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -146,11 +147,14 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
     };
   }, [conversationId, currentUserId, fetchMessages, onMarkAsRead, showScrollBottom]);
 
-  const handleLongPressStart = (msg: PrivateMessage) => {
+  const handleLongPressStart = (msg: PrivateMessage, e: React.TouchEvent | React.MouseEvent) => {
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    
     longPressTimerRef.current = setTimeout(() => {
-      setReplyTo(msg);
+      setContextMenu({ msg, x: clientX, y: clientY });
       if (navigator.vibrate) navigator.vibrate(50);
-    }, 500);
+    }, 2000); // 2 seconds
   };
 
   const handleLongPressEnd = () => {
@@ -158,6 +162,39 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
+  };
+
+  const handleCopyMessage = (content: string) => {
+    navigator.clipboard.writeText(content);
+    setContextMenu(null);
+  };
+
+  const handleReplyMessage = (msg: PrivateMessage) => {
+    setReplyTo(msg);
+    setContextMenu(null);
+  };
+
+  const handleDeleteMessage = async (msgId: string) => {
+    const { error } = await supabase
+      .from('private_messages')
+      .delete()
+      .eq('id', msgId);
+    
+    if (!error) {
+      setMessages(prev => prev.filter(m => m.id !== msgId));
+    }
+    setContextMenu(null);
+  };
+
+  // Format text with italic support for *text*
+  const formatMessageText = (text: string) => {
+    const parts = text.split(/(\*[^*]+\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+        return <em key={i} className="italic">{part.slice(1, -1)}</em>;
+      }
+      return <span key={i}>{part}</span>;
+    });
   };
 
   const handleSend = async () => {
@@ -357,7 +394,7 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
               {group.messages.map((msg) => {
                 const isOwn = msg.sender_id === currentUserId;
                 return (
-                  <div key={msg.id} className={`flex items-end space-x-3 ${isOwn ? 'flex-row-reverse space-x-reverse' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`} onTouchStart={() => handleLongPressStart(msg)} onTouchEnd={handleLongPressEnd} onMouseDown={() => handleLongPressStart(msg)} onMouseUp={handleLongPressEnd} onMouseLeave={handleLongPressEnd}>
+                  <div key={msg.id} className={`flex items-end space-x-3 ${isOwn ? 'flex-row-reverse space-x-reverse' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`} onTouchStart={(e) => handleLongPressStart(msg, e)} onTouchEnd={handleLongPressEnd} onMouseDown={(e) => handleLongPressStart(msg, e)} onMouseUp={handleLongPressEnd} onMouseLeave={handleLongPressEnd}>
                     <div className="flex-shrink-0 mb-1"><img src={isOwn ? currentUserAvatar : (otherUser.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default')} className="w-8 h-8 rounded-xl object-cover border border-white/10 shadow-lg" alt="" /></div>
                     <div className={`max-w-[78%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
                       <div className={`px-5 py-3.5 rounded-[26px] shadow-[0_10px_25px_rgba(0,0,0,0.4)] border border-white bg-white text-black transition-transform active:scale-[0.98] ${isOwn ? 'rounded-br-none' : 'rounded-bl-none'} ${replyTo?.id === msg.id ? 'ring-2 ring-primary' : ''}`}>
@@ -367,7 +404,7 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
                             <span className="truncate block opacity-80 leading-tight">"{msg.reply_to_text}"</span>
                           </div>
                         )}
-                        <p className="text-[14px] font-bold leading-relaxed break-words [overflow-wrap:anywhere] [word-break:break-word]">{msg.content.split('\n').map((line, i) => <span key={i} className="block">{line || '\u00A0'}</span>)}</p>
+                        <p className="text-[14px] font-bold leading-relaxed break-words [overflow-wrap:anywhere] [word-break:break-word]">{msg.content.split('\n').map((line, i) => <span key={i} className="block">{formatMessageText(line) || '\u00A0'}</span>)}</p>
                       </div>
                       <span className={`text-[8px] font-black text-white/20 mt-2 uppercase tracking-widest ${isOwn ? 'mr-1' : 'ml-1'}`}>{formatTime(msg.created_at)}</span>
                     </div>
@@ -461,6 +498,44 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
           onCropComplete={handleCropComplete}
           onCancel={() => setImageToCrop(null)}
         />
+      )}
+      
+      {/* Context Menu */}
+      {contextMenu && (
+        <div className="fixed inset-0 z-[800]" onClick={() => setContextMenu(null)}>
+          <div 
+            className="absolute bg-[#1a1a1a]/95 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden animate-in zoom-in-95 duration-200"
+            style={{ 
+              top: Math.min(contextMenu.y, window.innerHeight - 200), 
+              left: Math.min(Math.max(contextMenu.x - 100, 16), window.innerWidth - 216) 
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              onClick={() => handleCopyMessage(contextMenu.msg.content)} 
+              className="w-full px-6 py-4 flex items-center space-x-4 text-left hover:bg-white/5 border-b border-white/5 transition-colors"
+            >
+              <span className="material-symbols-rounded text-white/60">content_copy</span>
+              <span className="text-sm font-bold text-white">Copiar texto</span>
+            </button>
+            <button 
+              onClick={() => handleReplyMessage(contextMenu.msg)} 
+              className="w-full px-6 py-4 flex items-center space-x-4 text-left hover:bg-white/5 border-b border-white/5 transition-colors"
+            >
+              <span className="material-symbols-rounded text-primary">reply</span>
+              <span className="text-sm font-bold text-white">Responder</span>
+            </button>
+            {contextMenu.msg.sender_id === currentUserId && (
+              <button 
+                onClick={() => handleDeleteMessage(contextMenu.msg.id)} 
+                className="w-full px-6 py-4 flex items-center space-x-4 text-left hover:bg-white/5 transition-colors"
+              >
+                <span className="material-symbols-rounded text-rose-500">delete</span>
+                <span className="text-sm font-bold text-rose-500">Apagar mensagem</span>
+              </button>
+            )}
+          </div>
+        </div>
       )}
     </div>
   </div>
