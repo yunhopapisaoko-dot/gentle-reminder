@@ -795,7 +795,7 @@ const App: React.FC = () => {
           />
         )}
         
-        {!selectedLocalChat && !selectedUser && !selectedPost && !isCreateModalOpen && !activePrivateChat && !activeHouseChat && <FloatingActionDock activeTab={activeTab} onCreateClick={() => openCreateModal()} onAllChatsClick={() => openAllChats()} unreadMessages={totalUnread + totalChatUnread} isSidebarOpen={isSidebarOpen} hasNewMessages={hasNewMessages} />}
+        {!selectedLocalChat && !selectedUser && !selectedPost && !isCreateModalOpen && !activePrivateChat && !activeHouseChat && <FloatingActionDock activeTab={activeTab} onCreateClick={() => openCreateModal()} onAllChatsClick={() => openAllChats()} onLocaisClick={() => handleTabChange(TabType.Locais)} unreadMessages={totalUnread + totalChatUnread} isSidebarOpen={isSidebarOpen} hasNewMessages={hasNewMessages} />}
         <Toaster />
       </div>
     </div>

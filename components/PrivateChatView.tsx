@@ -186,12 +186,16 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
     setContextMenu(null);
   };
 
-  // Format text with italic support for *text*
+  // Format text with italic support for *text* (Sincronizado com ChatInterface)
   const formatMessageText = (text: string) => {
     const parts = text.split(/(\*[^*]+\*)/g);
     return parts.map((part, i) => {
       if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
-        return <em key={i} className="italic">{part.slice(1, -1)}</em>;
+        return (
+          <span key={i} className="text-black/40 font-medium italic break-words [overflow-wrap:anywhere]">
+            {part.slice(1, -1)}
+          </span>
+        );
       }
       return <span key={i}>{part}</span>;
     });
@@ -404,7 +408,11 @@ export const PrivateChatView: React.FC<PrivateChatViewProps> = ({
                             <span className="truncate block opacity-80 leading-tight">"{msg.reply_to_text}"</span>
                           </div>
                         )}
-                        <p className="text-[14px] font-bold leading-relaxed break-words [overflow-wrap:anywhere] [word-break:break-word]">{msg.content.split('\n').map((line, i) => <span key={i} className="block">{formatMessageText(line) || '\u00A0'}</span>)}</p>
+                        <div className="text-[14px] font-bold leading-relaxed break-words [overflow-wrap:anywhere] [word-break:break-word]">
+                          {msg.content.split('\n').map((line, i) => (
+                            <p key={i} className="mb-1">{formatMessageText(line) || '\u00A0'}</p>
+                          ))}
+                        </div>
                       </div>
                       <span className={`text-[8px] font-black text-white/20 mt-2 uppercase tracking-widest ${isOwn ? 'mr-1' : 'ml-1'}`}>{formatTime(msg.created_at)}</span>
                     </div>
