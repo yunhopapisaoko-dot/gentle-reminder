@@ -151,6 +151,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   
   // Reply functionality
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ msg: ChatMessage; x: number; y: number } | null>(null);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Typing indicator state
@@ -660,11 +661,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       ? (roomMessages[currentSubLoc.name] || []) 
       : messages;
 
-  const handleLongPressStart = (msg: ChatMessage) => {
+  const handleLongPressStart = (msg: ChatMessage, e: React.TouchEvent | React.MouseEvent) => {
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    
     longPressTimerRef.current = setTimeout(() => {
-      setReplyTo(msg);
+      setContextMenu({ msg, x: clientX, y: clientY });
       if (navigator.vibrate) navigator.vibrate(50);
-    }, 500);
+    }, 2000); // 2 seconds
   };
 
   const handleLongPressEnd = () => {
@@ -672,6 +676,50 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
+  };
+
+  const handleCopyMessage = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setContextMenu(null);
+  };
+
+  const handleReplyFromContext = (msg: ChatMessage) => {
+    setReplyTo(msg);
+    setContextMenu(null);
+  };
+
+  const handleDeleteMessage = async (msgId: string) => {
+    const loc = (locationContext || 'global').toLowerCase();
+    const { error } = await supabase
+      .from('chat_messages')
+      .delete()
+      .eq('id', msgId)
+      .eq('user_id', currentUser.id);
+    
+    if (!error) {
+      if (currentSubLoc) {
+        setRoomMessages(prev => ({
+          ...prev,
+          [currentSubLoc.name]: (prev[currentSubLoc.name] || []).filter(m => m.id !== msgId)
+        }));
+      } else if (isOffChatMode) {
+        setOffMessages(prev => prev.filter(m => m.id !== msgId));
+      } else {
+        setMessages(prev => prev.filter(m => m.id !== msgId));
+      }
+    }
+    setContextMenu(null);
+  };
+
+  // Format text with italic support for *text*
+  const formatMessageText = (text: string) => {
+    const parts = text.split(/(\*[^*]+\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+        return <em key={i} className="italic">{part.slice(1, -1)}</em>;
+      }
+      return <span key={i}>{part}</span>;
+    });
   };
 
   const handleSend = async (customMsg?: string) => {
@@ -913,10 +961,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 {TimeSeparator}
                 <div 
                   className={`flex min-w-0 items-start space-x-3 ${isOwnMessage ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}
-                  onTouchStart={() => handleLongPressStart(msg)}
+                  onTouchStart={(e) => handleLongPressStart(msg, e)}
                   onTouchEnd={handleLongPressEnd}
                   onTouchCancel={handleLongPressEnd}
-                  onMouseDown={() => handleLongPressStart(msg)}
+                  onMouseDown={(e) => handleLongPressStart(msg, e)}
                   onMouseUp={handleLongPressEnd}
                   onMouseLeave={handleLongPressEnd}
                 >
@@ -933,7 +981,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         </div>
                       )}
                       {actualText.split('\n').map((line, i) => (
-                        <p key={i} className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{line || '\u00A0'}</p>
+                        <p key={i} className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{formatMessageText(line) || '\u00A0'}</p>
                       ))}
                     </div>
                   </div>
@@ -950,10 +998,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               {TimeSeparator}
               <div 
                 className={`flex min-w-0 items-start space-x-3 ${isOwnMessage && !forceLeftSide ? 'flex-row-reverse space-x-reverse' : 'justify-start'}`}
-                onTouchStart={() => handleLongPressStart(msg)}
+                onTouchStart={(e) => handleLongPressStart(msg, e)}
                 onTouchEnd={handleLongPressEnd}
                 onTouchCancel={handleLongPressEnd}
-                onMouseDown={() => handleLongPressStart(msg)}
+                onMouseDown={(e) => handleLongPressStart(msg, e)}
                 onMouseUp={handleLongPressEnd}
                 onMouseLeave={handleLongPressEnd}
               >
@@ -1368,6 +1416,44 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           onMemberClick?.(u);
         }}
       />
+      
+      {/* Context Menu */}
+      {contextMenu && (
+        <div className="fixed inset-0 z-[9999]" onClick={() => setContextMenu(null)}>
+          <div 
+            className="absolute bg-[#1a1a1a]/95 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden animate-in zoom-in-95 duration-200"
+            style={{ 
+              top: Math.min(contextMenu.y, window.innerHeight - 200), 
+              left: Math.min(Math.max(contextMenu.x - 100, 16), window.innerWidth - 216) 
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              onClick={() => handleCopyMessage(contextMenu.msg.text)} 
+              className="w-full px-6 py-4 flex items-center space-x-4 text-left hover:bg-white/5 border-b border-white/5 transition-colors"
+            >
+              <span className="material-symbols-rounded text-white/60">content_copy</span>
+              <span className="text-sm font-bold text-white">Copiar texto</span>
+            </button>
+            <button 
+              onClick={() => handleReplyFromContext(contextMenu.msg)} 
+              className="w-full px-6 py-4 flex items-center space-x-4 text-left hover:bg-white/5 border-b border-white/5 transition-colors"
+            >
+              <span className="material-symbols-rounded text-primary">reply</span>
+              <span className="text-sm font-bold text-white">Responder</span>
+            </button>
+            {contextMenu.msg.author?.id === currentUser.id && (
+              <button 
+                onClick={() => handleDeleteMessage(contextMenu.msg.id)} 
+                className="w-full px-6 py-4 flex items-center space-x-4 text-left hover:bg-white/5 transition-colors"
+              >
+                <span className="material-symbols-rounded text-rose-500">delete</span>
+                <span className="text-sm font-bold text-rose-500">Apagar mensagem</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   </div>
   );
