@@ -919,7 +919,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           }
           
           // Check if message has reply info [reply:@Author|Snippet]
-          const replyMatch = msg.text.match(/^\[reply:@([^|]+)\|([^\]]+)\]\n([\s\S]*)$/);
+          // Using a regex that captures everything between | and ]\n (allowing ] inside snippet)
+          const replyMatch = msg.text.match(/^\[reply:@([^|]+)\|(.*?)\]\n([\s\S]*)$/);
           const hasReply = !!replyMatch;
           const replyAuthor = replyMatch?.[1];
           const replySnippet = replyMatch?.[2];
