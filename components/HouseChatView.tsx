@@ -47,7 +47,7 @@ interface HouseChatViewProps {
   currentUser: User;
   onClose: () => void;
   onMemberClick?: (user: User) => void;
-  onLeaveHouse?: (houseId: string) => void;
+  onLeaveHouse?: (houseId: string) => Promise<void>;
   isOwner?: boolean;
 }
 
@@ -601,10 +601,10 @@ export const HouseChatView: React.FC<HouseChatViewProps> = ({
         location={chatLocation}
         chatName={`${currentRoom.name} - Casa de ${ownerName}`}
         chatIcon={currentRoom.icon}
-        onLeaveChat={() => {
+        onLeaveChat={async () => {
           if (!isOwner && onLeaveHouse) {
             // User is a guest - remove invite and leave properly
-            onLeaveHouse(houseId);
+            await onLeaveHouse(houseId);
           }
           handleClose();
         }}

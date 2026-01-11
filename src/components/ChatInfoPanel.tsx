@@ -11,7 +11,7 @@ interface ChatInfoPanelProps {
   subLocation?: string | null;
   chatName: string;
   chatIcon: string;
-  onLeaveChat?: () => void;
+  onLeaveChat?: () => void | Promise<void>;
   onUserClick?: (user: User) => void;
 }
 
@@ -172,9 +172,9 @@ export const ChatInfoPanel: React.FC<ChatInfoPanelProps> = ({
     if (!onLeaveChat) return;
     
     setIsLongPressing(true);
-    longPressTimerRef.current = setTimeout(() => {
+    longPressTimerRef.current = setTimeout(async () => {
       if (navigator.vibrate) navigator.vibrate(100);
-      onLeaveChat();
+      await onLeaveChat();
       onClose();
       setIsLongPressing(false);
     }, 1500);
