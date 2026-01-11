@@ -137,6 +137,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const lastTypingUpdateRef = useRef<number>(0);
   const [isClosing, setIsClosing] = useState(false);
   const [showActionModal, setShowActionModal] = useState(false);
   const [showGrantAccess, setShowGrantAccess] = useState(false);
@@ -1234,10 +1235,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <textarea 
             value={input} 
             onChange={(e) => {
-              setInput(e.target.value);
+              const newValue = e.target.value;
+              setInput(newValue);
               
-              // Send typing indicator
-              if (presenceChannelRef.current && e.target.value.trim()) {
+              // Throttle typing indicator updates to max once per 500ms for mobile performance
+              const now = Date.now();
+              if (now - lastTypingUpdateRef.current < 500) return;
+              lastTypingUpdateRef.current = now;
+              
+              // Send typing indicator (throttled)
+              if (presenceChannelRef.current && newValue.trim()) {
                 presenceChannelRef.current.track({ isTyping: true, name: currentUser.name });
                 
                 // Clear previous timeout
@@ -1251,7 +1258,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     presenceChannelRef.current.track({ isTyping: false, name: currentUser.name });
                   }
                 }, 2000);
-              } else if (presenceChannelRef.current && !e.target.value.trim()) {
+              } else if (presenceChannelRef.current && !newValue.trim()) {
                 presenceChannelRef.current.track({ isTyping: false, name: currentUser.name });
               }
             }} 
@@ -1264,8 +1271,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               }
             }}
             placeholder={replyTo ? `Sua resposta...` : isOffChatMode ? "Mensagem livre..." : currentSubLoc ? `Roleplay em ${currentSubLoc.name}...` : "O que você faz agora?"} 
-            className="flex-1 bg-transparent border-none text-[15px] focus:ring-0 placeholder:text-white/20 text-white font-bold py-4 px-2 resize-none min-h-[52px] max-h-[120px] overflow-y-auto"
+            className="flex-1 bg-transparent border-none text-[15px] focus:ring-0 placeholder:text-white/20 text-white font-bold py-4 px-2 resize-none min-h-[52px] max-h-[120px] overflow-y-auto will-change-auto"
             rows={1}
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
           />
           <button onClick={() => handleSend()} disabled={isLoading || !input.trim()} className={`w-13 h-13 rounded-full flex items-center justify-center transition-all ${isLoading || !input.trim() ? 'bg-white/5 text-white/10' : isOffChatMode ? 'bg-amber-500 text-white active:scale-90' : 'bg-primary text-white active:scale-90'}`}><span className="material-symbols-rounded text-3xl">send</span></button>
         </div>
