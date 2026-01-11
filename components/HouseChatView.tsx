@@ -49,6 +49,7 @@ interface HouseChatViewProps {
   onMemberClick?: (user: User) => void;
   onLeaveHouse?: (houseId: string) => Promise<void>;
   isOwner?: boolean;
+  onMarkAsRead?: (location: string, subLocation?: string | null) => void;
 }
 
 const GAP_THRESHOLD_MS = 20 * 60 * 1000;
@@ -84,7 +85,8 @@ export const HouseChatView: React.FC<HouseChatViewProps> = ({
   onClose,
   onMemberClick,
   onLeaveHouse,
-  isOwner = false
+  isOwner = false,
+  onMarkAsRead
 }) => {
   const [currentRoom, setCurrentRoom] = useState<HouseRoom>(HOUSE_ROOMS[0]); // Starts in Sala
   const [showRoomSelector, setShowRoomSelector] = useState(false);
@@ -157,6 +159,11 @@ export const HouseChatView: React.FC<HouseChatViewProps> = ({
   useEffect(() => {
     loadMessages();
     
+    // Mark as read when entering the chat
+    if (onMarkAsRead) {
+      onMarkAsRead(chatLocation, null);
+    }
+    
     const channel = supabase
       .channel(`house-chat-${chatLocation}-${Date.now()}`)
       .on(
@@ -191,6 +198,11 @@ export const HouseChatView: React.FC<HouseChatViewProps> = ({
           };
 
           setMessages(prev => prev.some(m => m.id === newMessage.id) ? prev : [...prev, newMessage]);
+          
+          // Mark as read when receiving new messages while in the chat
+          if (onMarkAsRead) {
+            onMarkAsRead(chatLocation, null);
+          }
         }
       )
       .subscribe();
@@ -198,7 +210,7 @@ export const HouseChatView: React.FC<HouseChatViewProps> = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [chatLocation, loadMessages]);
+  }, [chatLocation, loadMessages, onMarkAsRead]);
 
   useEffect(() => {
     if (scrollRef.current) {
