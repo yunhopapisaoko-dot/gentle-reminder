@@ -758,6 +758,7 @@ const App: React.FC = () => {
             houseId={activeHouseChat.houseId}
             ownerName={activeHouseChat.ownerName}
             currentUser={currentUser!}
+            onMarkAsRead={(loc, subLoc) => markChatAsRead(loc, subLoc)}
             onClose={() => setActiveHouseChat(null)}
             onMemberClick={(user) => openProfile(user)}
             onLeaveHouse={async (houseId) => {
