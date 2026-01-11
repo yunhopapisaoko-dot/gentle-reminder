@@ -601,13 +601,11 @@ export const HouseChatView: React.FC<HouseChatViewProps> = ({
         location={chatLocation}
         chatName={`${currentRoom.name} - Casa de ${ownerName}`}
         chatIcon={currentRoom.icon}
-        onLeaveChat={async () => {
-          if (!isOwner && onLeaveHouse) {
-            // User is a guest - remove invite and leave properly
-            await onLeaveHouse(houseId);
-          }
+        onLeaveChat={!isOwner && onLeaveHouse ? async () => {
+          // User is a guest - remove invite and leave properly
+          await onLeaveHouse(houseId);
           handleClose();
-        }}
+        } : undefined}
         onUserClick={onMemberClick}
       />
     </div>
