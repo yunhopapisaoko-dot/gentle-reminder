@@ -1,13 +1,11 @@
-import React, { useState, useRef, useCallback, memo } from 'react';
+import React, { useRef, useCallback, memo, useEffect } from 'react';
 
 interface ChatInputProps {
   onSend: (text: string) => void;
-  onTypingStart: () => void;
-  onTypingStop: () => void;
+  onTypingChange?: (isTyping: boolean) => void;
   isLoading: boolean;
   placeholder: string;
   isOffChatMode: boolean;
-  hasReply: boolean;
   showActionButton: boolean;
   unreadCount: number;
   onActionClick: () => void;
@@ -15,66 +13,79 @@ interface ChatInputProps {
 
 export const ChatInput = memo(function ChatInput({
   onSend,
-  onTypingStart,
-  onTypingStop,
+  onTypingChange,
   isLoading,
   placeholder,
   isOffChatMode,
-  hasReply,
   showActionButton,
   unreadCount,
   onActionClick
 }: ChatInputProps) {
-  const [input, setInput] = useState('');
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const lastTypingUpdateRef = useRef<number>(0);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTypingRef = useRef(false);
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
-    setInput(newValue);
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const notifyTyping = useCallback((typing: boolean) => {
+    if (isTypingRef.current !== typing) {
+      isTypingRef.current = typing;
+      onTypingChange?.(typing);
+    }
+  }, [onTypingChange]);
+
+  const handleInput = useCallback(() => {
+    const hasText = !!inputRef.current?.value.trim();
     
-    // Throttle typing indicator updates to max once per 800ms for mobile performance
+    // Throttle typing indicator updates to max once per 1000ms
     const now = Date.now();
-    if (now - lastTypingUpdateRef.current < 800) return;
+    if (now - lastTypingUpdateRef.current < 1000) return;
     lastTypingUpdateRef.current = now;
     
-    if (newValue.trim()) {
-      onTypingStart();
+    if (hasText) {
+      notifyTyping(true);
       
       // Clear previous timeout
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
       
-      // Set timeout to stop typing indicator after 2 seconds of inactivity
+      // Stop typing indicator after 3 seconds of inactivity
       typingTimeoutRef.current = setTimeout(() => {
-        onTypingStop();
-      }, 2000);
+        notifyTyping(false);
+      }, 3000);
     } else {
-      onTypingStop();
+      notifyTyping(false);
     }
-  }, [onTypingStart, onTypingStop]);
+  }, [notifyTyping]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // On mobile (touch devices), Enter creates new line. On desktop, Enter sends (Shift+Enter for new line)
+    // On mobile, Enter creates new line. On desktop, Enter sends.
     const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     if (e.key === 'Enter' && !isMobile && !e.shiftKey) {
       e.preventDefault();
-      if (input.trim() && !isLoading) {
-        onSend(input);
-        setInput('');
-        onTypingStop();
-      }
+      handleSendClick();
     }
-  }, [input, isLoading, onSend, onTypingStop]);
+  }, []);
 
   const handleSendClick = useCallback(() => {
-    if (input.trim() && !isLoading) {
-      onSend(input);
-      setInput('');
-      onTypingStop();
+    const text = inputRef.current?.value.trim();
+    if (text && !isLoading) {
+      onSend(text);
+      if (inputRef.current) {
+        inputRef.current.value = '';
+      }
+      notifyTyping(false);
     }
-  }, [input, isLoading, onSend, onTypingStop]);
+  }, [isLoading, onSend, notifyTyping]);
 
   return (
     <div className={`flex items-center space-x-3 rounded-[40px] p-2.5 pl-5 border shadow-2xl ${isOffChatMode ? 'bg-amber-900/50 border-amber-500/30' : 'bg-zinc-900 border-white/10'}`}>
@@ -89,8 +100,8 @@ export const ChatInput = memo(function ChatInput({
         </button>
       )}
       <textarea 
-        value={input} 
-        onChange={handleChange}
+        ref={inputRef}
+        onInput={handleInput}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         className="flex-1 bg-transparent border-none text-[15px] focus:ring-0 focus:outline-none placeholder:text-white/20 text-white font-bold py-4 px-2 resize-none min-h-[52px] max-h-[120px] overflow-y-auto"
@@ -99,11 +110,12 @@ export const ChatInput = memo(function ChatInput({
         autoCorrect="off"
         autoCapitalize="off"
         spellCheck={false}
+        enterKeyHint="send"
       />
       <button 
         onClick={handleSendClick} 
-        disabled={isLoading || !input.trim()} 
-        className={`w-13 h-13 rounded-full flex items-center justify-center transition-all ${isLoading || !input.trim() ? 'bg-white/5 text-white/10' : isOffChatMode ? 'bg-amber-500 text-white active:scale-90' : 'bg-primary text-white active:scale-90'}`}
+        disabled={isLoading}
+        className={`w-13 h-13 rounded-full flex items-center justify-center transition-all ${isLoading ? 'bg-white/5 text-white/10' : isOffChatMode ? 'bg-amber-500 text-white active:scale-90' : 'bg-primary text-white active:scale-90'}`}
       >
         <span className="material-symbols-rounded text-3xl">send</span>
       </button>
