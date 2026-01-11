@@ -5,6 +5,7 @@ import { ChatMessage, User } from '../types';
 import { SUB_LOCATIONS, SubLocation } from '../constants';
 import { ChatInfoPanel } from '../src/components/ChatInfoPanel';
 import { UserStatusModal } from '../src/components/UserStatusModal';
+import { ChatInput } from '../src/components/ChatInput';
 import { supabaseService } from '../services/supabaseService';
 import { supabase } from '../supabase';
 import { sendPushToAllExcept, getUserDisplayName } from '../src/utils/pushNotifications';
@@ -135,9 +136,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [characterAge, setCharacterAge] = useState<number | null>(null);
   const [isOffChatMode, setIsOffChatMode] = useState(false);
   
-  const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const lastTypingUpdateRef = useRef<number>(0);
   const [isClosing, setIsClosing] = useState(false);
   const [showActionModal, setShowActionModal] = useState(false);
   const [showGrantAccess, setShowGrantAccess] = useState(false);
@@ -646,14 +645,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [messages, roomMessages, offMessages, currentSubLoc, isLoading, isOffChatMode]);
 
-  useEffect(() => {
-    if (input === '/' || input === '*') {
-      setShowSuggestions(true);
-      setSuggestionTab('acoes');
-    } else if (!input.startsWith('/') && !input.startsWith('*')) {
-      setShowSuggestions(false);
-    }
-  }, [input]);
 
 
   const activeMessages = isOffChatMode 
@@ -723,16 +714,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     });
   };
 
-  const handleSend = async (customMsg?: string) => {
-    const textToSend = (customMsg || input).trim();
-    if (!textToSend || isLoading) return;
+  const handleSend = async (textToSend: string) => {
+    if (!textToSend.trim() || isLoading) return;
 
     if (!isOffChatMode && (textToSend.startsWith('/') || textToSend.startsWith('*'))) {
       const target = textToSend.slice(1).toLowerCase();
       const loc = LOCATIONS_LIST.find(l => l.id === target || l.name.toLowerCase() === target);
       if (loc && onNavigate) {
         onNavigate(loc.id);
-        setInput('');
         setShowSuggestions(false);
         setReplyTo(null);
         return;
@@ -740,18 +729,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
 
     // Format message with reply info
-    let finalText = textToSend;
+    let finalText = textToSend.trim();
     if (replyTo) {
       // Limpa metadados de outras respostas no texto original para evitar replicação de headers
       const cleanReplyText = replyTo.text.replace(/^\[reply:@[^|]+\|[^\]]+\]\n/, '');
       const replyPreview = cleanReplyText.length > 50 ? cleanReplyText.slice(0, 50) + '...' : cleanReplyText;
-      finalText = `[reply:@${replyTo.author?.name}|${replyPreview}]\n${textToSend}`;
+      finalText = `[reply:@${replyTo.author?.name}|${replyPreview}]\n${textToSend.trim()}`;
     }
 
     // Don't add message optimistically - let realtime handle it to avoid duplicates
     // The message will appear when realtime subscription receives the INSERT event
     
-    if (!customMsg) setInput('');
     setReplyTo(null);
     
     // Stop typing indicator when message is sent
@@ -797,7 +785,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       alert(`Acesso à ${roomName} liberado para ${targetUser.name}! ✨`);
       setShowGrantAccess(false);
       setShowSuggestions(false);
-      setInput('');
     } catch (error: any) {
       alert("Erro ao liberar sala: " + error.message);
     }
@@ -806,7 +793,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleSuggestionClick = (locId: string) => {
     if (onNavigate) {
       onNavigate(locId);
-      setInput('');
       setShowSuggestions(false);
     }
   };
@@ -1221,64 +1207,26 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </div>
         )}
 
-        <div className={`flex items-center space-x-3 rounded-[40px] p-2.5 pl-5 border shadow-2xl ${isOffChatMode ? 'bg-amber-900/50 border-amber-500/30' : 'bg-zinc-900 border-white/10'}`}>
-          {!isOffChatMode && (
-            <button onClick={() => setShowActionModal(true)} className="relative w-13 h-13 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all hover:bg-white/15">
-              <span className="material-symbols-rounded text-3xl">add</span>
-              {unreadSubLocations.length > 0 && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center border-2 border-zinc-900 animate-pulse">
-                  <span className="text-[8px] font-black text-white">{unreadSubLocations.length}</span>
-                </div>
-              )}
-            </button>
-          )}
-          <textarea 
-            value={input} 
-            onChange={(e) => {
-              const newValue = e.target.value;
-              setInput(newValue);
-              
-              // Throttle typing indicator updates to max once per 500ms for mobile performance
-              const now = Date.now();
-              if (now - lastTypingUpdateRef.current < 500) return;
-              lastTypingUpdateRef.current = now;
-              
-              // Send typing indicator (throttled)
-              if (presenceChannelRef.current && newValue.trim()) {
-                presenceChannelRef.current.track({ isTyping: true, name: currentUser.name });
-                
-                // Clear previous timeout
-                if (typingTimeoutRef.current) {
-                  clearTimeout(typingTimeoutRef.current);
-                }
-                
-                // Set timeout to stop typing indicator after 2 seconds of inactivity
-                typingTimeoutRef.current = setTimeout(() => {
-                  if (presenceChannelRef.current) {
-                    presenceChannelRef.current.track({ isTyping: false, name: currentUser.name });
-                  }
-                }, 2000);
-              } else if (presenceChannelRef.current && !newValue.trim()) {
-                presenceChannelRef.current.track({ isTyping: false, name: currentUser.name });
-              }
-            }} 
-            onKeyDown={(e) => {
-              // On mobile (touch devices), Enter creates new line. On desktop, Enter sends (Shift+Enter for new line)
-              const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-              if (e.key === 'Enter' && !isMobile && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            placeholder={replyTo ? `Sua resposta...` : isOffChatMode ? "Mensagem livre..." : currentSubLoc ? `Roleplay em ${currentSubLoc.name}...` : "O que você faz agora?"} 
-            className="flex-1 bg-transparent border-none text-[15px] focus:ring-0 placeholder:text-white/20 text-white font-bold py-4 px-2 resize-none min-h-[52px] max-h-[120px] overflow-y-auto will-change-auto"
-            rows={1}
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-          />
-          <button onClick={() => handleSend()} disabled={isLoading || !input.trim()} className={`w-13 h-13 rounded-full flex items-center justify-center transition-all ${isLoading || !input.trim() ? 'bg-white/5 text-white/10' : isOffChatMode ? 'bg-amber-500 text-white active:scale-90' : 'bg-primary text-white active:scale-90'}`}><span className="material-symbols-rounded text-3xl">send</span></button>
-        </div>
+        <ChatInput
+          onSend={handleSend}
+          onTypingStart={() => {
+            if (presenceChannelRef.current) {
+              presenceChannelRef.current.track({ isTyping: true, name: currentUser.name });
+            }
+          }}
+          onTypingStop={() => {
+            if (presenceChannelRef.current) {
+              presenceChannelRef.current.track({ isTyping: false, name: currentUser.name });
+            }
+          }}
+          isLoading={isLoading}
+          placeholder={replyTo ? `Sua resposta...` : isOffChatMode ? "Mensagem livre..." : currentSubLoc ? `Roleplay em ${currentSubLoc.name}...` : "O que você faz agora?"}
+          isOffChatMode={isOffChatMode}
+          hasReply={!!replyTo}
+          showActionButton={true}
+          unreadCount={unreadSubLocations.length}
+          onActionClick={() => setShowActionModal(true)}
+        />
       </div>
 
       {/* Action Modal e outros componentes... (mantidos iguais) */}
