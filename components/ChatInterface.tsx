@@ -158,6 +158,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [typingUsers, setTypingUsers] = useState<{ userId: string; name: string }[]>([]);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const presenceChannelRef = useRef<any>(null);
+  const lastTypingStateRef = useRef<boolean>(false);
   
   // Unread messages in sub-locations
   const [unreadSubLocations, setUnreadSubLocations] = useState<string[]>([]);
@@ -797,6 +798,31 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
+  // Memoized typing change handler - uses requestIdleCallback/setTimeout to avoid blocking input
+  const handleTypingChange = useCallback((isTyping: boolean) => {
+    // Skip if state hasn't changed
+    if (lastTypingStateRef.current === isTyping) return;
+    lastTypingStateRef.current = isTyping;
+    
+    // Use requestIdleCallback or setTimeout to avoid blocking input
+    const updatePresence = () => {
+      if (presenceChannelRef.current) {
+        presenceChannelRef.current.track({ isTyping, name: currentUser.name });
+      }
+    };
+    
+    if ('requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(updatePresence, { timeout: 100 });
+    } else {
+      setTimeout(updatePresence, 0);
+    }
+  }, [currentUser.name]);
+
+  // Memoized action click handler
+  const handleActionClick = useCallback(() => {
+    setShowActionModal(true);
+  }, []);
+
   return (
     <div className="fixed inset-0 z-[750] bg-black overflow-hidden">
       <div className="absolute inset-0 z-0">
@@ -1209,17 +1235,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
         <ChatInput
           onSend={handleSend}
-          onTypingChange={(isTyping) => {
-            if (presenceChannelRef.current) {
-              presenceChannelRef.current.track({ isTyping, name: currentUser.name });
-            }
-          }}
+          onTypingChange={handleTypingChange}
           isLoading={isLoading}
           placeholder={replyTo ? `Sua resposta...` : isOffChatMode ? "Mensagem livre..." : currentSubLoc ? `Roleplay em ${currentSubLoc.name}...` : "O que você faz agora?"}
           isOffChatMode={isOffChatMode}
           showActionButton={true}
           unreadCount={unreadSubLocations.length}
-          onActionClick={() => setShowActionModal(true)}
+          onActionClick={handleActionClick}
         />
       </div>
 
