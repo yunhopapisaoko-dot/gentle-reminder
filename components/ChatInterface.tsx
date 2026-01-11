@@ -1209,20 +1209,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
         <ChatInput
           onSend={handleSend}
-          onTypingStart={() => {
+          onTypingChange={(isTyping) => {
             if (presenceChannelRef.current) {
-              presenceChannelRef.current.track({ isTyping: true, name: currentUser.name });
-            }
-          }}
-          onTypingStop={() => {
-            if (presenceChannelRef.current) {
-              presenceChannelRef.current.track({ isTyping: false, name: currentUser.name });
+              presenceChannelRef.current.track({ isTyping, name: currentUser.name });
             }
           }}
           isLoading={isLoading}
           placeholder={replyTo ? `Sua resposta...` : isOffChatMode ? "Mensagem livre..." : currentSubLoc ? `Roleplay em ${currentSubLoc.name}...` : "O que você faz agora?"}
           isOffChatMode={isOffChatMode}
-          hasReply={!!replyTo}
           showActionButton={true}
           unreadCount={unreadSubLocations.length}
           onActionClick={() => setShowActionModal(true)}
